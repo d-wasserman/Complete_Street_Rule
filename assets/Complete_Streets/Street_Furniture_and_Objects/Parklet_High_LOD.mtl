@@ -1,0 +1,122 @@
+newmtl Foliage
+illum 4
+Ka 0 0 0
+Kd 1 1 1
+Ks 0.1 0.1 0.1
+Ns 0
+d 1
+Tf 1.0 1.0 1.0
+Ni 1.0
+map_Kd Parklet_High_LOD/RoseBush_Foliage_Diffuse.png
+map_d RoseBush_Foliage_Diffuse.png
+
+newmtl Bark
+illum 3
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+Ns 0
+d 1
+Tf 1.0 1.0 1.0
+Ni 1.0
+map_Kd Parklet_High_LOD/Rhododendron_Bark_Diffuse.jpg
+
+newmtl CityEngineShapeMaterial_1
+illum 3
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+Ns 0
+d 1
+Tf 1.0 1.0 1.0
+Ni 1.0
+map_Kd Parklet_High_LOD/_10.jpg
+
+newmtl CityEngineShapeMaterial_7
+illum 3
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+Ns 0
+d 1
+Tf 1.0 1.0 1.0
+Ni 1.0
+
+newmtl CityEngineShapeMaterial_6
+illum 3
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+Ns 0
+d 1
+Tf 1.0 1.0 1.0
+Ni 1.0
+map_Kd Parklet_High_LOD/_9.jpg
+
+newmtl CityEngineShapeMaterial_4
+illum 3
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+Ns 0
+d 1
+Tf 1.0 1.0 1.0
+Ni 1.0
+map_Kd Parklet_High_LOD/_5.jpg
+
+newmtl CityEngineShapeMaterial_5
+illum 3
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+Ns 0
+d 1
+Tf 1.0 1.0 1.0
+Ni 1.0
+map_Kd Parklet_High_LOD/_3.jpg
+
+newmtl CityEngineShapeMaterial_3
+illum 3
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+Ns 0
+d 1
+Tf 1.0 1.0 1.0
+Ni 1.0
+map_Kd Parklet_High_LOD/_12.jpg
+
+newmtl CityEngineShapeMaterial_2
+illum 3
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+Ns 0
+d 1
+Tf 1.0 1.0 1.0
+Ni 1.0
+map_Kd Parklet_High_LOD/_11.jpg
+
+newmtl Foliage__leafcard
+illum 4
+Ka 0 0 0
+Kd 1 1 1
+Ks 0.1 0.1 0.1
+Ns 0
+d 1
+Tf 1.0 1.0 1.0
+Ni 1.0
+map_Kd Parklet_High_LOD/Rhododendron_Foliage_Diffuse.png
+map_d Rhododendron_Foliage_Diffuse.png
+
+newmtl CityEngineShapeMaterial
+illum 3
+Ka 0 0 0
+Kd 1 1 1
+Ks 0 0 0
+Ns 0
+d 1
+Tf 1.0 1.0 1.0
+Ni 1.0
+map_Kd Parklet_High_LOD/ooMaterial2.jpg
+

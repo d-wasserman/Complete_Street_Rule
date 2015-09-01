@@ -1,0 +1,17 @@
+newmtl lambert_car_2SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd lwpg002.png
+Ni 1.00
+Ks 0.75 0.75 0.75
+Ns 13.00
+newmtl lwpg002SG1
+illum 4
+Kd 0.06 0.03 0.13
+Ka 0.06 0.03 0.13
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.13 0.13 0.13
+Ns 88.00

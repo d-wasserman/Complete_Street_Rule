@@ -1,0 +1,14 @@
+newmtl pasted__lambert895SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd lightPole360.jpg
+Ni 1.00
+newmtl pasted__lambert896SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd lightPoleGlobe.jpg
+Ni 1.00

@@ -1,0 +1,220 @@
+# Alias OBJ Model File
+# Exported from SketchUp, (c) 2000-2012 Trimble Navigation Limited
+# File units = meters
+
+mtllib Median_End_2.mtl
+
+g Mesh1 Model
+
+usemtl FrontColor
+v 0.25 -1.20319e-016 -1.25
+vt -9.84252 49.2126
+vn -5.27255e-018 -1 1.86221e-016
+v 2.69386 2.40637e-016 1.68612
+vt -106.057 -66.3827
+v 0.25 2.40637e-016 3.25
+vt -9.84252 -127.953
+f 1/1/1 2/2/1 3/3/1
+
+v 3.23717 2.40637e-016 1.37657
+vt -127.448 -54.1957
+f 2/2/1 1/1/1 4/4/1
+
+usemtl BackColor
+vn 5.27255e-018 1 -1.86221e-016
+f 3/3/2 2/2/2 1/1/2
+
+usemtl FrontColor
+v 2.17141 2.40637e-016 2.0297
+vt -85.4884 -79.9096
+f 3/3/1 2/2/1 5/5/1
+
+usemtl BackColor
+f 5/5/2 2/2/2 3/3/2
+
+usemtl FrontColor
+v 1.67194 2.40637e-016 2.40592
+vt -65.8243 -94.7213
+f 3/3/1 5/5/1 6/6/1
+
+usemtl BackColor
+f 6/6/2 5/5/2 3/3/2
+
+usemtl FrontColor
+v 1.19749 2.40637e-016 2.81324
+vt -47.1453 -110.757
+f 3/3/1 6/6/1 7/7/1
+
+usemtl BackColor
+f 7/7/2 6/6/2 3/3/2
+
+usemtl FrontColor
+v 0.75 2.40637e-016 3.25
+vt -29.5276 -127.953
+f 3/3/1 7/7/1 8/8/1
+
+usemtl BackColor
+f 8/8/2 7/7/2 3/3/2
+
+f 4/4/2 1/1/2 2/2/2
+
+usemtl FrontColor
+v 3.79912 2.40637e-016 1.10232
+vt -149.572 -43.3984
+f 4/4/1 1/1/1 9/9/1
+
+usemtl BackColor
+f 9/9/2 1/1/2 4/4/2
+
+usemtl FrontColor
+v 4.37743 2.40637e-016 0.864478
+vt -172.34 -34.0346
+f 9/9/1 1/1/1 10/10/1
+
+usemtl BackColor
+f 10/10/2 1/1/2 9/9/2
+
+usemtl FrontColor
+v 4.96974 2.40637e-016 0.66402
+vt -195.659 -26.1425
+f 10/10/1 1/1/1 11/11/1
+
+usemtl BackColor
+f 11/11/2 1/1/2 10/10/2
+
+usemtl FrontColor
+v 5.57362 2.40637e-016 0.501762
+vt -219.434 -19.7544
+f 11/11/1 1/1/1 12/12/1
+
+usemtl BackColor
+f 12/12/2 1/1/2 11/11/2
+
+usemtl FrontColor
+v 12.7 -8.4223e-016 -1.25
+vt -500 49.2126
+f 12/12/1 1/1/1 13/13/1
+
+usemtl BackColor
+f 13/13/2 1/1/2 12/12/2
+
+usemtl FrontColor
+v 6.18663 2.40637e-016 0.378364
+vt -243.568 -14.8962
+f 12/12/1 13/13/1 14/14/1
+
+usemtl BackColor
+f 14/14/2 13/13/2 12/12/2
+
+usemtl FrontColor
+v 6.80627 2.40637e-016 0.294329
+vt -267.963 -11.5878
+f 14/14/1 13/13/1 15/15/1
+
+usemtl BackColor
+f 15/15/2 13/13/2 14/14/2
+
+usemtl FrontColor
+v 7.43 2.40637e-016 0.25
+vt -292.52 -9.84252
+f 15/15/1 13/13/1 16/16/1
+
+usemtl BackColor
+f 16/16/2 13/13/2 15/15/2
+
+usemtl FrontColor
+v 12.7 2.40637e-016 0.25
+vt -500 -9.84252
+f 16/16/1 13/13/1 17/17/1
+
+usemtl BackColor
+f 17/17/2 13/13/2 16/16/2
+
+usemtl FrontColor
+v 12.8941 -8.4223e-016 -1.22444
+vt -507.642 48.2065
+f 17/17/1 13/13/1 18/18/1
+
+usemtl BackColor
+f 18/18/2 13/13/2 17/17/2
+
+usemtl FrontColor
+v 12.8941 2.40637e-016 0.224444
+vt -507.642 -8.83639
+f 17/17/1 18/18/1 19/19/1
+
+usemtl BackColor
+f 19/19/2 18/18/2 17/17/2
+
+usemtl FrontColor
+v 13.075 -8.4223e-016 -1.14952
+vt -514.764 45.2567
+f 19/19/1 18/18/1 20/20/1
+
+usemtl BackColor
+f 20/20/2 18/18/2 19/19/2
+
+usemtl FrontColor
+v 13.075 2.40637e-016 0.149519
+vt -514.764 -5.88658
+f 19/19/1 20/20/1 21/21/1
+
+usemtl BackColor
+f 21/21/2 20/20/2 19/19/2
+
+usemtl FrontColor
+v 13.2303 -4.81274e-016 -1.03033
+vt -520.879 40.5642
+f 21/21/1 20/20/1 22/22/1
+
+usemtl BackColor
+f 22/22/2 20/20/2 21/21/2
+
+usemtl FrontColor
+v 13.2303 2.40637e-016 0.0303301
+vt -520.879 -1.1941
+f 21/21/1 22/22/1 23/23/1
+
+usemtl BackColor
+f 23/23/2 22/22/2 21/21/2
+
+usemtl FrontColor
+v 13.3495 -4.81274e-016 -0.875
+vt -525.572 34.4488
+f 23/23/1 22/22/1 24/24/1
+
+usemtl BackColor
+f 24/24/2 22/22/2 23/23/2
+
+usemtl FrontColor
+v 13.3495 2.40637e-016 -0.125
+vt -525.572 4.92126
+f 23/23/1 24/24/1 25/25/1
+
+usemtl BackColor
+f 25/25/2 24/24/2 23/23/2
+
+usemtl FrontColor
+v 13.4244 -4.81274e-016 -0.694114
+vt -528.521 27.3273
+f 25/25/1 24/24/1 26/26/1
+
+usemtl BackColor
+f 26/26/2 24/24/2 25/25/2
+
+usemtl FrontColor
+v 13.4244 -1.20319e-016 -0.305886
+vt -528.521 12.0427
+f 25/25/1 26/26/1 27/27/1
+
+usemtl BackColor
+f 27/27/2 26/26/2 25/25/2
+
+usemtl FrontColor
+v 13.45 -4.81274e-016 -0.5
+vt -529.528 19.685
+f 27/27/1 26/26/1 28/28/1
+
+usemtl BackColor
+f 28/28/2 26/26/2 27/27/2
+

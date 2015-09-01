@@ -1,0 +1,64 @@
+newmtl SPOKES1
+    Kd 0.478431 0.439216 0.411765
+    Ka 0 0 0
+     d 1
+    Tf 1.0 1.0 1.0
+    Ni 1.0
+ illum 4
+    Ks 0.33 0.33 0.33
+    Ns 1
+newmtl CROSS_BAR1
+    Kd 0.941176 0.584314 0.070588
+    Ka 0 0 0
+     d 1
+    Tf 1.0 1.0 1.0
+    Ni 1.0
+ illum 4
+    Ks 0.33 0.33 0.33
+    Ns 1
+newmtl TREK_SILLIN1
+    Kd 0.301961 0.262745 0.223529
+    Ka 0 0 0
+     d 1
+    Tf 1.0 1.0 1.0
+    Ni 1.0
+ illum 4
+    Ks 0.33 0.33 0.33
+    Ns 1
+newmtl TREK_CROMO1
+    Kd 0.231373 0.231373 0.145098
+    Ka 0 0 0
+     d 1
+    Tf 1.0 1.0 1.0
+    Ni 1.0
+ illum 4
+    Ks 0.33 0.33 0.33
+    Ns 1
+newmtl BLACK_HAND1
+    Kd 0.156863 0.156863 0.156863
+    Ka 0 0 0
+     d 1
+    Tf 1.0 1.0 1.0
+    Ni 1.0
+ illum 4
+    Ks 0.33 0.33 0.33
+    Ns 1
+newmtl TIRE1
+    Kd 0.117647 0.117647 0.117647
+    Ka 0 0 0
+     d 1
+    Tf 1.0 1.0 1.0
+    Ni 1.0
+ illum 4
+    Ks 0.33 0.33 0.33
+    Ns 1
+newmtl StaticModelFinal
+    Kd 1 1 1
+    Ka 0 0 0
+     d 1
+    Tf 1.0 1.0 1.0
+    Ni 1.0
+ illum 4
+    Ks 0.33 0.33 0.33
+    Ns 1
+ map_Kd bicycle_female_2.jpg

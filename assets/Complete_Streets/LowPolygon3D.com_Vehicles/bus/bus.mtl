@@ -1,0 +1,164 @@
+newmtl ___default
+illum 4
+Kd 0.13 0.11 0.11
+Ka 0.13 0.11 0.11
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 3.00
+newmtl basic
+illum 4
+Kd 0.05 0.05 0.05
+Ka 0.05 0.05 0.05
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 3.00
+newmtl basic2
+illum 4
+Kd 0.05 0.05 0.05
+Ka 0.05 0.05 0.05
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 3.00
+newmtl basic4
+illum 4
+Kd 0.15 0.15 0.15
+Ka 0.15 0.15 0.15
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 3.00
+newmtl basic6
+illum 4
+Kd 0.07 0.07 0.07
+Ka 0.07 0.07 0.07
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 2.00
+newmtl basic8
+illum 4
+Kd 0.13 0.13 0.13
+Ka 0.13 0.13 0.13
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 3.00
+newmtl basic10
+illum 4
+Kd 0.22 0.22 0.22
+Ka 0.22 0.22 0.22
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 3.00
+newmtl lwpg059
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.58 0.58 0.58
+Tf 1.00 1.00 1.00
+map_Kd lwpg016d.jpg
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 3.00
+newmtl lwpg061
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd lwpg017d.jpg
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 3.00
+newmtl lwpg063
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.58 0.58 0.58
+Tf 1.00 1.00 1.00
+map_Kd lwpg018d.jpg
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 3.00
+newmtl lwpg065
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.58 0.58 0.58
+Tf 1.00 1.00 1.00
+map_Kd lwpg019d.jpg
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 3.00
+newmtl lwpg067
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.58 0.58 0.58
+Tf 1.00 1.00 1.00
+map_Kd lwpg023d.jpg
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 3.00
+newmtl lwpg069
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.58 0.58 0.58
+Tf 1.00 1.00 1.00
+map_Kd lwpg024d.jpg
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 3.00
+newmtl lwpg071
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.58 0.58 0.58
+Tf 1.00 1.00 1.00
+map_Kd lwpg027d.jpg
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 3.00
+newmtl lwpg073
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.58 0.58 0.58
+Tf 1.00 1.00 1.00
+map_Kd lwpg028d.jpg
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 3.00
+newmtl lwpg075
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.58 0.58 0.58
+Tf 1.00 1.00 1.00
+map_Kd lwpg031d.jpg
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 3.00
+newmtl lwpg077
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.58 0.58 0.58
+Tf 1.00 1.00 1.00
+map_Kd lwpg032d.jpg
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 3.00
+newmtl lwpg079
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.58 0.58 0.58
+Tf 1.00 1.00 1.00
+map_Kd lwpg033d.jpg
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 3.00
+newmtl lwpg081
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.58 0.58 0.58
+Tf 1.00 1.00 1.00
+map_Kd lwpg058d.jpg
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 3.00

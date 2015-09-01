@@ -1,0 +1,32 @@
+newmtl FrontColor
+illum 4
+Ka 0 0 0
+Kd 0.894118 0.894118 0.894118
+Ks 0.33 0.33 0.33
+Ns 1
+d 1
+Tf 1.0 1.0 1.0
+Ni 1.0
+
+newmtl _5
+illum 4
+Ka 0 0 0
+Kd 0.894118 0.894118 0.894118
+Ks 0.33 0.33 0.33
+Ns 1
+d 1
+Tf 1.0 1.0 1.0
+Ni 1.0
+map_Kd Bike_Rack/_5.jpg
+
+newmtl _5_1_
+illum 4
+Ka 0 0 0
+Kd 0.894118 0.894118 0.894118
+Ks 0.33 0.33 0.33
+Ns 1
+d 1
+Tf 1.0 1.0 1.0
+Ni 1.0
+map_Kd Bike_Rack/_5_1_.jpg
+

@@ -1,0 +1,9 @@
+newmtl lambert5SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd aus_taxi.png
+Ni 1.00
+Ks 0.53 0.53 0.53
+Ns 13.00

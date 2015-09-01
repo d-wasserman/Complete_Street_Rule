@@ -1,0 +1,22 @@
+#
+## Alias OBJ Material File
+# Exported from SketchUp, (c) 2000-2012 Trimble Navigation Limited
+
+newmtl _2
+Ka 0.000000 0.000000 0.000000
+Kd 0.458824 0.458824 0.458824
+Ks 0.330000 0.330000 0.330000
+map_Kd ADA_Ramp1/_2.jpg
+
+newmtl _1
+Ka 0.000000 0.000000 0.000000
+Kd 0.541176 0.529412 0.501961
+Ks 0.330000 0.330000 0.330000
+map_Kd ADA_Ramp1/_1.jpg
+
+newmtl _3
+Ka 0.000000 0.000000 0.000000
+Kd 0.560784 0.341176 0.356863
+Ks 0.330000 0.330000 0.330000
+map_Kd ADA_Ramp1/_3.jpg
+

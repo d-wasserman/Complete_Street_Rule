@@ -1,0 +1,9 @@
+newmtl cars_lwpg34
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd bmw1.png
+Ni 1.00
+Ks 0.73 0.73 0.73
+Ns 13.00

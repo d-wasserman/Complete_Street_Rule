@@ -1,0 +1,45 @@
+#
+## Alias OBJ Material File
+# Exported from SketchUp, (c) 2000-2012 Trimble Navigation Limited
+
+newmtl Cladding_Stucco_White
+Ka 0.000000 0.000000 0.000000
+Kd 0.858824 0.858824 0.858824
+Ks 0.330000 0.330000 0.330000
+map_Kd Bus_Stop/Cladding_Stucco_White.jpg
+
+newmtl _1
+Ka 0.000000 0.000000 0.000000
+Kd 0.133333 0.658824 0.592157
+Ks 0.330000 0.330000 0.330000
+d 0.500000
+map_Kd Bus_Stop/_1.jpg
+
+newmtl BackColor
+Ka 0.000000 0.000000 0.000000
+Kd 0.643137 0.698039 0.733333
+Ks 0.330000 0.330000 0.330000
+
+newmtl _4
+Ka 0.000000 0.000000 0.000000
+Kd 0.631373 0.705882 0.619608
+Ks 0.330000 0.330000 0.330000
+map_Kd Bus_Stop/_4.png
+
+newmtl FrontColor
+Ka 0.000000 0.000000 0.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.330000 0.330000 0.330000
+
+newmtl ooMaterial2
+Ka 0.000000 0.000000 0.000000
+Kd 0.592157 0.596078 0.592157
+Ks 0.330000 0.330000 0.330000
+map_Kd Bus_Stop/ooMaterial2.jpg
+
+newmtl _2
+Ka 0.000000 0.000000 0.000000
+Kd 0.717647 0.439216 0.196078
+Ks 0.330000 0.330000 0.330000
+map_Kd Bus_Stop/_2.jpg
+

@@ -1,0 +1,39 @@
+#
+## Alias OBJ Material File
+# Exported from SketchUp, (c) 2000-2012 Trimble Navigation Limited
+
+newmtl Curbs_2m_2
+Ka 0.000000 0.000000 0.000000
+Kd 0.541176 0.529412 0.501961
+Ks 0.330000 0.330000 0.330000
+map_Kd ExtensionTransition/Curbs_2m_2.jpg
+
+newmtl FrontColor
+Ka 0.000000 0.000000 0.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.330000 0.330000 0.330000
+
+newmtl Curbs_num2
+Ka 0.000000 0.000000 0.000000
+Kd 0.541176 0.529412 0.505882
+Ks 0.330000 0.330000 0.330000
+map_Kd ExtensionTransition/Curbs_num2.jpg
+
+newmtl Pavement
+Ka 0.000000 0.000000 0.000000
+Kd 0.419608 0.419608 0.419608
+Ks 0.330000 0.330000 0.330000
+map_Kd ExtensionTransition/Pavement.jpg
+
+newmtl Curbs_2m_2_1_
+Ka 0.000000 0.000000 0.000000
+Kd 0.541176 0.529412 0.501961
+Ks 0.330000 0.330000 0.330000
+map_Kd ExtensionTransition/Curbs_2m_2_1_.jpg
+
+newmtl Curbs_2m_2_2_
+Ka 0.000000 0.000000 0.000000
+Kd 0.541176 0.529412 0.501961
+Ks 0.330000 0.330000 0.330000
+map_Kd ExtensionTransition/Curbs_2m_2_2_.jpg
+
