@@ -82,9 +82,9 @@ attr Stop_Begin 				= _getInitialStop(connectionStart,nLanesLeft+_Lt_Transit_Lan
 attr Stop_End 					= _getInitialStop(connectionEnd, _Distribute_Right_Lanes+_Rt_Transit_Lane_Count)
 
 @Group("ROAD LAYOUT","Crosswalk Markings",3)
-@Order(1) @Range("none","continental","ladder","transverse","dashed","solid","custom","ladder custom") @Description("NACTO-High­-visibility ladder, zebra, and continental crosswalk markings are preferable to standard parallel or dashed pavement markings. These are more visible to approaching vehicles and have been shown to improve yielding behavior.")										# TODO "solid","dashed","ladder"
+@Order(1) @Range("none","continental","ladder","transverse","dashed","solid","custom","ladder custom") @Description("NACTO-HighÂ­-visibility ladder, zebra, and continental crosswalk markings are preferable to standard parallel or dashed pavement markings. These are more visible to approaching vehicles and have been shown to improve yielding behavior.")										# TODO "solid","dashed","ladder"
 attr Crosswalk_Begin 			= _getInitialCrosswalk(connectionStart)
-@Order(2) @Range("none","continental","ladder","transverse","dashed","solid","custom","ladder custom")@Description("NACTO-High­-visibility ladder, zebra, and continental crosswalk markings are preferable to standard parallel or dashed pavement markings. These are more visible to approaching vehicles and have been shown to improve yielding behavior.")									
+@Order(2) @Range("none","continental","ladder","transverse","dashed","solid","custom","ladder custom")@Description("NACTO-HighÂ­-visibility ladder, zebra, and continental crosswalk markings are preferable to standard parallel or dashed pavement markings. These are more visible to approaching vehicles and have been shown to improve yielding behavior.")									
 attr Crosswalk_End 				= _getInitialCrosswalk(connectionEnd)
 @Order(3) @Range(0,10) @Description("Crosswalk to Stop Bar Distance. If the Crosswalk UV is clipping geometry, adjust this to set it back more on angled streets. If used, stop and yield lines should be placed a minimum of  4 ft (1.2 m) from the Crosswalk-MUTCD. NACTO suggests a minimum of 8 ft (2.44 m) in urban areas.")
 attr Begin_Crosswalk_To_Stop_Bar= _getInitialGap(connectionStart)
@@ -464,7 +464,7 @@ const Design_Speed					=  case Speed_Limit_in_MPH>=40:Speed_Limit_in_MPH+7.5 els
 # "To counteract these gruesome and unnecessary injuries and fatalities, cities should utilize 
 #speed control mechanisms that influence behavior, lower speeds, and in turn, reduce injuries 
 #and fatalities. Embracing a proactive design approach on new and existing streets with the goal 
-#of reducing speeds “may be the single most consequential intervention in reducing pedestrian injury and fatality."1"
+#of reducing speeds Â“may be the single most consequential intervention in reducing pedestrian injury and fatality."1"
 #Thus they put forward: "Proactive Urban Street Design: Target Speed = Design Speed = Posted Speed"
 #As a result of existing research relating to traffic speed and crash risk, and the fact that for the most part this
 #rule is designed for urban streets, if the speed limit is greater than or equal to 40 mph (5 above NACTO suggested speed),
@@ -980,7 +980,7 @@ _BikeSense_Modifier			=#changes combined "bike protection" width based orientati
 	case ! Buffer_Protection && Parking_Protection :
 		(_MaxBufferSum)
 	case Buffer_Protection && ! Parking_Protection :
-		(_MaxParkingSum)
+		0
 	case Buffer_Protection && Parking_Protection :
 		0
 	else:
