@@ -1,14 +1,14 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 12/23/2015
+ * Last Updated: 11/17/2015
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
 # ESRI Attribution License:
 #	ESRI Derivative work
 #	http://mappingcenter.esri.com/downloads/AttributionAndLicense_05_09_07.pdf
 #
-# Copyright 2015 David J. Wasserman, ESRI Redlands Derivative Work
+#Copyright 2015 David J. Wasserman, ESRI Redlands Derivative Work
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -89,11 +89,13 @@ const LOD_Object_Choice   = case Not_Low_LOD:"High" else: "Low"
 attr Lane_Distribution 			= _getInitialLaneDistribution
 @Order(2)@Range(2.7,3.9624)@Description("Determines the widths of the main travel lanes. Typically, Freeways are about 12 feet (3.6 m), Arterials 11-12 feet (3.3-3.6 m), Collectors 10-12 feet (3.0-3.6 m), and Local roads 9-12 feet (2.7-3.6 m).")
 attr Lane_Width					= (laneWidth-.2)
-@Order(3) @Range("yellow","white","none") @Description("Choses color for the centerline if there is a center line. This attribute does nothing to other center types.")
+@Order(3)@Range(2.7,3.9624)@Description("Determines the width of the the main travel lane closest to the sidewalk. Generally, For multi-lane roadways where transit or freight vehicles are present and require a wider travel lane, the wider lane should be the outside lane (NACTO).")
+attr Curb_Lane_Width=Lane_Width
+@Order(4) @Range("yellow","white","none") @Description("Choses color for the centerline if there is a center line. This attribute does nothing to other center types.")
 attr Centerline_Color 			= _getInitialCenterline
-@Order(4) @Range("right-hand","left-hand")@Description("Orients the road for right vs. left traffic. Please note that some aspects of the rule do not *flip* when this is changed such as the median.")
+@Order(5) @Range("right-hand","left-hand")@Description("Orients the road for right vs. left traffic. Please note that some aspects of the rule do not *flip* when this is changed such as the median.")
 attr Traffic_Direction			= "right-hand"
-@Order(5) @Range(0,80) @Description("A descriptive attribute that feeds into reporting. If >= 40 mph, Design Speed is calculated as Speed_Limit +7.5, if less than 40, design speed is assumed equal to the Speed_Limit (see comments for details). 1 MPH==1.6093 KPH.")
+@Order(6) @Range(0,80) @Description("A descriptive attribute that feeds into reporting. If >= 40 mph, Design Speed is calculated as Speed_Limit +7.5, if less than 40, design speed is assumed equal to the Speed_Limit (see comments for details). 1 MPH==1.6093 KPH.")
 attr Speed_Limit_in_MPH			= _InititalSpeedLimit		
 
 @Group("ROAD LAYOUT","Stop Markings",2)
@@ -111,7 +113,7 @@ attr Crosswalk_End 				= _getInitialCrosswalk(connectionEnd)
 attr Begin_Crosswalk_To_Stop_Bar= _getInitialGap(connectionStart)
 @Order(4) @Range(0,10) @Description("Crosswalk to Stop Bar Distance. If the Crosswalk UV is clipping geometry, adjust this to set it back more on angled streets. If used, stop and yield lines should be placed a minimum of  4 ft (1.2 m) from the Crosswalk-MUTCD. NACTO suggests a minimum of 8 ft (2.44 m) in urban areas.")
 attr End_Crosswalk_To_Stop_Bar 	= _getInitialGap(connectionEnd)
-@Order(5) @Range("white","yellow") @Description("Determines the color of painted crosswalks.")#@Hidden
+@Order(5) @Range("white","yellow") @Description("Determines the color of painted crosswalks.")
 attr Crosswalk_Color 			= "white"
 @Order(6) @File("tif","jpg","png","tiff","gif","jpeg","psp","jsl","sgi","tga","bmp","dds")@Description("Creates a 2 m by 2 m tile of the image selected on the crosswalk. Keep in mind that if another painted tile is chosen, the paint area will not appear in reporting. Defer to Crosswalk Area Reports.")
 attr Custom_Crosswalk_Texture	= SidewalkFolder+"/Paver Brick Red Basket Weave.jpg"
@@ -121,15 +123,15 @@ attr Crosswalk_Width			= _crosswalkWidth
 @Group("ROAD LAYOUT","On-Street Parking",5)
 @Order(1)@Range("None","Parallel","Angled Nose In","Angled Back In") @Description("Will create parking of that type with default lengths and widths. Keep in mind, adjusting the length/width will make it lock onto that value. To reset it to automatic default, set the Attribute Connection Editor back to rule-defined value.")
 attr Right_Parking_Type			= "None"
-@Order(2)@Range(0,5)@Description("Good default is 8 feet (2.4384 m) with a minimum of 7 feet (2.1336 m) for low turn over locations for parallel parking. Angled parking varies on angle, but a 30-45 degree depth suggestion is 19 feet (5.7912 m). Design guidance on width varies with conditions. ")#@Hidden
+@Order(2)@Range(0,5)@Description("Good default is 8 feet (2.4384 m) with a minimum of 7 feet (2.1336 m) for low turn over locations for parallel parking. Angled parking varies on angle, but a 30-45 degree depth suggestion is 19 feet (5.7912 m). Design guidance on width varies with conditions. ")
 attr Right_Parking_Width		= _ParkingWidth("Right") 
-@Order(3)@Range(0,10)@Description("For Parallel Parking 6.1 to 7.5 meters long is suggested, for Angled Parking 2.4 to 3 m is suggested.")#@Hidden
+@Order(3)@Range(0,10)@Description("For Parallel Parking 6.1 to 7.5 meters long is suggested, for Angled Parking 2.4 to 3 m is suggested.")
 attr Right_Parking_Length		= _ParkingLength("Right")
 @Order(4)@Range("None","Parallel","Angled Nose In","Angled Back In")@Description("Will create parking of that type with default lengths and widths. Keep in mind, adjusting the length/width will make it lock onto that value. To reset it to automatic default, set the Attribute Connection Editor back to rule-defined value.")
 attr Left_Parking_Type			= "None"
-@Order(5)@Range(0,5) @Description("Good default is 8 feet (2.4384 m) with a minimum of 7 feet (2.1336 m) for low turn over locations for parallel parking. Angled parking varies on angle, but a 30-45 degree depth suggestion is 19 feet (5.7912 m). Design guidance on width varies with conditions.")#@Hidden
+@Order(5)@Range(0,5) @Description("Good default is 8 feet (2.4384 m) with a minimum of 7 feet (2.1336 m) for low turn over locations for parallel parking. Angled parking varies on angle, but a 30-45 degree depth suggestion is 19 feet (5.7912 m). Design guidance on width varies with conditions.")
 attr Left_Parking_Width			= _ParkingWidth("Left") 
-@Order(6)@Range(0,10)@Description("For Parallel Parking 6.1 to 7.5 meters long is suggested, for Angled Parking 2.4 to 3 m is suggested.")#@Hidden
+@Order(6)@Range(0,10)@Description("For Parallel Parking 6.1 to 7.5 meters long is suggested, for Angled Parking 2.4 to 3 m is suggested.")
 attr Left_Parking_Length		= _ParkingLength("Left")
 @Order(7)@Range(0,100) @Description("Will create Parklets in Parking spaces, it is best if the parking spaces are contiguous to the sidewalk. The default OBJ does not have bollards or curb stops suggested by NACTO.")
 attr Parklet_Percentage			= 0
@@ -167,26 +169,26 @@ attr Median_Planting_Length				= 4
 attr Median_Tree_Spacing				= 3
 @Order(6)@Description("Determines the species of the tree/plant selected for Tree 1. Random picks from 5 common tree types and is a good default.")@Range("Random","Alder Buckthorn","Amazon Sword Plant","American Chestnut","American Sycamore","Apricot","Australian Pine","Baldcypress","Balsam Fir","Bamboo","Banana Tree","Basswood","Bay Laurel","Black Locust","Blue Gum Eucalyptus","Boxwood","Cabbage Palm Fern","California Bay","California Incense Cedar","California Palm","California Redwood","California Walnut","Coconut Palm","Common Hawthorn","Common Whitebeam","Conker Tree","Date Palm","Desert Willow","Douglas Fir","European Beech","European Larch","Ficus","Field Elm","Flannelbush","Flowering Dogwood","Giant Sequoia","Hedgehog Agave","Japanese Angelica Tree","Lacy Tree Philodendron","Leyland Cypress","Lily of the Valley","Lodgepole Pine","Mediterranean Buckthorn","Mexican Palmetto","Mountain Mahogany","Northern Red Oak","Norway Maple","Norway Spruce","Orange Tree","Orchid","Oval-leaved Privet","Palm Lily","Palo Verde","Paper Birch","Parlour Palm","Prickly Pear Cactus","Red Alder","Red Hickory","Rhododendron Azaleas","Rose","Ruffle Palm","Saguaro Cactus","Sassafras","Scots Pine","Sea Islands Yucca","Shadbush","Snake Plant","Southern Magnolia","Spanish Broom","Strawberry Tree","Sugar Maple","Sunflower","Sweetgum","Umbrella Acacia","Western Juniper","White Ash","White Oak","White Poplar","White Willow","Witch Hazel","","_____________________________","GENERICS","","Generic Dead Tree","Generic Stump","Generic Unknown","","_____________________________","PROXIES","","Algarrobo","American Elderberry","American Pepper","American Silverberry","Athel Tamarisk","Avocado","Black Tupelo","Buttonbush","Canada Buffaloberry","Chinaberry Tree","Chinese Tallow Tree","Common Hackberry","Common Holly","Common Persimmon","Desert Bitterbrush","European Hornbeam","Giant Chinquapin","Honey Locust","Hophornbeam","Huckleberry Shrub","Japanese Hemlock","Japanese Nutmeg","Judas Tree","Lawson Cypress","Loblolly Bay","Mexican Buckeye","Necklacepod","Northern Bilberry","Northern White Cedar","Octopus Tree","Osage Orange","Paper Bark Tree","Pawpaw","Persian Silk Tree","Princess Tree","Smooth Sumac","Sourwood","Southern Wax Myrtle","Tanoak","Tree of Heaven","Turkish Hazel","Western Soapberry","White Mulberry","Yellow Poplar","Yew")
 attr Median_Tree_1_Type = "Random"
-@Order(7) @Range(0,1) @Description("Reduces the probability of Tree 1 appearing in a typical designated location.")#@Hidden
+@Order(7) @Range(0,1) @Description("Reduces the probability of Tree 1 appearing in a typical designated location.")
 attr Median_Tree_1_Percentage 			= 1
-@Order(8)@Description("Determines the species of the tree/plant selected for secondary tree for more variation. If this is not None, Tree 2 will appear if Tree 1 does not fire with the current percentage. This does mean that you cannot drop tree density if you alternate trees.")@Range("None","Random","Alder Buckthorn","Amazon Sword Plant","American Chestnut","American Sycamore","Apricot","Australian Pine","Baldcypress","Balsam Fir","Bamboo","Banana Tree","Basswood","Bay Laurel","Black Locust","Blue Gum Eucalyptus","Boxwood","Cabbage Palm Fern","California Bay","California Incense Cedar","California Palm","California Redwood","California Walnut","Coconut Palm","Common Hawthorn","Common Whitebeam","Conker Tree","Date Palm","Desert Willow","Douglas Fir","European Beech","European Larch","Ficus","Field Elm","Flannelbush","Flowering Dogwood","Giant Sequoia","Hedgehog Agave","Japanese Angelica Tree","Lacy Tree Philodendron","Leyland Cypress","Lily of the Valley","Lodgepole Pine","Mediterranean Buckthorn","Mexican Palmetto","Mountain Mahogany","Northern Red Oak","Norway Maple","Norway Spruce","Orange Tree","Orchid","Oval-leaved Privet","Palm Lily","Palo Verde","Paper Birch","Parlour Palm","Prickly Pear Cactus","Red Alder","Red Hickory","Rhododendron Azaleas","Rose","Ruffle Palm","Saguaro Cactus","Sassafras","Scots Pine","Sea Islands Yucca","Shadbush","Snake Plant","Southern Magnolia","Spanish Broom","Strawberry Tree","Sugar Maple","Sunflower","Sweetgum","Umbrella Acacia","Western Juniper","White Ash","White Oak","White Poplar","White Willow","Witch Hazel","","_____________________________","GENERICS","","Generic Dead Tree","Generic Stump","Generic Unknown","","_____________________________","PROXIES","","Algarrobo","American Elderberry","American Pepper","American Silverberry","Athel Tamarisk","Avocado","Black Tupelo","Buttonbush","Canada Buffaloberry","Chinaberry Tree","Chinese Tallow Tree","Common Hackberry","Common Holly","Common Persimmon","Desert Bitterbrush","European Hornbeam","Giant Chinquapin","Honey Locust","Hophornbeam","Huckleberry Shrub","Japanese Hemlock","Japanese Nutmeg","Judas Tree","Lawson Cypress","Loblolly Bay","Mexican Buckeye","Necklacepod","Northern Bilberry","Northern White Cedar","Octopus Tree","Osage Orange","Paper Bark Tree","Pawpaw","Persian Silk Tree","Princess Tree","Smooth Sumac","Sourwood","Southern Wax Myrtle","Tanoak","Tree of Heaven","Turkish Hazel","Western Soapberry","White Mulberry","Yellow Poplar","Yew") #@Hidden
+@Order(8)@Description("Determines the species of the tree/plant selected for secondary tree for more variation. If this is not None, Tree 2 will appear if Tree 1 does not fire with the current percentage. This does mean that you cannot drop tree density if you alternate trees.")@Range("None","Random","Alder Buckthorn","Amazon Sword Plant","American Chestnut","American Sycamore","Apricot","Australian Pine","Baldcypress","Balsam Fir","Bamboo","Banana Tree","Basswood","Bay Laurel","Black Locust","Blue Gum Eucalyptus","Boxwood","Cabbage Palm Fern","California Bay","California Incense Cedar","California Palm","California Redwood","California Walnut","Coconut Palm","Common Hawthorn","Common Whitebeam","Conker Tree","Date Palm","Desert Willow","Douglas Fir","European Beech","European Larch","Ficus","Field Elm","Flannelbush","Flowering Dogwood","Giant Sequoia","Hedgehog Agave","Japanese Angelica Tree","Lacy Tree Philodendron","Leyland Cypress","Lily of the Valley","Lodgepole Pine","Mediterranean Buckthorn","Mexican Palmetto","Mountain Mahogany","Northern Red Oak","Norway Maple","Norway Spruce","Orange Tree","Orchid","Oval-leaved Privet","Palm Lily","Palo Verde","Paper Birch","Parlour Palm","Prickly Pear Cactus","Red Alder","Red Hickory","Rhododendron Azaleas","Rose","Ruffle Palm","Saguaro Cactus","Sassafras","Scots Pine","Sea Islands Yucca","Shadbush","Snake Plant","Southern Magnolia","Spanish Broom","Strawberry Tree","Sugar Maple","Sunflower","Sweetgum","Umbrella Acacia","Western Juniper","White Ash","White Oak","White Poplar","White Willow","Witch Hazel","","_____________________________","GENERICS","","Generic Dead Tree","Generic Stump","Generic Unknown","","_____________________________","PROXIES","","Algarrobo","American Elderberry","American Pepper","American Silverberry","Athel Tamarisk","Avocado","Black Tupelo","Buttonbush","Canada Buffaloberry","Chinaberry Tree","Chinese Tallow Tree","Common Hackberry","Common Holly","Common Persimmon","Desert Bitterbrush","European Hornbeam","Giant Chinquapin","Honey Locust","Hophornbeam","Huckleberry Shrub","Japanese Hemlock","Japanese Nutmeg","Judas Tree","Lawson Cypress","Loblolly Bay","Mexican Buckeye","Necklacepod","Northern Bilberry","Northern White Cedar","Octopus Tree","Osage Orange","Paper Bark Tree","Pawpaw","Persian Silk Tree","Princess Tree","Smooth Sumac","Sourwood","Southern Wax Myrtle","Tanoak","Tree of Heaven","Turkish Hazel","Western Soapberry","White Mulberry","Yellow Poplar","Yew") 
 attr Median_Tree_2_Type				= "None"
 @Group("CENTER SECTION LAYOUT","Basic Components", 4) 
 @Order(5)@Range("None","Both","Right","Left") @Description("Determines whether an object is placed and what side of the street or walkways relevant objects are placed.")
 attr Median_Bus_Stop					="None"
 @Order(6) @Range("Far-side", "Mid-Block", "Near-side")@Description("Locates bus stop in the appropriate location. Far-side is right after the last intersection, Mid-Block is in the middle of the street, and Near-side is near to the next intersection.")
 attr Median_Bus_Stop_Location			= "Far-side"
-@Order(7)@Description("Will create 2 bike racks near a bus stop.")#@Hidden
+@Order(7)@Description("Will create 2 bike racks near a bus stop.")
 attr Median_Bike_Rack					= false		
-@Order(8)@Description("Will create a WayFinder near a bus stop.")#@Hidden
+@Order(8)@Description("Will create a WayFinder near a bus stop.")
 attr Median_Way_Finder					= false
 @Order(9)@Range("None","Both","Right","Left") @Description("Creates benches on the edges of the walkways of the Median.")
 attr Median_Benches						="None"
-@Order(10)@Range(0,50) @Description("Determines the spacing between each Bench. No shape is created in the sections in between objects.")#@Hidden
+@Order(10)@Range(0,50) @Description("Determines the spacing between each Bench. No shape is created in the sections in between objects.")
 attr Median_Bench_Spacing				=10
 @Order(11)@Range("None","Both","Right","Left")@Description("Determines whether an object is placed and what side of the street or walkways relevant objects are placed.")
 attr Median_Street_Lamps						="Both"
-@Order(12)@Range(0,50) @Description("Determines the spacing between each Street Lamp. No shape is created in the sections in between objects.")#@Hidden
+@Order(12)@Range(0,50) @Description("Determines the spacing between each Street Lamp. No shape is created in the sections in between objects.")
 attr Median_Street_Lamp_Spacing				=10
 
 @Group("MULTIMODAL LANES LAYOUT", "Bus and HOV Lanes",4)@Order(1)@Range("None","Bus Lane","HOV Lane")@Description("The controls for the bus lane also control the HOV lane. They are grouped together because they are both considered :High Capacity Lanes:")
@@ -197,11 +199,11 @@ attr Transit_Lane_Sides 			=_Initital_Transit_Lane_Sides # If the street is onew
 attr Transit_Lane_Width			=  3.3528
 @Order(3)@Range("Sidewalk Side","Right Most Lane","Left Most Lane")@Description("Inserts a transit lane at the location specified. Keep in mind this is an insertion not a lane reallocation.")
 attr Transit_Lane_Position 			="Right Most Lane"
-@Order(4)@Range(1,304.8)@Description("MUTCD- Preferential Lanes: Markings spaced as close as 80 feet(~24.5 m) apart might be appropriate on city streets, while markings spaced as far as 1,000 feet (304.8 m) apart might be appropriate for freeways.")#@Hidden
+@Order(4)@Range(1,304.8)@Description("MUTCD- Preferential Lanes: Markings spaced as close as 80 feet(~24.5 m) apart might be appropriate on city streets, while markings spaced as far as 1,000 feet (304.8 m) apart might be appropriate for freeways.")
 attr Transit_Symbol_Spacing 		=24.5
 @Order(6)@Range("red","black") @Description("NACTO-Red colored paint should be applied to emphasize the lane and to deter drivers from using it. Red paint has higher installation and maintenance costs, but has been shown to deter both unauthorized driving and parking in the bus lane.")
 attr Bus_Lane_Color				="red"
-@Order(7)@Range("Both","Right", "Left", "None")@Description("Controls the white lines on the sides of preferential lanes.")#@Hidden
+@Order(7)@Range("Both","Right", "Left", "None")@Description("Controls the white lines on the sides of preferential lanes.")
 attr Transit_Paint_Line_Sides		= "Both"
 
 @Group("MULTIMODAL LANES LAYOUT", "Bike Lanes",5)@Order(2)@Range(0,6) @Description("Desirable bike lane width adjacent to a curbface is 6 feet (1.8288m), but rideable surface adjacent  to a street edge is 4 feet (1.2192m) with minimum of 3 feet (0.9144m). In areas where illegal parking is an issue, at least 5 feet (1.524m) is suggested.")
@@ -220,27 +222,28 @@ attr Buffer_Protection			= true
 attr Parking_Protection 		= true
 @Order(8)@Range("Painted Stripes","Curb Buffer","Curb Buffer with Plantings","Curb Buffer with Trees","Solid White","Cycle Track With Planters","Cycle Track With Tubular Markers","Asphalt","Shoulder")@Description("This attribute controls the bicycle buffer type and form, but also can become plain asphalt or a shoulder.")
 attr Buffer_Type				="Painted Stripes"
-@Order(9)@Range(0,10)@Description("Controls  the buffers spacing of objects such as tubular markers, planters, and tree/plantings (Trees/Plants match Sidewalk Plantings if selected).")#@Hidden			
+@Order(9)@Range(0,10)@Description("Controls  the buffers spacing of objects such as tubular markers, planters, and tree/plantings (Trees/Plants match Sidewalk Plantings if selected).")			
 attr Buffer_Object_Spacing		=_Default_Buffer_Object_Spacing
-@Order(10)@Range(1,304.8)@Description("MUTCD- Preferential Lanes: Markings spaced as close as 80 feet (~24.5 m) apart might be appropriate on city streets, while markings spaced as far as 1,000 feet (304.8 m) apart might be appropriate for freeways.")#@Hidden
+@Order(10)@Range(1,304.8)@Description("MUTCD- Preferential Lanes: Markings spaced as close as 80 feet (~24.5 m) apart might be appropriate on city streets, while markings spaced as far as 1,000 feet (304.8 m) apart might be appropriate for freeways.")
 attr Bike_Symbol_Spacing		= 24.5
 @Order(11)@Range(0,20) @Description("Creates conflict spacing made up by asphalt gaps in the bike lane for approaching interesections.")
 attr Bike_Conflict_Spacing		= 0
 @Order(12)@Range("green","black","red","blue") @Description("Determines the color of the bike lane and bike box. Paint reporting costs adjust based on color choices.")
 attr Bike_Lane_Color			="black"
-@Order(13)@Range("Both","Right", "Left", "None")@Description("Controls the white lines on the sides of preferential lanes.")#@Hidden
+@Order(13)@Range("Both","Right", "Left", "None")@Description("Controls the white lines on the sides of preferential lanes.")
 attr Bike_Paint_Line_Sides  	="Both"
-@Order(14)@Range("Rare","Moderate","Frequent")@Description("Is a descriptive attribute relating to the probability that a bike lane might be blocked due to unloading or double parking that feeds into Thematic.")#@Hidden
+@Order(14)@Range("Rare","Moderate","Frequent")@Description("Is a descriptive attribute relating to the probability that a bike lane might be blocked due to unloading or double parking that feeds into Thematic")
 attr Level_of_Blockage			="Rare"
+
 
 @Group("MULTIMODAL LANES LAYOUT","Bike Box",6)
 @Order(1) @Description("Right Side Bike Box: NACTO-A bike box is a designated area at the head of a traffic lane at a signalized intersection that provides bicyclists with a safe and visible way to get ahead of queuing traffic during the red signal phase. Works best if bike lane is adjacent to sidewalk.")
 attr Right_Bike_Box 					= false
 @Order(2) @Description("Left Side Bike Box: NACTO-A bike box is a designated area at the head of a traffic lane at a signalized intersection that provides bicyclists with a safe and visible way to get ahead of queuing traffic during the red signal phase. Works best if bike lane is adjacent to sidewalk.")
 attr Left_Bike_Box						= false
-@Order(3)@Range(1,10) @Description("Is the best fit spacing between the bicycle symbols on the bike box. Can be increased to reduce the number of symbols created.")#@Hidden
+@Order(3)@Range(1,10) @Description("Is the best fit spacing between the bicycle symbols on the bike box. Can be increased to reduce the number of symbols created.")
 attr Bike_Box_Symbol_Spacing	= 5
-@Order(4)@Range(0,5.3768)@Description("NACTO-A box formed by transverse lines shall be used to hold queuing bicyclists, typically 10-16  feet deep (3.048-4.8768 M). Deeper boxes show less encroachment by motor vehicles.")#@Hidden
+@Order(4)@Range(0,5.3768)@Description("NACTO-A box formed by transverse lines shall be used to hold queuing bicyclists, typically 10-16  feet deep (3.048-4.8768 M). Deeper boxes show less encroachment by motor vehicles.")
 attr Bike_Box_Length			=4.26
 @Order(12)@Range("green","black","red","blue") @Description("By default, the Bike Box will match the color of the bike lane, but this attribute can be adjusted to override that choice. Paint reporting costs adjust based on color choices.")
 attr Bike_Box_Color_Override	= Bike_Lane_Color
@@ -260,19 +263,15 @@ attr Sidewalk_Height 				= 0.102  			# height of sidewalk of curbs(4 inch is sta
 attr Sidewalk_Ground_Cover			= "None"
 @Order(2)@Range(0,10)@Description("Controls the width of sidewalk planting space, and the setback of the bus stop.")
 attr Sidewalk_Planting_Width		= _PlantingWidth
-@Order(3)@Range(0,10)@Description("Controls the right sidewalk side width of sidewalk planting space, and the setback of the bus stop.")@Hidden
-attr Right_Sidewalk_Planting_Width= Sidewalk_Planting_Width 
-@Order(4)@Range(0,10)@Description("Controls the left sidewalk side width of sidewalk planting space, and the setback of the bus stop.")@Hidden
-attr Left_Sidewalk_Planting_Width= Sidewalk_Planting_Width 
-@Order(5)@Range(0,10)  @Description("Is the approximate length of the green space accommodating trees, it can be used to space out trees more without walkway spacing.")
+@Order(3)@Range(0,10)  @Description("Is the approximate length of the green space accommodating trees, it can be used to space out trees more without walkway spacing.")
 attr Sidewalk_Planting_Length 		= 5
-@Order(6)@Range(0,20)@Description("Creates a walkway spacing between created trees. Keep in mind that the benches are placed in this spacing and must be an appropriate size to accommodate them.")#@Hidden
+@Order(4)@Range(0,20)@Description("Creates a walkway spacing between created trees. Keep in mind that the benches are placed in this spacing and must be an appropriate size to accommodate them.")
 attr Sidewalk_Planting_Spacing 		= 5
-@Order(7)@Description("Determines the species of the tree/plant selected for Tree 1. Random picks from 5 common tree types and is a good default.")@Range("Random","Alder Buckthorn","Amazon Sword Plant","American Chestnut","American Sycamore","Apricot","Australian Pine","Baldcypress","Balsam Fir","Bamboo","Banana Tree","Basswood","Bay Laurel","Black Locust","Blue Gum Eucalyptus","Boxwood","Cabbage Palm Fern","California Bay","California Incense Cedar","California Palm","California Redwood","California Walnut","Coconut Palm","Common Hawthorn","Common Whitebeam","Conker Tree","Date Palm","Desert Willow","Douglas Fir","European Beech","European Larch","Ficus","Field Elm","Flannelbush","Flowering Dogwood","Giant Sequoia","Hedgehog Agave","Japanese Angelica Tree","Lacy Tree Philodendron","Leyland Cypress","Lily of the Valley","Lodgepole Pine","Mediterranean Buckthorn","Mexican Palmetto","Mountain Mahogany","Northern Red Oak","Norway Maple","Norway Spruce","Orange Tree","Orchid","Oval-leaved Privet","Palm Lily","Palo Verde","Paper Birch","Parlour Palm","Prickly Pear Cactus","Red Alder","Red Hickory","Rhododendron Azaleas","Rose","Ruffle Palm","Saguaro Cactus","Sassafras","Scots Pine","Sea Islands Yucca","Shadbush","Snake Plant","Southern Magnolia","Spanish Broom","Strawberry Tree","Sugar Maple","Sunflower","Sweetgum","Umbrella Acacia","Western Juniper","White Ash","White Oak","White Poplar","White Willow","Witch Hazel","","_____________________________","GENERICS","","Generic Dead Tree","Generic Stump","Generic Unknown","","_____________________________","PROXIES","","Algarrobo","American Elderberry","American Pepper","American Silverberry","Athel Tamarisk","Avocado","Black Tupelo","Buttonbush","Canada Buffaloberry","Chinaberry Tree","Chinese Tallow Tree","Common Hackberry","Common Holly","Common Persimmon","Desert Bitterbrush","European Hornbeam","Giant Chinquapin","Honey Locust","Hophornbeam","Huckleberry Shrub","Japanese Hemlock","Japanese Nutmeg","Judas Tree","Lawson Cypress","Loblolly Bay","Mexican Buckeye","Necklacepod","Northern Bilberry","Northern White Cedar","Octopus Tree","Osage Orange","Paper Bark Tree","Pawpaw","Persian Silk Tree","Princess Tree","Smooth Sumac","Sourwood","Southern Wax Myrtle","Tanoak","Tree of Heaven","Turkish Hazel","Western Soapberry","White Mulberry","Yellow Poplar","Yew")
+@Order(6)@Description("Determines the species of the tree/plant selected for Tree 1. Random picks from 5 common tree types and is a good default.")@Range("Random","Alder Buckthorn","Amazon Sword Plant","American Chestnut","American Sycamore","Apricot","Australian Pine","Baldcypress","Balsam Fir","Bamboo","Banana Tree","Basswood","Bay Laurel","Black Locust","Blue Gum Eucalyptus","Boxwood","Cabbage Palm Fern","California Bay","California Incense Cedar","California Palm","California Redwood","California Walnut","Coconut Palm","Common Hawthorn","Common Whitebeam","Conker Tree","Date Palm","Desert Willow","Douglas Fir","European Beech","European Larch","Ficus","Field Elm","Flannelbush","Flowering Dogwood","Giant Sequoia","Hedgehog Agave","Japanese Angelica Tree","Lacy Tree Philodendron","Leyland Cypress","Lily of the Valley","Lodgepole Pine","Mediterranean Buckthorn","Mexican Palmetto","Mountain Mahogany","Northern Red Oak","Norway Maple","Norway Spruce","Orange Tree","Orchid","Oval-leaved Privet","Palm Lily","Palo Verde","Paper Birch","Parlour Palm","Prickly Pear Cactus","Red Alder","Red Hickory","Rhododendron Azaleas","Rose","Ruffle Palm","Saguaro Cactus","Sassafras","Scots Pine","Sea Islands Yucca","Shadbush","Snake Plant","Southern Magnolia","Spanish Broom","Strawberry Tree","Sugar Maple","Sunflower","Sweetgum","Umbrella Acacia","Western Juniper","White Ash","White Oak","White Poplar","White Willow","Witch Hazel","","_____________________________","GENERICS","","Generic Dead Tree","Generic Stump","Generic Unknown","","_____________________________","PROXIES","","Algarrobo","American Elderberry","American Pepper","American Silverberry","Athel Tamarisk","Avocado","Black Tupelo","Buttonbush","Canada Buffaloberry","Chinaberry Tree","Chinese Tallow Tree","Common Hackberry","Common Holly","Common Persimmon","Desert Bitterbrush","European Hornbeam","Giant Chinquapin","Honey Locust","Hophornbeam","Huckleberry Shrub","Japanese Hemlock","Japanese Nutmeg","Judas Tree","Lawson Cypress","Loblolly Bay","Mexican Buckeye","Necklacepod","Northern Bilberry","Northern White Cedar","Octopus Tree","Osage Orange","Paper Bark Tree","Pawpaw","Persian Silk Tree","Princess Tree","Smooth Sumac","Sourwood","Southern Wax Myrtle","Tanoak","Tree of Heaven","Turkish Hazel","Western Soapberry","White Mulberry","Yellow Poplar","Yew")
 attr Sidewalk_Tree_1_Type				= "Random"
-@Order(8) @Range(0,1)@Description("Reduces the probability of Tree 1 appearing in a typical designated location, but also controls the Tree quantity at round abouts.")#@Hidden
+@Order(7) @Range(0,1)@Description("Reduces the probability of Tree 1 appearing in a typical designated location, but also controls the Tree quantity at round abouts.")
 attr Sidewalk_Tree_1_Percentage 		= 1
-@Order(9)@Description("Determines the species of the tree/plant selected for secondary tree for more variation. If this is not None, Tree 2 will appear if Tree 1 does not fire with the current percentage. This does mean that you cannot drop tree density if you alternate trees.")@Range("None","Random","Alder Buckthorn","Amazon Sword Plant","American Chestnut","American Sycamore","Apricot","Australian Pine","Baldcypress","Balsam Fir","Bamboo","Banana Tree","Basswood","Bay Laurel","Black Locust","Blue Gum Eucalyptus","Boxwood","Cabbage Palm Fern","California Bay","California Incense Cedar","California Palm","California Redwood","California Walnut","Coconut Palm","Common Hawthorn","Common Whitebeam","Conker Tree","Date Palm","Desert Willow","Douglas Fir","European Beech","European Larch","Ficus","Field Elm","Flannelbush","Flowering Dogwood","Giant Sequoia","Hedgehog Agave","Japanese Angelica Tree","Lacy Tree Philodendron","Leyland Cypress","Lily of the Valley","Lodgepole Pine","Mediterranean Buckthorn","Mexican Palmetto","Mountain Mahogany","Northern Red Oak","Norway Maple","Norway Spruce","Orange Tree","Orchid","Oval-leaved Privet","Palm Lily","Palo Verde","Paper Birch","Parlour Palm","Prickly Pear Cactus","Red Alder","Red Hickory","Rhododendron Azaleas","Rose","Ruffle Palm","Saguaro Cactus","Sassafras","Scots Pine","Sea Islands Yucca","Shadbush","Snake Plant","Southern Magnolia","Spanish Broom","Strawberry Tree","Sugar Maple","Sunflower","Sweetgum","Umbrella Acacia","Western Juniper","White Ash","White Oak","White Poplar","White Willow","Witch Hazel","","_____________________________","GENERICS","","Generic Dead Tree","Generic Stump","Generic Unknown","","_____________________________","PROXIES","","Algarrobo","American Elderberry","American Pepper","American Silverberry","Athel Tamarisk","Avocado","Black Tupelo","Buttonbush","Canada Buffaloberry","Chinaberry Tree","Chinese Tallow Tree","Common Hackberry","Common Holly","Common Persimmon","Desert Bitterbrush","European Hornbeam","Giant Chinquapin","Honey Locust","Hophornbeam","Huckleberry Shrub","Japanese Hemlock","Japanese Nutmeg","Judas Tree","Lawson Cypress","Loblolly Bay","Mexican Buckeye","Necklacepod","Northern Bilberry","Northern White Cedar","Octopus Tree","Osage Orange","Paper Bark Tree","Pawpaw","Persian Silk Tree","Princess Tree","Smooth Sumac","Sourwood","Southern Wax Myrtle","Tanoak","Tree of Heaven","Turkish Hazel","Western Soapberry","White Mulberry","Yellow Poplar","Yew")#@Hidden
+@Order(8)@Description("Determines the species of the tree/plant selected for secondary tree for more variation. If this is not None, Tree 2 will appear if Tree 1 does not fire with the current percentage. This does mean that you cannot drop tree density if you alternate trees.")@Range("None","Random","Alder Buckthorn","Amazon Sword Plant","American Chestnut","American Sycamore","Apricot","Australian Pine","Baldcypress","Balsam Fir","Bamboo","Banana Tree","Basswood","Bay Laurel","Black Locust","Blue Gum Eucalyptus","Boxwood","Cabbage Palm Fern","California Bay","California Incense Cedar","California Palm","California Redwood","California Walnut","Coconut Palm","Common Hawthorn","Common Whitebeam","Conker Tree","Date Palm","Desert Willow","Douglas Fir","European Beech","European Larch","Ficus","Field Elm","Flannelbush","Flowering Dogwood","Giant Sequoia","Hedgehog Agave","Japanese Angelica Tree","Lacy Tree Philodendron","Leyland Cypress","Lily of the Valley","Lodgepole Pine","Mediterranean Buckthorn","Mexican Palmetto","Mountain Mahogany","Northern Red Oak","Norway Maple","Norway Spruce","Orange Tree","Orchid","Oval-leaved Privet","Palm Lily","Palo Verde","Paper Birch","Parlour Palm","Prickly Pear Cactus","Red Alder","Red Hickory","Rhododendron Azaleas","Rose","Ruffle Palm","Saguaro Cactus","Sassafras","Scots Pine","Sea Islands Yucca","Shadbush","Snake Plant","Southern Magnolia","Spanish Broom","Strawberry Tree","Sugar Maple","Sunflower","Sweetgum","Umbrella Acacia","Western Juniper","White Ash","White Oak","White Poplar","White Willow","Witch Hazel","","_____________________________","GENERICS","","Generic Dead Tree","Generic Stump","Generic Unknown","","_____________________________","PROXIES","","Algarrobo","American Elderberry","American Pepper","American Silverberry","Athel Tamarisk","Avocado","Black Tupelo","Buttonbush","Canada Buffaloberry","Chinaberry Tree","Chinese Tallow Tree","Common Hackberry","Common Holly","Common Persimmon","Desert Bitterbrush","European Hornbeam","Giant Chinquapin","Honey Locust","Hophornbeam","Huckleberry Shrub","Japanese Hemlock","Japanese Nutmeg","Judas Tree","Lawson Cypress","Loblolly Bay","Mexican Buckeye","Necklacepod","Northern Bilberry","Northern White Cedar","Octopus Tree","Osage Orange","Paper Bark Tree","Pawpaw","Persian Silk Tree","Princess Tree","Smooth Sumac","Sourwood","Southern Wax Myrtle","Tanoak","Tree of Heaven","Turkish Hazel","Western Soapberry","White Mulberry","Yellow Poplar","Yew")
 attr Sidewalk_Tree_2_Type				= "None"
 
 @Group("SIDEWALK LAYOUT","Sidewalk Components",9)@Order(1)
@@ -286,36 +285,36 @@ attr Sidewalk_Bus_Stop_Setback			= 1
 attr Sidewalk_Benches					=case Not_High_LOD || sidewalkWidth<2.5: "None" else: "Both"
 @Order(5)@Range("None","Both","Right","Left")@Description("Determines whether an object is placed and what side of the street or walkways relevant objects are placed.")
 attr Parking_Meters						="None"
-@Order(6)@Range(0,20) @Description("Determines the spacing between each parking meter. No shape is created in the sections in between objects.")#@Hidden
+@Order(6)@Range(0,20) @Description("Determines the spacing between each parking meter. No shape is created in the sections in between objects.")
 attr Parking_Meters_Spacing				= 6.1
-@Order(7) @Range(0,20) @Description("This attribute provides a way to adjust the starting location for parking meters so that they align with on-street parking.")#@Hidden
+@Order(7) @Range(0,20) @Description("This attribute provides a way to adjust the starting location for parking meters so that they align with on-street parking.")
 attr Parking_Meter_Setback				= 9 #pushes or pulls parking meters away 
 @Order(8)@Range("None","Both","Right","Left")@Description("Determines whether an object is placed and what side of the street or walkways relevant objects are placed.")
 attr Sidewalk_Street_Lamps				= case Not_High_LOD: "None" else: "Both"
-@Order(9)@Range(0,50) @Description("Determines the spacing between each Street Lamp. No shape is created in the sections in between objects.")#@Hidden
+@Order(9)@Range(0,50) @Description("Determines the spacing between each Street Lamp. No shape is created in the sections in between objects.")
 attr Sidewalk_Street_Lamp_Spacing		=10
 @Order(10)@Range("None","Both","Right","Left")@Description("Determines whether an object is placed and what side of the street or walkways relevant objects are placed.")
 attr Traffic_Lights						= case Not_High_LOD: "None" else: "Both"
-@Order(11) @Description("Will create a WayFinder near a bus stop.")#@Hidden
+@Order(11) @Description("Will create a WayFinder near a bus stop.")
 attr Sidewalk_Way_Finder				=false
-@Order(12) @Description("Will create 2 bike racks near a bus stop.")#@Hidden
+@Order(12) @Description("Will create 2 bike racks near a bus stop.")
 attr Sidewalk_Bike_Rack					=false
 
 
 @Group("POPULATION",80) @Range(0,300) @Order(1) 
-@Description("Determines the number of vehicles per KM of road length loaded onto main throughways.")#@Hidden
+@Description("Determines the number of vehicles per KM of road length loaded onto main throughways.")
 attr Vehicles_Per_KM 				= case Not_High_LOD:0 else: 100
-@Range(0,1) @Order(2)@Description("Determines the approximate percentage of vehicles that are buses on main throughways.")#@Hidden		
+@Range(0,1) @Order(2)@Description("Determines the approximate percentage of vehicles that are buses on main throughways.")		
 attr Mixed_Traffic_Bus_Percentage	= Default_Mix_Bus
-@Range(0,1) @Order(3)@Description("Determines the approximate percentage of vehicles that are taxis on main throughways.")#@Hidden		
+@Range(0,1) @Order(3)@Description("Determines the approximate percentage of vehicles that are taxis on main throughways.")		
 attr Taxi_Percentage 				= 0.2
-@Range(0,300) @Order(4)@Description("Determines the number of buses per KM of road length loaded onto bus lanes only.")#@Hidden
+@Range(0,300) @Order(4)@Description("Determines the number of buses per KM of road length loaded onto bus lanes only.")
 attr Bus_Lane_Buses_Per_KM			= case Not_High_LOD:0 else: 25
-@Order(5) @Range(0,1) @Description("Higher the percentage, the higher the number of people loaded onto sidewalks.")#@Hidden
+@Order(5) @Range(0,1) @Description("Higher the percentage, the higher the number of people loaded onto sidewalks.")
 attr People_Percentage 				= case Not_High_LOD:0 else: 1
-@Order(6) @Range(0,100)@Description("Determines the number of bicyclists per KM of road length loaded onto bike lanes only.")#@Hidden
+@Order(6) @Range(0,100)@Description("Determines the number of bicyclists per KM of road length loaded onto bike lanes only.")
 attr Bicycles_Per_KM				= case Not_High_LOD:0 else: 60
-@Order(7)@Range(0,1) @Description("Higher the percentage, the higher the parking occupancy.")#@Hidden
+@Order(7)@Range(0,1) @Description("Higher the percentage, the higher the parking occupancy.")
 attr Parked_Car_Percentage			= case Not_High_LOD:0 else: .6
 @Order(8)@Hidden @Range(0,360) @Description("When parking is angled, this determines the angle of the vehicles placed in each right side angled parking spot.")
 attr Right_Parked_Car_Angle			= _Right_Car_Angle
@@ -323,21 +322,21 @@ attr Right_Parked_Car_Angle			= _Right_Car_Angle
 attr Left_Parked_Car_Angle			= _Left_Car_Angle
 
 @Group("CUSTOM OBJECTS",90) 
-@Order(1)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")#@Hidden
+@Order(1)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")
 attr Street_Lamp_Object						=Default_Lamp
-@Order(2)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")#@Hidden
+@Order(2)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")
 attr Parking_Meter_Object					=Default_Parking_Meter
-@Order(3)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")#@Hidden
+@Order(3)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")
 attr Traffic_Light_Object					=Default_Traffic_Light
-@Order(4)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")#@Hidden
+@Order(4)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")
 attr Wayfinder_Object						=Default_WayFinder
-@Order(4)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")#@Hidden
+@Order(4)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")
 attr Bench_Object							=Default_Bench
-@Order(5)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")#@Hidden
+@Order(5)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")
 attr Bike_Rack_Object						=Default_Bike_Rack
-@Order(6)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")#@Hidden
+@Order(6)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")
 attr Parklet_Object							=Default_Parklet
-@Order(6)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")#@Hidden
+@Order(6)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")
 attr Bus_Stop_Object						=Default_BusStop
 @Group("REPORTING ATTRIBUTES","Paint Reports",100)
 #Default values taken from NACTO Urban Bike Design Guide, 2nd edition see comments for details. Costs can become dated due to inflation, change as needed.-DJW
@@ -351,15 +350,15 @@ attr Bus_Stop_Object						=Default_BusStop
 ##Material cost: $3-$6 Sq. Ft. raw material/ $10-$14 Sq.Ft. installed.
 #Colored Pavement- bituminous pitch, sand/gravel/pigment-very durable, last as long as typical asphalt depending on conditions
 ##Material cost: Pigmented asphalt typically costs 30-50% more than  non colored structural asphalt, thin overlay applications have varying costs.
-@Order(1)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")#@Hidden
+@Order(1)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")
 attr Green_Paint_Cost_Per_Square_FT		= 1.6
-@Order(2)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")#@Hidden
+@Order(2)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")
 attr White_Paint_Cost_Per_Square_FT		= 1.6
-@Order(3)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")#@Hidden
+@Order(3)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")
 attr Yellow_Paint_Cost_Per_Square_FT	=1.6
-@Order(4)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")#@Hidden
+@Order(4)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")
 attr Red_Paint_Cost_Per_Square_FT		=1.6
-@Order(5)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")#@Hidden
+@Order(5)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")
 attr Other_Paint_Cost_Per_Square_FT		=1.6
 ######################################################
 #Bridge Attributes									 #
@@ -368,13 +367,13 @@ attr Other_Paint_Cost_Per_Square_FT		=1.6
 @Group("BRIDGES",110) @Order(1) @Description("Determines the various conditions by which the bridge rule will turn on. Occulsion functions are used in the bridge rule and might have some errant behavior.")
 @Range("Off","Concrete Extrusion Only","On, By Elevation","On, Regardless","On, Show All Piers", "On, Flag Occlusions")
 attr Bridge_Display = "Off" 
-@Group("BRIDGES") @Order(20) @Description("Determines the threshold distance above the standard elevation for the bridge rule to trigger based on Elevation.")#@Hidden
+@Group("BRIDGES") @Order(20) @Description("Determines the threshold distance above the standard elevation for the bridge rule to trigger based on Elevation.")
 attr Bridge_Starts_At = 3
-@Group("BRIDGES") @Order(30) @Description("Determines how thick the supporting cement structure of the bridge is.")#@Hidden
+@Group("BRIDGES") @Order(30) @Description("Determines how thick the supporting cement structure of the bridge is.")
 attr Bridge_Thickness = 1
-@Group("BRIDGES") @Order(40) @Description("Determines the distance between Piers.")#@Hidden
+@Group("BRIDGES") @Order(40) @Description("Determines the distance between Piers.")
 attr Pier_Distance = 23
-@Group("BRIDGES") @Order(50) @Description("Determines the width of the Piers.")#@Hidden
+@Group("BRIDGES") @Order(50) @Description("Determines the width of the Piers.")
 attr Pier_Width = 2.3
 
 # Mapped Attributes (comming from graph)
@@ -416,7 +415,7 @@ const LampsFolder					= ObjectFolder+"/Dir_Lamps"
 const MiscFolder					= StreetTextureFolder+"/Misc"
 #Paint Constants
 const ThickPaintLineWidth			= 0.5
-const PaintLineWidth				= 0.1 #uvSpace 36/256-about 4 in
+const PaintLineWidth				= 0.1016 #uvSpace 36/256
 const Rumble_Strip_Len				= 1.5 #FWHA 7 in wide per bump with 5 in ashpalt spacing
 const Rumble_Strip_Wid				= .355 #FWHA-typically 12-16 in wide
 #SideWalk and Median Constants
@@ -598,11 +597,6 @@ _ParkingLength(side)				=
 			6.1
 		else:
 			2.6
-_Side_Sidewalk_Planting_Width(side) =
- 	case side=="Right":
- 		Right_Sidewalk_Planting_Width
- 	else:
- 		Left_Sidewalk_Planting_Width
 _Right_Car_Angle					=
 	case Right_Parking_Type	=="Parallel":
 		0
@@ -766,12 +760,23 @@ _Transit_Lane_Width_Switch(dir,Location)=
 			0
 	else:
 		0
+_curbLaneAddedTotalWidth=
+	case oneWay: 
+		Curb_Lane_Width-Lane_Width
+	else: 
+		Curb_Lane_Width-Lane_Width*2
+		
+_curbLaneSideAddedWidth(nLanesSide)=
+	case nLanesSide<=0: 
+		0
+	else: 
+		Curb_Lane_Width-Lane_Width
+				
 _tooShort(length,goal_len)= # This function will be equal to 0 (making a split length 0 via *) if the length of a segment is less than a goal length).
 	case length<goal_len: 0 else: 1
 	
-#Stop Tex/Neighbor Detection Functions
+#Stop Tex Functions
 _hasStop(neighbor) 	= neighbor=="CROSSING" || neighbor=="ROUNDABOUT" || neighbor=="JUNCTION_ENTRY"||neighbor=="JUNCTION"||neighbor=="DEAD_END"
-_hasStopSideSwitch(dir)= case dir==0: _neighborEnd else: _neighborBegin		
 _stopTex(stopType,lanenumber,lanestotal)			= #TODO: Add more lane options- D.J.Wasserman
 					  case stopType == "with stop marking"	  : 
 					  		case rightHandTraffic: "_stop_word" else: "_stop_word_mirrored"
@@ -1274,7 +1279,7 @@ LeftSide-->
 ##
 # split lanes into a single lane each and respective transit lane (location based transit lanes)
 Lanes(dir,stopType) -->
-	split(v,unitSpace,0){{~_Actual_Lane_Width : LaneReporting(dir,split.total,split.index,stopType,"MainLanes")}*}
+	split(v,unitSpace,0){~Curb_Lane_Width:LaneReporting(dir,split.total,split.index,stopType,"MainLanes")|{~_Actual_Lane_Width: LaneReporting(dir,split.total,split.index,stopType,"MainLanes")}*}
 	#print(geometry.dv(0,unitSpace))
 	#print(split.total)
 # prepare the uv coordinates and texture the shape
@@ -1347,11 +1352,11 @@ Buslane_Texture_Rule(dir)-->
 							#Level 1-First split indentation
 							|~1:split(u,unitSpace,0){2:AsphaltPainted(Bus_Lane_Color,true,1,"Transit")
 								#Level 2- sub-split indentation
-								| ~Transit_Lane_Width:BuslaneStamp(dir)
+								| Transit_Lane_Width:BuslaneStamp(dir)
 								|~ Transit_Symbol_Spacing :AsphaltPainted(Bus_Lane_Color,true,1,"Transit")
-								|{ ~Transit_Lane_Width :BuslaneStamp(dir)
+								|{ Transit_Lane_Width :BuslaneStamp(dir)
 								|~ Transit_Symbol_Spacing :AsphaltPainted(Bus_Lane_Color,true,1,"Transit")}*
-								| ~_hasStopSideSwitch(dir)*Transit_Lane_Width:BuslaneStamp(dir)
+								| Transit_Lane_Width :BuslaneStamp(dir)
 								|2:AsphaltPainted(Bus_Lane_Color,true,1,"Transit")}
 							|PaintLineWidth*_PaintLineControl("Left", Transit_Paint_Line_Sides ):AsphaltPainted("white",true,1,"Transit")}
 	BusOnLane(dir)
@@ -1371,11 +1376,11 @@ HOVlane_Texture(dir)-->
 							#Level 1-First split indentation
 							|~1:split(u,unitSpace,0){2:Asphalt(true,1,"Transit")
 								#Level 2- sub-split indentation
-								| ~Transit_Lane_Width:HOVlaneStamp(dir)
+								| Transit_Lane_Width:HOVlaneStamp(dir)
 								|~ Transit_Symbol_Spacing :Asphalt(true,1,"Transit")
-								|{ ~Transit_Lane_Width :HOVlaneStamp(dir)
+								|{ Transit_Lane_Width :HOVlaneStamp(dir)
 								|~ Transit_Symbol_Spacing :Asphalt(true,1,"Transit")}*
-								| ~_hasStopSideSwitch(dir)*Transit_Lane_Width :HOVlaneStamp(dir)
+								| Transit_Lane_Width :HOVlaneStamp(dir)
 								|2:Asphalt(true,1,"Transit")}
 							|PaintLineWidth*2*_PaintLineControl("Left", Transit_Paint_Line_Sides ):AsphaltPainted("yellow",true,1,"Transit")}
 	VehiclesOnLane(dir)
@@ -1444,13 +1449,13 @@ BikeLane(sideflip,Width)-->#Was Left,now both, fairly modular
 							#Level 1-First split indentation
 							|~1:split(u,unitSpace,0){2:AsphaltPainted(Bike_Lane_Color,true,1,"Bikeways")
 								#Level 2- sub-split indentation
-								| ~Width :BikeLaneStamp(Width  ,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
+								| Width :BikeLaneStamp(Width  ,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
 								|~ Bike_Symbol_Spacing :AsphaltPainted(Bike_Lane_Color,true,1,"Bikeways")
-								|{~Width  :BikeLaneStamp(Width  ,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
+								|{ Width  :BikeLaneStamp(Width  ,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
 								|~ Bike_Symbol_Spacing :AsphaltPainted(Bike_Lane_Color,true,1,"Bikeways")}*
-								| ~_hasStopSideSwitch((case sideflip==1:0 else: 2))*Width  :BikeLaneStamp(Width,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
+								| Width  :BikeLaneStamp(Width,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
 								| Bike_Conflict_Spacing :ConflictZone(Bike_Lane_Color)
-								|~1:AsphaltPainted((Bike_Lane_Color),true,1,"Bikeways")} 
+								|1:AsphaltPainted((Bike_Lane_Color),true,1,"Bikeways")} 
 							|PaintLineWidth*_PaintLineControl("Right", Bike_Paint_Line_Sides):BikeLaneLines}
 
 BikeLaneLines-->
@@ -2375,26 +2380,27 @@ Curbs(RotateUV) -->
 Sidewalk_Setup-->
 	case sidewalkSide=="Right":
 		extrude(world.y, Sidewalk_Height )
-		comp(f){top=SidewalkTop(sidewalkSide)|side:Pavement("Building Side") }
+		comp(f){top=SidewalkTop|side:Pavement("Building Side") }
 	case sidewalkSide=="Left":
 		scaleUV(0,1,1)
 		extrude(world.y, Sidewalk_Height ) 
-		comp(f){top=SidewalkTop(sidewalkSide)|side:Pavement("Building Side") }
+		comp(f){top=SidewalkTop|side:Pavement("Building Side") }
 	else:
 		print("Error: two right sidewalks as default- please map this attribute.") 
 		extrude(world.y, Sidewalk_Height ) 
-		comp(f){top=SidewalkTop(sidewalkSide)|side:Pavement("Building Side") }
+		comp(f){top=SidewalkTop|side:Pavement("Building Side") }
 
-SidewalkTop(side)-->
+SidewalkTop-->
 	case valency>1:
 		Pavement("Corners")
+		
 	case Sidewalk_Ground_Cover =="None":
-		split(v,unitSpace,0) {CurbtoPlantingGap:Sign_Loader(side)|~1:Pavement("Through Zone") People}
+		split(v,unitSpace,0) {CurbtoPlantingGap:Sign_Loader|~1:Pavement("Through Zone") People}
 	else:
-		split(v,unitSpace,0){CurbtoPlantingGap:Sign_Loader(side)
-							|_Side_Sidewalk_Planting_Width(side): Sidewalk_Loading_Section(case side=="Right":0 else:2)
+		split(v,unitSpace,0){CurbtoPlantingGap:Sign_Loader
+							|Sidewalk_Planting_Width: Sidewalk_Loading_Section(case sidewalkSide=="Right":0 else:2)
 							|~1:Pavement("Through Zone") People}
-Sign_Loader(side)-->
+Sign_Loader-->
 	Pavement("Sign Gap")
 	Traffic_Light_Setup
 	Parking_Meter_Setup
