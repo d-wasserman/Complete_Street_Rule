@@ -5,6 +5,7 @@ The rule uses the original assets folder of the ESRI Complete street rule, so in
 The rules new features include: 
 
 Key changes to the rule include:
+
 1. Best Fit setting allows the rule to make sure that the street has the option to not have exact geometry.
 This still needs to be tested more so please comment if you have any issues with the rule. The best fit feature works by calculating empty space and then adding it to the lane width. This means that your lane width attribute becomes the minimum width the lanes can take on before it subtracts lanes.
 
