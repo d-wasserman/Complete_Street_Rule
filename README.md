@@ -21,14 +21,16 @@ This still needs to be tested more so please comment if you have any issues with
 
 7. Addition of Complete_Street_Simple.CGA: This additional included rule has about ~50 fewer attributes while maintaining the core functionality of the rule. This rule is intended to make demos or charrettes a little easier.
 
-8. Other miscellaneous changes.
+8. Addition of Sharrows: Added support for sharrows (shared use lanes). The sharrows only appear on the curb lane. 
 
-Dead end exception, dead ends, treated like they have a connection (for singular cross sections).
+9. Other miscellaneous changes.
 
-Fixed striping bug in right most lane that occurred as a result of floating point arithmetic/rounding error (a micro-lane is being created).
+	-Dead end exception, dead ends, treated like they have a connection (for singular cross sections).
 
-Fixed various aspects of the Bike Stress Ranking to deal with parking and cycle tracks.
+	-Fixed striping bug in right most lane that occurred as a result of floating point arithmetic/rounding error (a micro-lane is being created).
 
-Fixed how multimodal lanes handle non-intersections-the last stamps will not be added when they connect to joints and other "non-stop" neighbor shapes.
+	-Fixed various aspects of the Bike Stress Ranking to deal with parking and cycle tracks.
 
-Better default planting widths for sidewalks: Sidewalk planting width was changed to mimic general guidelines and suggestions from a NACTO Tree Maintenance Guidelines Document. If you have a narrow sidewalk, the planting strip will narrow to a minimum of 2 feet, and grow to a maximum of 6 feet.
+	-Fixed how multimodal lanes handle non-intersections-the last stamps will not be added when they connect to joints and other "non-stop" neighbor shapes.
+
+	-Better default planting widths for sidewalks: Sidewalk planting width was changed to mimic general guidelines and suggestions from a NACTO Tree Maintenance Guidelines Document. If you have a narrow sidewalk, the planting strip will narrow to a minimum of 2 feet, and grow to a maximum of 6 feet.
