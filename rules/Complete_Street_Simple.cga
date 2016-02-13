@@ -1,14 +1,14 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 1/29/2016
+ * Last Updated: 2/12/2016
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
 # ESRI Attribution License:
 #	ESRI Derivative work
 #	http://mappingcenter.esri.com/downloads/AttributionAndLicense_05_09_07.pdf
 #
-# Copyright 2015 David J. Wasserman, ESRI Redlands Derivative Work
+# Copyright 2015 David J. Wasserman
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ attr Display_Textures = true
 @Group("DISPLAY OPTIONS") @Order(2) @Description("Visually colors the entire street model based on the attributes of a street. Usage thematic looks best when textures are turned off.")
 @Range("Thematics Off", "Solid Color", "Peak Runoff/Permeability","Bike Stress","Pedestrian Stress","Auto Stress","Transit Stress","Usage","Flood Scenario")
 attr Display_Thematics = "Thematics Off" 
-@Hidden @Group("DISPLAY OPTIONS") @Order(3) @Description("When the Solid Color thematic is used for highlighting certain streets, this chooses the color that is utilized by the thematic.")
+@Group("DISPLAY OPTIONS") @Order(3) @Description("When the Solid Color thematic is used for highlighting certain streets, this chooses the color that is utilized by the thematic.") @Hidden
 attr Solid_Color = "#FFFFFF"
 @Group("DISPLAY OPTIONS") @Range("Best Fit","Exact","Flag") @Order(4)@Description("Determines whether the lane width will be the best of fit, exact width, or flag unallocated space red when it is 1/3 the current lane width (usually 3-4 feet).")
 attr Space_Management="Best Fit"
@@ -217,7 +217,7 @@ attr Left_Buffer_Width			= 0
 @Order(6)@Description("If on/true, buffer is closer to the through lane, and bicycle lane is protected from through traffic.")
 attr Buffer_Protection			= true
 @Order(7)@Description("If on/true, parking lane is closer to the through lane, and bicycle lane is protected from through traffic. Keep in mind how the door zone influences bicycle lane placement.")
-attr Parking_Protection 		= true
+attr Parking_Protection 		= _IsCycleTrackBuffer
 @Order(8)@Range("Painted Stripes","Curb Buffer","Curb Buffer with Plantings","Curb Buffer with Trees","Solid White","Cycle Track With Planters","Cycle Track With Tubular Markers","Asphalt","Shoulder")@Description("This attribute controls the bicycle buffer type and form, but also can become plain asphalt or a shoulder.")
 attr Buffer_Type				="Painted Stripes"
 @Order(9)@Range(0,10)@Description("Controls  the buffers spacing of objects such as tubular markers, planters, and tree/plantings (Trees/Plants match Sidewalk Plantings if selected).")@Hidden			
@@ -227,7 +227,7 @@ attr Bike_Symbol_Spacing		= 24.5
 @Order(11)@Range(0,20) @Description("Creates conflict spacing made up by asphalt gaps in the bike lane for approaching interesections.")
 attr Bike_Conflict_Spacing		= 0
 @Order(12)@Range("green","black","red","blue") @Description("Determines the color of the bike lane and bike box. Paint reporting costs adjust based on color choices.")
-attr Bike_Lane_Color			="black"
+attr Bike_Lane_Color			= case Bike_Lane_Type=="Sharrow":"green" else: "black"
 @Order(13)@Range("Both","Right", "Left", "None")@Description("Controls the white lines on the sides of preferential lanes.")@Hidden
 attr Bike_Paint_Line_Sides  	="Both"
 @Order(14)@Range("Rare","Moderate","Frequent")@Description("Is a descriptive attribute relating to the probability that a bike lane might be blocked due to unloading or double parking that feeds into Thematic.")@Hidden
@@ -235,7 +235,7 @@ attr Level_of_Blockage			="Rare"
 
 @Group("MULTIMODAL LANES LAYOUT","Bike Box",6)
 @Order(1) @Description("Right Side Bike Box: NACTO-A bike box is a designated area at the head of a traffic lane at a signalized intersection that provides bicyclists with a safe and visible way to get ahead of queuing traffic during the red signal phase. Works best if bike lane is adjacent to sidewalk.")
-attr Right_Bike_Box 					= false
+attr Right_Bike_Box								= false
 @Order(2) @Description("Left Side Bike Box: NACTO-A bike box is a designated area at the head of a traffic lane at a signalized intersection that provides bicyclists with a safe and visible way to get ahead of queuing traffic during the red signal phase. Works best if bike lane is adjacent to sidewalk.")
 attr Left_Bike_Box						= false
 @Order(3)@Range(1,10) @Description("Is the best fit spacing between the bicycle symbols on the bike box. Can be increased to reduce the number of symbols created.")@Hidden
@@ -428,9 +428,10 @@ const Median_Stop_Adjuster			=-1
 const CurbtoPlantingGap				=.1
 const Curb_Depth					= 0.1574
 const BusStop_Length				= 12.192
-const Parklet_Shift					= case Space_Management== "Best Fit" || (Parking_Protection && _Minof(Left_Buffer_Width+Left_Bike_Lane_Width,Right_Buffer_Width+Right_Bike_Lane_Width)>0):0 else:-_EmptySpace #if parking protection is on a shift will lead to geometric collision, but it will choose to collide if oneside does not have a bikelane/buffer (check later).   
+const Parklet_Shift					= case Space_Management== "Best Fit" || (bool(Parking_Protection) && _Minof(Left_Buffer_Width+Left_Bike_Lane_Width,Right_Buffer_Width+Right_Bike_Lane_Width)>0):0 else:-_EmptySpace #if parking protection is on a shift will lead to geometric collision, but it will choose to collide if oneside does not have a bikelane/buffer (check later).   
 const Max_Sidewalk_Gap				= 5.4 #change this if you want a smaller or larger gap between first tree splits and crosswalks
 #Bike Constants
+const sharrowHeight					=0.005
 const Buffer_StartGap				=.2
 const Bike_Lane_Twoway_Distribution	=.5
 const BikeBox_Fraction				=.75
@@ -716,8 +717,8 @@ _LeftSplitSum=
 	Left_Bike_Lane_Width + Left_Parking_Width + Left_Buffer_Width				#Generates right road side features that need to be fractions of lanewidths
 
 _Bike_Box_Gap(street_side)=
-	case street_side=="Begin" && Left_Bike_Box:Bike_Box_Length/2
-	case street_side=="End" && Right_Bike_Box:Bike_Box_Length/2
+	case street_side=="Begin" && bool(Left_Bike_Box):Bike_Box_Length/2
+	case street_side=="End" && bool(Right_Bike_Box):Bike_Box_Length/2
 	else:0	
 
 _MaxSplitSum=
@@ -733,7 +734,7 @@ _IsCycleTrackBuffer=
 	else:
 		false
 _IsCycleTrack=
-	case Parking_Protection && _MaxParkingSum>1 && (Right_Bike_Lane_Width>0 || Left_Bike_Lane_Width>0)&&_Orientation_Modified_SplitSum>=4.572:#Parking Scenario
+	case bool(Parking_Protection) && _MaxParkingSum>1 && (Right_Bike_Lane_Width>0 || Left_Bike_Lane_Width>0)&&_Orientation_Modified_SplitSum>=4.572:#Parking Scenario
 		true
 	case _IsCycleTrackBuffer && (Right_Bike_Lane_Width>0 || Left_Bike_Lane_Width>0) &&_MaxParkingSum<=1 && _Orientation_Modified_SplitSum>=1.8288: #Plain Buffer
 		true
@@ -787,7 +788,6 @@ _stopTex(stopType,lanenumber,lanestotal)			= #TODO: Add more lane options- D.J.W
 					  		 "_stop_strip"
  
 _stopTexPaintFractions(markings,lanenumber)			=
-						
 					  case markings=="_stop_word"|| markings== "_stop_word_mirrored": Marking_Stop_WhiteFraction
 					  case count(markings,"_stop_arrows_all_")>0:Marking_AvgArrow_WhiteFraction
 					  case markings=="_stop_arrows_sides_1"|| markings=="_stop_arrows_sides_4":Marking_AvgArrow_WhiteFraction
@@ -885,17 +885,17 @@ _Bus_Alloc(Location)					=.5 #Allows user to adjust by location if customized.
 
 _Bike_Rack_Alloc(Location)				=
 			case Location== "Median" || Location=="Boulevard":
-					case Median_Bike_Rack: .2
+					case bool(Median_Bike_Rack): .2
 					else: 0
 			else:
-					case Sidewalk_Bike_Rack:.2
+					case bool(Sidewalk_Bike_Rack):.2
 					else: 0
 _WayFinder_Alloc(Location)				=
 			case Location== "Median" || Location=="Boulevard":
-					case Median_Way_Finder: .3
+					case bool(Median_Way_Finder): .3
 					else: 0
 			else:
-					case Sidewalk_Way_Finder:.2
+					case bool(Sidewalk_Way_Finder):.2
 					else: 0
 					
 _Sidewalk_CrossStop_Gap(Dir,Begin)= #Limits the amount of gap to 5.4 meters (3 m sidewalk+2.4 crosswalkgap) Keep trees out of crosswalk/clear view for drivers at intersections.
@@ -1012,11 +1012,11 @@ _Thematic				=
 	else:
 		Brightness
 _BikeSense_Modifier			=#changes combined "bike protection" width based orientation-with splitsum creates distance from through lane
-	case ! Buffer_Protection && Parking_Protection :
+	case !bool(Buffer_Protection) && bool(Parking_Protection) :
 		(_MaxBufferSum)
-	case Buffer_Protection && ! Parking_Protection :
+	case bool(Buffer_Protection) && ! bool(Parking_Protection) :
 		0
-	case Buffer_Protection && Parking_Protection :
+	case bool(Buffer_Protection) && bool(Parking_Protection) :
 		0
 	else:
 		(_MaxParkingSum + _MaxBufferSum)
@@ -1027,7 +1027,7 @@ _BikeSense_Modifier			=#changes combined "bike protection" width based orientati
 _BikeRank				=#Adapted from MTI Report 11-19 # Does not take into account Boulevard Cycle Paths
 	case _IsCycleTrack:
 		1
-	case !Parking_Protection && _MaxParkingSum>1 && (Right_Bike_Lane_Width>0 || Left_Bike_Lane_Width>0) :
+	case !bool(Parking_Protection) && _MaxParkingSum>1 && (Right_Bike_Lane_Width>0 || Left_Bike_Lane_Width>0) :
 		case floor((DirLaneTotal))<=1 &&  Speed_Limit_in_MPH<=25 && Level_of_Blockage=="Rare" &&_Orientation_Modified_SplitSum>=4.572:
 			1 #LTS 1- 
 		case (Speed_Limit_in_MPH<25)||(floor((DirLaneTotal))<=2 && Speed_Limit_in_MPH<=30 && Level_of_Blockage=="Rare" &&_Orientation_Modified_SplitSum>=4.2672):
@@ -1233,13 +1233,13 @@ StreetWithEntries -->
 #and then moves the rest of the space left to the dedicated lane spaces. 
 StopBox(RuleChoice)--> 
 	case RuleChoice=="RightSide":
-		case Right_Bike_Box && geometry.dv(0,unitSpace)>BikeBoxGeometryThreshold :#Must be enough room, turned on. 
+		case bool(Right_Bike_Box) && geometry.dv(0,unitSpace)>BikeBoxGeometryThreshold :#Must be enough room, turned on. 
 			split(u,unitSpace,0) {~1:RightSide| Bike_Box_Length :BikeBoxCreation("Right")}
 		else:
 			split(u,unitSpace,0) {~1:RightSide|_stopEnd*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")}
 		
 	case RuleChoice=="LeftSide":
-		case  Left_Bike_Box && geometry.dv(0,unitSpace)>BikeBoxGeometryThreshold: #Must be enough room, turned on. 
+		case  bool(Left_Bike_Box) && geometry.dv(0,unitSpace)>BikeBoxGeometryThreshold: #Must be enough room, turned on. 
 			split(u,unitSpace,0) { Bike_Box_Length :BikeBoxCreation("Left")|~1:LeftSide}
 		else:
 			split(u,unitSpace,0) {_stopBegin*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")|~1:LeftSide}	
@@ -1337,7 +1337,7 @@ ConventionalLane(dir,lanestotal,lanenumber,stopType)-->
 Sharrow(dir,lanestotal,lanenumber)-->
 	case lanenumber==0 && Bike_Lane_Type=="Sharrow":
 		alignScopeToAxes(y)
-		t(0,0.01,0) #Translate it up 
+		t(0,sharrowHeight,0) #Translate it up 
 		split(u,unitSpace,0){~1:NIL
 				|~2:split(v,unitSpace,0)
 					{~0.5:NIL|
@@ -1413,13 +1413,13 @@ HOVlaneStamp(dir)-->
 
 RightSplitSpace-->
 	
-	scaleUV(0,1,case Parking_Protection :-1 else:1)
+	scaleUV(0,1,case bool(Parking_Protection) :-1 else:1)
 	split(v,unitSpace,0){Right_Parking_Width :ParkingLane("Right",Right_Parking_Type,Right_Parking_Length,Right_Parking_Width)
 						|( Right_Bike_Lane_Width + Right_Buffer_Width ):RightBikeLaneSpace("list")}
 
 LeftSplitSpace-->
 	
-	scaleUV(0,1,case Parking_Protection :-1 else:1)
+	scaleUV(0,1,case bool(Parking_Protection) :-1 else:1)
 	split(v,unitSpace,0){( Left_Bike_Lane_Width + Left_Buffer_Width ):LeftBikeLaneSpace("list")
 							| Left_Parking_Width :ParkingLane("Left",Left_Parking_Type,Left_Parking_Length,Left_Parking_Width)}
 						
@@ -1428,15 +1428,15 @@ LeftSplitSpace-->
 #Bike Space-Total
 LeftBikeLaneSpace(list)-->
 	 
-	scaleUV(0,1,case Buffer_Protection : -1 else:1)
-	scaleUV(0,1,case Parking_Protection :-1 else:1)
+	scaleUV(0,1,case bool(Buffer_Protection) : -1 else:1)
+	scaleUV(0,1,case bool(Parking_Protection) :-1 else:1)
 	split(v,unitSpace,0) { Left_Bike_Lane_Width :LeftBikeLaneSection(list)
 						  |Left_Buffer_Width :BikeBuffer(Left_Buffer_Width,2)}
 
 RightBikeLaneSpace(list)-->
 
-	scaleUV(0,1,case Buffer_Protection : -1 else:1)
-	scaleUV(0,1,case Parking_Protection :-1 else:1)
+	scaleUV(0,1,case bool(Buffer_Protection) : -1 else:1)
+	scaleUV(0,1,case bool(Parking_Protection) :-1 else:1)
 	split(v,unitSpace,0) {Right_Buffer_Width :BikeBuffer(Right_Buffer_Width,0)
 						 |Right_Bike_Lane_Width :RightBikeLaneSection(list)}
 #BikeLane Start
@@ -1661,9 +1661,9 @@ AngledNoseIn(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,Parkin
 	AngledParkingCar((case Side=="Right":0 else:2),ParkingType,ParkingLength, ParkingWidth,SpaceNumber)
 	scaleUV(0,-1,
  		(case Side=="Right":
- 						(case Parking_Protection :1 else:-1)
+ 						(case bool(Parking_Protection) :1 else:-1)
  					 else:
- 						(case Parking_Protection :-1 else:1)))
+ 						(case bool(Parking_Protection) :-1 else:1)))
  	tileUV(0,~ParkingLength,~ParkingWidth)
 	texture(LanesFolder+"/AngledParking.jpg")
 	deleteUV(_Texture_Switch)
@@ -1673,9 +1673,9 @@ AngledNoseIn(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,Parkin
 AngledNoseOutParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
 	AngledParkingCar((case Side=="Right":0 else:2),ParkingType,ParkingLength, ParkingWidth,SpaceNumber)
 	scaleUV(0,1,(case Side=="Right":
- 							(case Parking_Protection :1 else:-1)
+ 							(case bool(Parking_Protection) :1 else:-1)
  						 else:
- 							(case Parking_Protection :-1 else:1)))
+ 							(case bool(Parking_Protection) :-1 else:1)))
  		tileUV(0,~ParkingLength,~ParkingWidth)
 		texture(LanesFolder+"/AngledParking.jpg")
 	deleteUV(_Texture_Switch)
@@ -1686,9 +1686,9 @@ ParallelParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,Par
 	case SpaceNumber==TotalSpacesonSide-2:#1 from index total, 1 from additional split
  			ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth)# Fix Parking Angle on oneway Streets
  			scaleUV(0,1,(case Side=="Right":
- 							(case Parking_Protection :1 else:-1)
+ 							(case bool(Parking_Protection) :1 else:-1)
  						 else:
- 							(case Parking_Protection :-1 else:1)))
+ 							(case bool(Parking_Protection) :-1 else:1)))
  			tileUV(0,~ParkingLength,~ParkingWidth)
 			texture(LanesFolder+"/ParallelParkFront.jpg")
 			deleteUV(_Texture_Switch)
@@ -1698,9 +1698,9 @@ ParallelParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,Par
  		case SpaceNumber==1:
  			
  			scaleUV(0,1,(case Side=="Right":
- 							(case Parking_Protection :1 else:-1)
+ 							(case bool(Parking_Protection) :1 else:-1)
  						 else:
- 							(case Parking_Protection :-1 else:1)))
+ 							(case bool(Parking_Protection) :-1 else:1)))
  			tileUV(0,~ParkingLength,~ParkingWidth)
 			texture(LanesFolder+"/ParallelParkRear.jpg")
 			deleteUV(_Texture_Switch)
@@ -1710,9 +1710,9 @@ ParallelParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,Par
  		else:
  			ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth)# Fix Parking Angle on oneway Streets-TODO
  			scaleUV(0,1,(case Side=="Right":
- 							(case Parking_Protection :1 else:-1)
+ 							(case bool(Parking_Protection) :1 else:-1)
  						 else:
- 							(case Parking_Protection :-1 else:1)))
+ 							(case bool(Parking_Protection) :-1 else:1)))
  			tileUV(0,~ParkingLength,~ParkingWidth)
 			texture(LanesFolder+"/ParallelParkMid.jpg")
 			deleteUV(_Texture_Switch)
