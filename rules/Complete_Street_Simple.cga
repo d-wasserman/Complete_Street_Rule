@@ -788,6 +788,7 @@ _stopTex(stopType,lanenumber,lanestotal)			= #TODO: Add more lane options- D.J.W
 					  		 "_stop_strip"
  
 _stopTexPaintFractions(markings,lanenumber)			=
+						
 					  case markings=="_stop_word"|| markings== "_stop_word_mirrored": Marking_Stop_WhiteFraction
 					  case count(markings,"_stop_arrows_all_")>0:Marking_AvgArrow_WhiteFraction
 					  case markings=="_stop_arrows_sides_1"|| markings=="_stop_arrows_sides_4":Marking_AvgArrow_WhiteFraction
@@ -1336,16 +1337,32 @@ ConventionalLane(dir,lanestotal,lanenumber,stopType)-->
 
 Sharrow(dir,lanestotal,lanenumber)-->
 	case lanenumber==0 && Bike_Lane_Type=="Sharrow":
-		alignScopeToAxes(y)
-		t(0,sharrowHeight,0) #Translate it up 
-		split(u,unitSpace,0){~1:NIL
-				|~2:split(v,unitSpace,0)
-					{~0.5:NIL|
-					~1.5:BikeLaneStamp(1.5,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
-					|~1.5:NIL}
-			|~Bike_Symbol_Spacing:NIL}*	
+		case dir==0 && Right_Bike_Lane_Width<=0:
+			alignScopeToAxes(y)
+			#t(0,sharrowHeight,0) # Optional method of representing stamp
+			split(u,unitSpace,0){~1:NIL
+					|~2:split(v,unitSpace,0)
+						{~0.5:NIL|
+						1.5:Sharrow_Stamp(dir,lanestotal,lanenumber)
+						|~1.5:NIL}
+				|~Bike_Symbol_Spacing:NIL}*	
+		case dir==2 && Left_Bike_Lane_Width<=0:
+			alignScopeToAxes(y)
+			#t(0,sharrowHeight,0) # Optional method of representing stamp
+			split(u,unitSpace,0){~1:NIL
+					|~2:split(v,unitSpace,0)
+						{~0.5:NIL|
+						1.5:Sharrow_Stamp(dir,lanestotal,lanenumber)
+						|~1.5:NIL}
+				|~Bike_Symbol_Spacing:NIL}*
+		else:
+			NIL	
 	else:
 		NIL
+Sharrow_Stamp(dir,lanestotal,lanenumber)-->
+	extrude(sharrowHeight)
+	comp(f) {all:BikeLaneStamp(1.5,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)}
+	
 		
 Transit_Lane_Reporting(dir)--> #Reports based on shape geometry and sends to allocator
 	report("Lane Width.Transit Lane Width (ft)",geometry.dv(0,unitSpace)*Feet) #Used to provide lane widths in feet
