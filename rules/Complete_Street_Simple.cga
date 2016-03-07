@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 2/12/2016
+ * Last Updated: 3/6/2016
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
 # ESRI Attribution License:
@@ -145,7 +145,7 @@ attr Center_Type						= "None"
 @Order(2) @Range(0,40) @Description("Is the combined center section width regardless of type. Does nothing for the barrier selection.")
 attr Center_Width						= 0
 @Order(3) @Range(0,4) @Description("Is the width of the walkways created by Median. They will override the planting width, and keep in mind there are two walkways for Plant:Walk:Plant.")
-attr WalkWay_Width 						= 0
+attr WalkWay_Width 						= case Center_Width<=Median_Layout_Threshold: 0 else: 3+Median_Walkway_Expansion
 @Order(4) @Range("Walk:Plant:Walk","Walk:Plant","Plant:Walk","Plant:Walk:Plant") @Description("Lays out the median/boulevard walkway configurations. In the case of Plant:Walk:Plant-the walkway rule is used twice so adjust walkway width accordingly.") 
 attr Planting_and_Walkway_Layout		="Walk:Plant:Walk"
 @Order(5) @Range(0,10)@Description("In the case of a boulevard, this is the combined width for the lanes and center between the walkways. Each lane set gets half allocated space. Keep in mind this means there is forced symmetry in lanes.")
@@ -162,9 +162,9 @@ attr Boulevard_Center_Width				= case Boulevard_Configuration=="Normal Lanes": P
 attr Median_Ground_Cover = "Standard Grass"
 #@Range("Random", "Conifer", "Desert", "Eudicot", "Monocot")
 @Order(4)@Range(0,10) @Description("Is the approximate length of the green space accomodating trees, it can be used to space out trees more without walkway spacing.")
-attr Median_Planting_Length				= 4
+attr Median_Planting_Length				= case Center_Width<=Median_Layout_Threshold: 8+Speed_Related_Expansion else: 4
 @Order(5) @Range(0,15) @Description("Creates a walkway spacing between created trees.")
-attr Median_Tree_Spacing				= 3
+attr Median_Tree_Spacing				= case Center_Width<=Median_Layout_Threshold: 0 else: 3
 @Order(6)@Description("Determines the species of the tree/plant selected for Tree 1. Random picks from 5 common tree types and is a good default.")@Range("Random","Alder Buckthorn","Amazon Sword Plant","American Chestnut","American Sycamore","Apricot","Australian Pine","Baldcypress","Balsam Fir","Bamboo","Banana Tree","Basswood","Bay Laurel","Black Locust","Blue Gum Eucalyptus","Boxwood","Cabbage Palm Fern","California Bay","California Incense Cedar","California Palm","California Redwood","California Walnut","Coconut Palm","Common Hawthorn","Common Whitebeam","Conker Tree","Date Palm","Desert Willow","Douglas Fir","European Beech","European Larch","Ficus","Field Elm","Flannelbush","Flowering Dogwood","Giant Sequoia","Hedgehog Agave","Japanese Angelica Tree","Lacy Tree Philodendron","Leyland Cypress","Lily of the Valley","Lodgepole Pine","Mediterranean Buckthorn","Mexican Palmetto","Mountain Mahogany","Northern Red Oak","Norway Maple","Norway Spruce","Orange Tree","Orchid","Oval-leaved Privet","Palm Lily","Palo Verde","Paper Birch","Parlour Palm","Prickly Pear Cactus","Red Alder","Red Hickory","Rhododendron Azaleas","Rose","Ruffle Palm","Saguaro Cactus","Sassafras","Scots Pine","Sea Islands Yucca","Shadbush","Snake Plant","Southern Magnolia","Spanish Broom","Strawberry Tree","Sugar Maple","Sunflower","Sweetgum","Umbrella Acacia","Western Juniper","White Ash","White Oak","White Poplar","White Willow","Witch Hazel","","_____________________________","GENERICS","","Generic Dead Tree","Generic Stump","Generic Unknown","","_____________________________","PROXIES","","Algarrobo","American Elderberry","American Pepper","American Silverberry","Athel Tamarisk","Avocado","Black Tupelo","Buttonbush","Canada Buffaloberry","Chinaberry Tree","Chinese Tallow Tree","Common Hackberry","Common Holly","Common Persimmon","Desert Bitterbrush","European Hornbeam","Giant Chinquapin","Honey Locust","Hophornbeam","Huckleberry Shrub","Japanese Hemlock","Japanese Nutmeg","Judas Tree","Lawson Cypress","Loblolly Bay","Mexican Buckeye","Necklacepod","Northern Bilberry","Northern White Cedar","Octopus Tree","Osage Orange","Paper Bark Tree","Pawpaw","Persian Silk Tree","Princess Tree","Smooth Sumac","Sourwood","Southern Wax Myrtle","Tanoak","Tree of Heaven","Turkish Hazel","Western Soapberry","White Mulberry","Yellow Poplar","Yew")
 attr Median_Tree_1_Type = "Random"
 @Order(7) @Range(0,1) @Description("Reduces the probability of Tree 1 appearing in a typical designated location.")@Hidden
@@ -218,7 +218,7 @@ attr Left_Buffer_Width			= 0
 attr Buffer_Protection			= true
 @Order(7)@Description("If on/true, parking lane is closer to the through lane, and bicycle lane is protected from through traffic. Keep in mind how the door zone influences bicycle lane placement.")
 attr Parking_Protection 		= _IsCycleTrackBuffer
-@Order(8)@Range("Painted Stripes","Curb Buffer","Curb Buffer with Plantings","Curb Buffer with Trees","Solid White","Cycle Track With Planters","Cycle Track With Tubular Markers","Asphalt","Shoulder")@Description("This attribute controls the bicycle buffer type and form, but also can become plain asphalt or a shoulder.")
+@Order(8)@Range("Painted Stripes","Curb Buffer","Curb Buffer with Plantings","Curb Buffer with Trees","Solid White","Cycle Track With Planters","Cycle Track With Tubular Markers","Spaced Curb Buffer","Asphalt","Shoulder")@Description("This attribute controls the bicycle buffer type and form, but also can become plain asphalt or a shoulder.")
 attr Buffer_Type				="Painted Stripes"
 @Order(9)@Range(0,10)@Description("Controls  the buffers spacing of objects such as tubular markers, planters, and tree/plantings (Trees/Plants match Sidewalk Plantings if selected).")@Hidden			
 attr Buffer_Object_Spacing		=_Default_Buffer_Object_Spacing
@@ -283,7 +283,7 @@ attr Sidewalk_Bus_Stop_Location			= "Far-side"
 @Order(3) @Range(-4,4)@Description("As it stands, the Bus Stop will be as far back as the Planting Width, if more adjustment is required, this attribute can be used to set back the Bus Stop further back or move it closer to the curb.")
 attr Sidewalk_Bus_Stop_Setback			= 1
 @Order(4)@Range("None","Both","Right","Left")@Description("Will place benches in between the spacing between Trees on the sidewalk side chosen.")
-attr Sidewalk_Benches					=case Not_High_LOD || sidewalkWidth<2.5: "None" else: "Both"
+attr Sidewalk_Benches					=case Not_High_LOD || sidewalkWidth<3.5: "None" else: "Both"
 @Order(5)@Range("None","Both","Right","Left")@Description("Determines whether an object is placed and what side of the street or walkways relevant objects are placed.")
 attr Parking_Meters						="None"
 @Order(6)@Range(0,20) @Description("Determines the spacing between each parking meter. No shape is created in the sections in between objects.")@Hidden
@@ -420,6 +420,9 @@ const PaintLineWidth				= 0.1 #uvSpace 36/256-about 4 in
 const Rumble_Strip_Len				= 1.5 #FWHA 7 in wide per bump with 5 in ashpalt spacing
 const Rumble_Strip_Wid				= .355 #FWHA-typically 12-16 in wide
 #SideWalk and Median Constants
+const Median_Layout_Threshold		= Lane_Width*2
+const Median_Walkway_Expansion		= ln(abs((Center_Width-Median_Layout_Threshold)/2))
+const Speed_Related_Expansion		= ln(abs(Speed_Limit_in_MPH/5))
 const Bench_Threshold_Width			= .9
 const Bench_Adjuster				=.5
 const Default_Pavement				= SidewalkFolder+"/Concrete Clean Light.jpg"
@@ -567,7 +570,7 @@ _PlantingWidth=
 	case sidewalkSide=="Right":
 		_Minof(_Maxof((sidewalkWidthRight*0.33),0.66),1.8)
 	else:
-		_Minof(_Maxof((sidewalkWidthRight*0.33),0.66),1.8)
+		_Minof(_Maxof((sidewalkWidthLeft*0.33),0.66),1.8)
 
 _ParkingWidth(side)					=
 	case side=="Right":
@@ -1532,6 +1535,11 @@ BikeBuffer(Buffer_Width,Dir)-->
 		color(_Usage("Bikeways"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 		Striped_Buffer(Buffer_Width)
 		ObjectSetup("Tubular Marker",Buffer_Object_Spacing,"/Tubular_Marker.obj",Buffer_Width)
+	case Buffer_Type=="Spaced Curb Buffer":
+		color(_Usage("(Bikeways"))
+		split(u,unitSpace,0) {{~Buffer_Object_Spacing:Asphalt(true,1,"Bikeways")
+								|~Buffer_Object_Spacing:Raised_Curb("Buffer",1)}*
+								|~Buffer_Object_Spacing:Asphalt(true,1,"Bikeways")}
 	else:
 		color(_Usage("Bikeways"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 		Striped_Buffer(Buffer_Width)
@@ -2424,10 +2432,12 @@ SidewalkTop(side)-->
 	case valency>1:
 		Pavement("Corners")
 	case Sidewalk_Ground_Cover =="None":
-		split(v,unitSpace,0) {CurbtoPlantingGap:Sign_Loader(side)|~1:Pavement("Through Zone") People}
+		split(v,unitSpace,0) {CurbtoPlantingGap:Sign_Loader(side)
+							|_Side_Sidewalk_Planting_Width(side):Sidewalk_WOPlant_Loading_Section (case side=="Right":0 else:2)
+							|~1:Pavement("Through Zone") People}
 	else:
 		split(v,unitSpace,0){CurbtoPlantingGap:Sign_Loader(side)
-							|_Side_Sidewalk_Planting_Width(side): Sidewalk_Loading_Section(case side=="Right":0 else:2)
+							|_Side_Sidewalk_Planting_Width(side): Sidewalk_WPlant_Loading_Section (case side=="Right":0 else:2)
 							|~1:Pavement("Through Zone") People}
 Sign_Loader(side)-->
 	Pavement("Sign Gap")
@@ -2544,7 +2554,7 @@ Pavement(Location) -->
 		scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
 		rotateUV(0, Sidewalk_Texture_Rotation)
 		
-Sidewalk_Loading_Section(Dir)-->
+Sidewalk_WPlant_Loading_Section (Dir)-->
 	split(u,unitSpace,0){(_Sidewalk_CrossStop_Gap(Dir,"Begin")):Pavement("Cross Walk Begin Gap")
 						|~_Bus_Sidewalk_Base("Near-side"):Bus_Stop_Base("Sidewalk",0)
 						|~geometry.du(0,unitSpace)/2:Sidewalk_Plant_Side("Begin")
@@ -2552,6 +2562,15 @@ Sidewalk_Loading_Section(Dir)-->
 						|~geometry.du(0,unitSpace)/2:Sidewalk_Plant_Side("End")
 						|~_Bus_Sidewalk_Base("Far-side"):Bus_Stop_Base("Sidewalk",0)
 						|(_Sidewalk_CrossStop_Gap(Dir,"End") ):Pavement("Cross Walk End Gap")}
+
+Sidewalk_WOPlant_Loading_Section (Dir)-->
+	split(u,unitSpace,0){(_Sidewalk_CrossStop_Gap(Dir,"Begin")):Pavement("Cross Walk Begin Gap")People
+						|~_Bus_Sidewalk_Base("Near-side"):Bus_Stop_Base("Sidewalk",0)
+						|~geometry.du(0,unitSpace)/2:Pavement("Through Zone")People
+						|~_Bus_Sidewalk_Base("Mid-Block"):Bus_Stop_Base("Sidewalk",0)
+						|~geometry.du(0,unitSpace)/2:Pavement("Through Zone") People
+						|~_Bus_Sidewalk_Base("Far-side"):Bus_Stop_Base("Sidewalk",0)
+						|(_Sidewalk_CrossStop_Gap(Dir,"End") ):Pavement("Cross Walk End Gap")People}
 
 Sidewalk_Object_Split(RotationAng)-->
 	split(u,unitSpace,0){'_Bus_Alloc("Sidewalk"):Bus_Objects_Insert("Bus Stop",Bus_Stop_Object,RotationAng,Sidewalk_Bus_Stop_Setback,2,3,3.35)
