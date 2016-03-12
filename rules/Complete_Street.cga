@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 3/11/2016
+ * Last Updated: 3/12/2016
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
 # ESRI Attribution License:
@@ -69,7 +69,7 @@ version "2015.2"
 @Group("DISPLAY OPTIONS",0) @Order(1)@Description("When true, textures are on display, when false textures are removed. If true it deletes an unused UVset (see comments for details).")
 attr Display_Textures = true
 @Group("DISPLAY OPTIONS") @Order(2) @Description("Visually colors the entire street model based on the attributes of a street. Usage thematic looks best when textures are turned off.")
-@Range("Thematics Off", "Solid Color", "Peak Runoff/Permeability","Bike Preference","Pedestrian Preference","Auto Preference","Transit Preference","Usage","Transit Highlight","Bicycle Highlight","Auto Highlight","Pedestrian Highlight","Flood Scenario")
+@Range("Thematics Off", "Solid Color", "Peak Runoff/Permeability","Bike Preference","Pedestrian Preference","Auto Preference","Transit Preference","All Mode Preference","Usage","Transit Highlight","Bicycle Highlight","Auto Highlight","Pedestrian Highlight","Planting Highlight","Flood Scenario")
 attr Display_Thematics = "Thematics Off" 
 @Group("DISPLAY OPTIONS") @Order(3) @Description("When the Solid Color thematic is used for highlighting certain streets or mode classes, this chooses the color that is utilized by the thematic.") #@Hidden
 attr Solid_Color = "#FFFFFF"
@@ -1007,6 +1007,8 @@ _PedestrianThematic=
 		NACTOPedestrian
 	case Display_Thematics=="Pedestrian Highlight":
 		Solid_Color
+	case Display_Thematics=="All Mode Preference":
+		getHexColorString(1-_PedRank,_PedRank,0)
 	else:
 		Secondary_Solid_Color
 _TransitThematic=
@@ -1014,6 +1016,8 @@ _TransitThematic=
 		NACTOTransit
 	case Display_Thematics=="Transit Highlight":
 		Solid_Color
+	case Display_Thematics=="All Mode Preference":
+		getHexColorString(1-_TransitRank,_TransitRank,0)
 	else:
 		Secondary_Solid_Color
 _BikewaysThematic=
@@ -1021,6 +1025,8 @@ _BikewaysThematic=
 		NACTOBike
 	case Display_Thematics=="Bicycle Highlight":
 		Solid_Color
+	case Display_Thematics=="All Mode Preference":
+		getHexColorString(1-_BikeRank,_BikeRank,0)
 	else:
 		Secondary_Solid_Color
 _AutoThematic=
@@ -1028,16 +1034,26 @@ _AutoThematic=
 		NACTOAuto
 	case Display_Thematics=="Auto Highlight":
 		Solid_Color
+	case Display_Thematics=="All Mode Preference":
+		getHexColorString(1-_AutoRank,_AutoRank,0)
 	else:
 		Secondary_Solid_Color
+
 _PlantingThematic=
 	case Display_Thematics=="Usage":
 		NACTOPlanting
+	case Display_Thematics=="Planting Highlight":
+		Solid_Color
+	case Display_Thematics=="All Mode Preference":
+		getHexColorString(1-_PedRank,_PedRank,0)
 	else:
 		Secondary_Solid_Color
+
 _ConflictZoneThematic=
 	case Display_Thematics=="Usage":
 		NACTOConflictZone
+	case Display_Thematics=="All Mode Preference":
+		getHexColorString(1-_PedRank,_PedRank,0)
 	else:
 		Secondary_Solid_Color 	
 		
