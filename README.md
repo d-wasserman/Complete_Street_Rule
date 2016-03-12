@@ -23,7 +23,7 @@ This still needs to be tested more so please comment if you have any issues with
 
 8. Addition of Sharrows: Added support for sharrows (shared use lanes). The sharrows only appear on the curb lane.
 
-9. Addition of Mode Focused Thematics: Allows a user to highlight specific imporvements to a street with custom color choices. For example, if you add a bike lane and select "Bicycle Highlight" thematic, the solid color attribute will only highlight added bike lanes. Also, the addition of  a All Mode Preference option helps visualize all the mode preference reports at once.  
+9. Addition of Mode Focused Thematics: Allows a user to highlight specific improvements to a street with custom color choices. For example, if you add a bike lane and select "Bicycle Highlight" thematic, the solid color attribute will only highlight added bike lanes. Also, the addition of a All Mode Preference option helps visualize all the mode preference reports at once.  
 
 10. Other miscellaneous changes.
 
