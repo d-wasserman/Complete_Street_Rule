@@ -21,9 +21,11 @@ This still needs to be tested more so please comment if you have any issues with
 
 7. Addition of Complete_Street_Simple.CGA: This additional included rule has about ~50 fewer attributes while maintaining the core functionality of the rule. This rule is intended to make demos or charrettes a little easier.
 
-8. Addition of Sharrows: Added support for sharrows (shared use lanes). The sharrows only appear on the curb lane. 
+8. Addition of Sharrows: Added support for sharrows (shared use lanes). The sharrows only appear on the curb lane.
 
-9. Other miscellaneous changes.
+9. Addition of Mode Focused Thematics: Allows a user to highlight specific imporvements to a street with custom color choices. For example, if you add a bike lane and select "Bicycle Highlight" thematic, the solid color attribute will only highlight added bike lanes. Also, the addition of  a All Mode Preference option helps visualize all the mode preference reports at once.  
+
+10. Other miscellaneous changes.
 
 	-Dead end exception, dead ends, treated like they have a connection (for singular cross sections).
 
