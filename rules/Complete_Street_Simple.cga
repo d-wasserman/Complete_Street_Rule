@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 3/12/2016
+ * Last Updated: 4/3/2016
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
 # ESRI Attribution License:
@@ -142,7 +142,7 @@ attr Rear_Parking_Spacing		= 0
 
 
 @Group("CENTER SECTION LAYOUT","Basic Attributes", 2) 
-@Order(1) @Range("None","Median", "Boulevard", "Barrier","Barrier & Shoulder","Center Turn Lane")@Description("This attribute is key to picking a center type. If none, it is a centerline, but each choice creates different center section layouts.")
+@Order(1) @Range("None","Median", "Boulevard", "Barrier","Barrier & Shoulder","Center Turn Lane","Median With Turn Lane")@Description("This attribute is key to picking a center type. If none, it is a centerline, but each choice creates different center section layouts.")
 attr Center_Type						= "None"
 @Order(2) @Range(0,40) @Description("Is the combined center section width regardless of type. Does nothing for the barrier selection.")
 attr Center_Width						= 0
@@ -210,7 +210,7 @@ attr Transit_Paint_Line_Sides		= "Both"
 attr Right_Bike_Lane_Width 		=0
 @Order(2)@Range(0,6)@Description("Desirable bike lane width adjacent to a curbface is 6 feet (1.8288m), but rideable surface adjacent  to a street edge is 4 feet (1.2192m) with minimum of 3 feet (0.9144m). In areas where illegal parking is an issue, at least 5 feet (1.524m) is suggested.")
 attr Left_Bike_Lane_Width		=0
-@Order(3)@Range("One-way","Two-way","Sharrow")@Description("The one-way option uses the full lane width for each lane, while the two-way option will allocate half of the width to each sub-lane.")
+@Order(3)@Range("One-way","Two-way","Sharrow","Sidewalk")@Description("The one-way option uses the full lane width for each lane, while the two-way option will allocate half of the width to each sub-lane.")
 attr Bike_Lane_Type				="One-way"
 @Order(4)@Range(0,6)@Description("Bicycle Buffers have desired minimums of about 3 feet, but should be at least 18 inches wide because it is impractical to mark a zone narrower than that.")
 attr Right_Buffer_Width			= 0
@@ -422,7 +422,7 @@ const PaintLineWidth				= 0.1 #uvSpace 36/256-about 4 in
 const Rumble_Strip_Len				= 1.5 #FWHA 7 in wide per bump with 5 in ashpalt spacing
 const Rumble_Strip_Wid				= .355 #FWHA-typically 12-16 in wide
 #SideWalk and Median Constants
-const Median_Layout_Threshold		= Lane_Width*2
+const Median_Layout_Threshold		= case find(Center_Type,"Turn Lane",0)!=-1:Lane_Width*3 else: Lane_Width*2
 const Median_Walkway_Expansion		= ln(abs((Center_Width-Median_Layout_Threshold)/2))
 const Speed_Related_Expansion		= ln(abs(Speed_Limit_in_MPH/5))
 const Bench_Threshold_Width			= .9
@@ -433,8 +433,12 @@ const Median_Stop_Adjuster			=-1
 const CurbtoPlantingGap				=.1
 const Curb_Depth					= 0.1574
 const BusStop_Length				= 12.192
-const Parklet_Shift					= case Space_Management== "Best Fit" || (bool(Parking_Protection) && _Minof(Left_Buffer_Width+Left_Bike_Lane_Width,Right_Buffer_Width+Right_Bike_Lane_Width)>0):0 else:-_EmptySpace #if parking protection is on a shift will lead to geometric collision, but it will choose to collide if oneside does not have a bikelane/buffer (check later).   
+const Parklet_Shift					= case Space_Management== "Best Fit" || (bool(Parking_Protection) && _Minof(Left_Buffer_Width+Street_Left_Bike_Lane_Width,Right_Buffer_Width+Street_Right_Bike_Lane_Width)>0):0 else:-_EmptySpace #if parking protection is on a shift will lead to geometric collision, but it will choose to collide if oneside does not have a bikelane/buffer (check later).   
 const Max_Sidewalk_Gap				= 5.4 #change this if you want a smaller or larger gap between first tree splits and crosswalks
+const Median_Turn_Transition_Depth  = 6
+const Minimum_Turn_Curb_Width		= 1.5/Feet
+const Turn_Pocket_Curb_Width		=_Maxof(Minimum_Turn_Curb_Width,Center_Width/10)
+const Split_Divider_Width			= case LOD_Setting=="Low":3/Feet case LOD_Setting=="High":1/Feet else: 1.5/Feet
 #Bike Constants
 const sharrowHeight					=0.005
 const Buffer_StartGap				=.2
@@ -443,7 +447,12 @@ const BikeBox_Fraction				=.75
 const Buffer_Stripe_Length			= 3.048 #Not used, but can be. 
 const Center_Tube_Marker_Dist		=.1
 const _Default_Buffer_Object_Spacing= case Buffer_Type=="Curb Buffer with Trees":8 case Buffer_Type=="Cycle Track With Planters":2.5 else:1.5
-const BikeBoxGeometryThreshold		= Lane_Width *BikeBox_Fraction+_Maxof(Right_Bike_Lane_Width,Left_Bike_Lane_Width)-.1
+const BikeBoxGeometryThreshold		= Lane_Width *BikeBox_Fraction+_Maxof(Street_Right_Bike_Lane_Width,Street_Left_Bike_Lane_Width)-.1
+const Street_Right_Bike_Lane_Width	=	case Bike_Lane_Type=="Sidewalk":0 else:Right_Bike_Lane_Width
+const Street_Left_Bike_Lane_Width	=	case Bike_Lane_Type=="Sidewalk":0 else:Left_Bike_Lane_Width
+const Sidewalk_Right_Bike_Lane_Width=	case Bike_Lane_Type=="Sidewalk":Right_Bike_Lane_Width else:0
+const Sidewalk_Left_Bike_Lane_Width	=	case Bike_Lane_Type=="Sidewalk":Left_Bike_Lane_Width else:0
+
 #Vegetation Constants
 const Random_Grass					=(fileRandom(GrassFolder + "/*.jpg"))
 #Parking Constants
@@ -473,14 +482,14 @@ const CenterTurnLane_WhiteFraction  = 0.0632#surprisingly this the avg arrow fra
 const Marking_Stop_WhiteFraction	= 0.0796
 const Marking_AvgArrow_WhiteFraction= 0.0666 #Is the average of the arrow textures, all of them were within 2% of each other error created by using an average is marginal
 const Marking_AvgPlain_WhiteFraction= 0.03
-const Crosswalk_PaintFraction		= .5
+const Crosswalk_PaintFraction		= 0.5
 const HOV_Diamond_WhiteFraction		= 0.0230
 const MainLane_WhiteFraction		= 0.0121
 #Stop Distance Reporting Constants
 #AASHTO Numbers of interest: Brake reaction time: 2.5 seconds (capabilities of most drivers), 90 percent deceleration rate: 11.2 ft/s^2- reports assume at grade-future iterations will adapt to percent max slope.
 const Brake_Reaction_Time			= 2.5 #s
 const Deceleration_Rate				= 11.2 #ft/s^2
-const Design_Speed					=  case Speed_Limit_in_MPH>=40:Speed_Limit_in_MPH+7.5 else: Speed_Limit_in_MPH # see Below- value chosen is on a much lower end. Please adjust as seen fit. Decision basis below.
+const Design_Speed					= case Speed_Limit_in_MPH>=40:Speed_Limit_in_MPH+7.5 else: Speed_Limit_in_MPH # see Below- value chosen is on a much lower end. Please adjust as seen fit. Decision basis below.
 # Source 8: TRB study on Design vs Speed limits: (Discussion informed by research 
 #"Factors used to select design speed are functional classification, rural versus urban,
 #and terrain (used by AASHTO); AASHTO Green Book procedure, legal speed limit,
@@ -615,6 +624,11 @@ _Side_Sidewalk_Planting_Width(side) =
  		Right_Sidewalk_Planting_Width
  	else:
  		Left_Sidewalk_Planting_Width
+_Sidewalk_BikeLane_Width(Dir)		=
+	case Dir==0:
+		Sidewalk_Right_Bike_Lane_Width
+	else:
+		Sidewalk_Left_Bike_Lane_Width
 _Right_Car_Angle					=
 	case Right_Parking_Type	=="Parallel":
 		0
@@ -722,10 +736,10 @@ const HardscapePaverCost = 25		# In square meters
 ###################################################
 #Split Based and Misc Functions
 _RightSplitSum=
-	Right_Bike_Lane_Width + Right_Parking_Width + Right_Buffer_Width				#Generates right road side features that need to be fractions of lanewidths
+	Street_Right_Bike_Lane_Width + Right_Parking_Width + Right_Buffer_Width				#Generates right road side features that need to be fractions of lanewidths
 	
 _LeftSplitSum=
-	Left_Bike_Lane_Width + Left_Parking_Width + Left_Buffer_Width				#Generates right road side features that need to be fractions of lanewidths
+	Street_Left_Bike_Lane_Width + Left_Parking_Width + Left_Buffer_Width				#Generates right road side features that need to be fractions of lanewidths
 
 _Bike_Box_Gap(street_side)=
 	case street_side=="Begin" && bool(Left_Bike_Box):Bike_Box_Length/2
@@ -745,9 +759,11 @@ _IsCycleTrackBuffer=
 	else:
 		false
 _IsCycleTrack=
-	case bool(Parking_Protection) && _MaxParkingSum>1 && (Right_Bike_Lane_Width>0 || Left_Bike_Lane_Width>0)&&_Orientation_Modified_SplitSum>=4.572:#Parking Scenario
+	case bool(Parking_Protection) && _MaxParkingSum>1 && (Street_Right_Bike_Lane_Width>0 || Street_Left_Bike_Lane_Width>0)&&_Orientation_Modified_SplitSum>=4.572:#Parking Scenario
 		true
-	case _IsCycleTrackBuffer && (Right_Bike_Lane_Width>0 || Left_Bike_Lane_Width>0) &&_MaxParkingSum<=1 && _Orientation_Modified_SplitSum>=1.8288: #Plain Buffer
+	case _IsCycleTrackBuffer && (Street_Right_Bike_Lane_Width>0 || Street_Left_Bike_Lane_Width>0) &&_MaxParkingSum<=1 && _Orientation_Modified_SplitSum>=1.8288: #Plain Buffer
+		true
+	case Bike_Lane_Type=="Sidewalk" && (Sidewalk_Right_Bike_Lane_Width>0||Sidewalk_Left_Bike_Lane_Width>0):
 		true
 	else:
 		false
@@ -818,6 +834,7 @@ _PaintLineControl(side,Control_String)=
 		case Control_String=="Right":	1
 		case Control_String=="Left":	0
 		else: 							0
+		
 _Bus_Furniture_Base(Center_Section,Location,Facing_Side)=
 	case Median_Bus_Stop=="None":#2
 		0
@@ -1097,7 +1114,7 @@ _BikeSense_Modifier			=#changes combined "bike protection" width based orientati
 _BikeRank				=#Adapted from MTI Report 11-19 # Does not take into account Boulevard Cycle Paths
 	case _IsCycleTrack:
 		1
-	case !bool(Parking_Protection) && _MaxParkingSum>1 && (Right_Bike_Lane_Width>0 || Left_Bike_Lane_Width>0) :
+	case !bool(Parking_Protection) && _MaxParkingSum>1 && (Street_Right_Bike_Lane_Width>0 || Street_Left_Bike_Lane_Width>0) :
 		case floor((DirLaneTotal))<=1 &&  Speed_Limit_in_MPH<=25 && Level_of_Blockage=="Rare" &&_Orientation_Modified_SplitSum>=4.572:
 			1 #LTS 1- 
 		case (Speed_Limit_in_MPH<25)||(floor((DirLaneTotal))<=2 && Speed_Limit_in_MPH<=30 && Level_of_Blockage=="Rare" &&_Orientation_Modified_SplitSum>=4.2672):
@@ -1108,7 +1125,7 @@ _BikeRank				=#Adapted from MTI Report 11-19 # Does not take into account Boulev
 			0 #LTS 4
 			
 			
-	case (Right_Bike_Lane_Width>0 || Left_Bike_Lane_Width>0) &&_MaxParkingSum<=1: # Bike Lanes not along parking lane
+	case (Street_Right_Bike_Lane_Width>0 || Street_Left_Bike_Lane_Width>0) &&_MaxParkingSum<=1: # Bike Lanes not along parking lane
 		case floor((DirLaneTotal))<=1 &&  Speed_Limit_in_MPH<=30 && Level_of_Blockage=="Rare" && _Orientation_Modified_SplitSum>=1.8288:
 			1 #LTS 1
 		case (Speed_Limit_in_MPH<25)|| (Speed_Limit_in_MPH<=35  &&(floor((DirLaneTotal))<=(case Center_Type =="Median":2 else: 1)&& Level_of_Blockage=="Rare" && _Orientation_Modified_SplitSum<1.8288)):
@@ -1140,15 +1157,15 @@ _PedRank				=#Rule creator criteria-a road with low speed limits and less lanes 
 	 	else:
 	 		0
 _AutoRank				= #Criteria is simply based on lanewidths, on-street parking presence,lane number (does it enable passing?), and reduction of turning conflicts (is there a center turn lane). The top rank is practically high way conditions with a shoulder (shoulders reduce driver stress about accidents /reduce variance is highway performance by providing vehicle storage). 
-		case ((rint(DirLaneTotal))>=3 && Lane_Width >=3.6576 && _Maxof(Left_Parking_Width,Right_Parking_Width)==0) || (Center_Type=="Center Turn Lane" && (rint((nLanesTotal/2) +_Transit_Lane_Count/2))>=2 && Lane_Width >=3.3528 && _Maxof(Left_Parking_Width,Right_Parking_Width)==0)&& (Buffer_Type=="Shoulder" || Center_Type=="Barrier & Shoulder") :
+		case ((rint(DirLaneTotal))>=3 && Lane_Width >=3.6576 && _Maxof(Left_Parking_Width,Right_Parking_Width)==0) || (findFirst(Center_Type,"Turn Lane")!=-1 && (rint((nLanesTotal/2) +_Transit_Lane_Count/2))>=2 && Lane_Width >=3.3528 && _Maxof(Left_Parking_Width,Right_Parking_Width)==0)&& (Buffer_Type=="Shoulder" || Center_Type=="Barrier & Shoulder") :
 			1
-		case ((rint(DirLaneTotal))>=2 && Lane_Width >=3.6576 && _Maxof(Left_Parking_Width,Right_Parking_Width)==0) || (Center_Type=="Center Turn Lane" && (rint((nLanesTotal/2) +_Transit_Lane_Count/2))>=2 && Lane_Width >=3.3528 && _Maxof(Left_Parking_Width,Right_Parking_Width)==0):
+		case ((rint(DirLaneTotal))>=2 && Lane_Width >=3.6576 && _Maxof(Left_Parking_Width,Right_Parking_Width)==0) || (findFirst(Center_Type,"Turn Lane")!=-1 && (rint((nLanesTotal/2) +_Transit_Lane_Count/2))>=2 && Lane_Width >=3.3528 && _Maxof(Left_Parking_Width,Right_Parking_Width)==0):
 			.8
-		case ((rint(DirLaneTotal))>=2 && Lane_Width >=3.358  && (Left_Parking_Width==0 || Right_Parking_Width==0)) || (Center_Type=="Center Turn Lane" && (rint((nLanesTotal/2) +_Transit_Lane_Count/2))>=1 && Lane_Width >=3.048 && _Maxof(Left_Parking_Width,Right_Parking_Width)==0):
+		case ((rint(DirLaneTotal))>=2 && Lane_Width >=3.358  && (Left_Parking_Width==0 || Right_Parking_Width==0)) || (findFirst(Center_Type,"Turn Lane")!=-1 && (rint((nLanesTotal/2) +_Transit_Lane_Count/2))>=1 && Lane_Width >=3.048 && _Maxof(Left_Parking_Width,Right_Parking_Width)==0):
 			.6
-		case ((rint(DirLaneTotal))>=1 && Lane_Width >=3.048  && (Left_Parking_Width==0 || Right_Parking_Width==0)) || (Center_Type=="Center Turn Lane" && (rint((nLanesTotal/2) + _Transit_Lane_Count/2))>=1 && Lane_Width >=3.048 && (Left_Parking_Width==0 ||Right_Parking_Width==0)):
+		case ((rint(DirLaneTotal))>=1 && Lane_Width >=3.048  && (Left_Parking_Width==0 || Right_Parking_Width==0)) || (findFirst(Center_Type,"Turn Lane")!=-1 && (rint((nLanesTotal/2) + _Transit_Lane_Count/2))>=1 && Lane_Width >=3.048 && (Left_Parking_Width==0 ||Right_Parking_Width==0)):
 			.4
-		case ((rint(DirLaneTotal))>=1 && Lane_Width >=3.048)  || (Center_Type=="Center Turn Lane" && (rint((nLanesTotal/2) +_Transit_Lane_Count/2))>=1 && Lane_Width >=3.048):
+		case ((rint(DirLaneTotal))>=1 && Lane_Width >=3.048)  || (findFirst(Center_Type,"Turn Lane")!=-1 && (rint((nLanesTotal/2) +_Transit_Lane_Count/2))>=1 && Lane_Width >=3.048):
 			.2
 		else:
 			0
@@ -1406,7 +1423,7 @@ ConventionalLane(dir,lanestotal,lanenumber,stopType)-->
 
 Sharrow(dir,lanestotal,lanenumber)-->
 	case lanenumber==0 && Bike_Lane_Type=="Sharrow":
-		case dir==0 && Right_Bike_Lane_Width<=0:
+		case dir==0 && Street_Right_Bike_Lane_Width<=0:
 			alignScopeToAxes(y)
 			#t(0,sharrowHeight,0) # Optional method of representing stamp
 			split(u,unitSpace,0){~1:NIL
@@ -1415,7 +1432,7 @@ Sharrow(dir,lanestotal,lanenumber)-->
 						1.5:Sharrow_Stamp(dir,lanestotal,lanenumber)
 						|~1.5:NIL}
 				|~Bike_Symbol_Spacing:NIL}*	
-		case dir==2 && Left_Bike_Lane_Width<=0:
+		case dir==2 && Street_Left_Bike_Lane_Width<=0:
 			alignScopeToAxes(y)
 			#t(0,sharrowHeight,0) # Optional method of representing stamp
 			split(u,unitSpace,0){~1:NIL
@@ -1498,15 +1515,13 @@ HOVlaneStamp(dir)-->
 #parking, bike, and buffer lanes are constructed. 
 
 RightSplitSpace-->
-	
 	scaleUV(0,1,case bool(Parking_Protection) :-1 else:1)
 	split(v,unitSpace,0){Right_Parking_Width :ParkingLane("Right",Right_Parking_Type,Right_Parking_Length,Right_Parking_Width)
-						|( Right_Bike_Lane_Width + Right_Buffer_Width ):RightBikeLaneSpace("list")}
+						|( Street_Right_Bike_Lane_Width + Right_Buffer_Width ):RightBikeLaneSpace("list")}
 
 LeftSplitSpace-->
-	
 	scaleUV(0,1,case bool(Parking_Protection) :-1 else:1)
-	split(v,unitSpace,0){( Left_Bike_Lane_Width + Left_Buffer_Width ):LeftBikeLaneSpace("list")
+	split(v,unitSpace,0){( Street_Left_Bike_Lane_Width + Left_Buffer_Width ):LeftBikeLaneSpace("list")
 							| Left_Parking_Width :ParkingLane("Left",Left_Parking_Type,Left_Parking_Length,Left_Parking_Width)}
 						
 ####################
@@ -1516,7 +1531,7 @@ LeftBikeLaneSpace(list)-->
 	 
 	scaleUV(0,1,case bool(Buffer_Protection) : -1 else:1)
 	scaleUV(0,1,case bool(Parking_Protection) :-1 else:1)
-	split(v,unitSpace,0) { Left_Bike_Lane_Width :LeftBikeLaneSection(list)
+	split(v,unitSpace,0) { Street_Left_Bike_Lane_Width :LeftBikeLaneSection(list)
 						  |Left_Buffer_Width :BikeBuffer(Left_Buffer_Width,2)}
 
 RightBikeLaneSpace(list)-->
@@ -1524,22 +1539,21 @@ RightBikeLaneSpace(list)-->
 	scaleUV(0,1,case bool(Buffer_Protection) : -1 else:1)
 	scaleUV(0,1,case bool(Parking_Protection) :-1 else:1)
 	split(v,unitSpace,0) {Right_Buffer_Width :BikeBuffer(Right_Buffer_Width,0)
-						 |Right_Bike_Lane_Width :RightBikeLaneSection(list)}
+						 |Street_Right_Bike_Lane_Width :RightBikeLaneSection(list)}
 #BikeLane Start
 
 RightBikeLaneSection(list)-->
-	case Bike_Lane_Type=="One-way" ||Bike_Lane_Type=="Sharrow":
-		BikeLane(1,Right_Bike_Lane_Width)
+	case Bike_Lane_Type=="Two-way":
+		split(v,unitSpace,0) {'.5:BikeLane(-1,Street_Right_Bike_Lane_Width)|~1:BikeLane(1,Street_Right_Bike_Lane_Width)}						
 	else:
-		split(v,unitSpace,0) {'.5:BikeLane(-1,Right_Bike_Lane_Width)|~1:BikeLane(1,Right_Bike_Lane_Width)}						
-
-LeftBikeLaneSection(list)-->
-	case Bike_Lane_Type=="One-way"||Bike_Lane_Type=="Sharrow":
-		BikeLane(-1,Left_Bike_Lane_Width)
-	else:
-		split(v,unitSpace,0) {'.5:BikeLane(-1,Left_Bike_Lane_Width)| ~1:BikeLane(1,Left_Bike_Lane_Width)}						
+		BikeLane(1,Street_Right_Bike_Lane_Width)
 		
-
+LeftBikeLaneSection(list)-->
+	case Bike_Lane_Type=="Two-way":
+		split(v,unitSpace,0) {'.5:BikeLane(-1,Street_Left_Bike_Lane_Width)| ~1:BikeLane(1,Street_Left_Bike_Lane_Width)}						
+	else:
+		BikeLane(-1,Street_Left_Bike_Lane_Width)
+		
 BikeLane(sideflip,Width)-->#Was Left,now both, fairly modular
 	Bikes((case sideflip==1:0 else: 2),(case Bike_Lane_Type=="Two-way":Width/2 else: Width))
 	color( _ModeClassifier ("Bikeways"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
@@ -1678,12 +1692,12 @@ BikeBoxCreation(side)-->
 						  	  PaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")
 						  	  |~1:BikeBoxSymbol(side)
 						  	  |ThickPaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")}
-						  |Left_Bike_Lane_Width -PaintLineWidth*_Bike_Paint_Adjuster:split(u,unitSpace,0){
+						  |Street_Left_Bike_Lane_Width -PaintLineWidth*_Bike_Paint_Adjuster:split(u,unitSpace,0){
 						  		PaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")|~1:AsphaltPainted(Bike_Box_Color_Override,true,1,"Bikeways")}
 						  |PaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")}
 	else:
 		split(v, unitSpace,0) {PaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")
-							  | Right_Bike_Lane_Width -PaintLineWidth*_Bike_Paint_Adjuster:split(u,unitSpace,0){
+							  | Street_Right_Bike_Lane_Width -PaintLineWidth*_Bike_Paint_Adjuster:split(u,unitSpace,0){
 							  		~1:AsphaltPainted(Bike_Box_Color_Override,true,1,"Bikeways")|PaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")}
 						  	  |~1:split(u, unitSpace,0){
 						  	 	 ThickPaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")
@@ -1860,6 +1874,8 @@ CenterLineReporting-->
 CenterSpace -->
 	case Center_Type =="Median":
 		Raised_Curb("Median",1)# IF a median, and this will be use dto make a different rule
+	case Center_Type =="Median With Turn Lane":
+		MedianWTurnLane
 	case Center_Type =="Boulevard":
 		Boulevard
 	case Center_Type =="Barrier":
@@ -1878,7 +1894,36 @@ CenterSpace -->
 							| _stopEnd*21  : CenterLineMarkings("single_white") }
 	else:
 		CenterLineMarkings("double_"+ Centerline_Color )
-		
+
+MedianWTurnLane-->
+	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
+						|_neighborBegin*_stopBegin*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")
+						|(_tooShort(geometry.du(0,unitSpace),30))*_neighborBegin*_stopBegin*(16+Median_Turn_Transition_Depth):MedianTurnPocket(0)
+						|~1 :Raised_Offset_Curb("Median",1,"Auto",Center_Width/4)
+						|(_tooShort(geometry.du(0,unitSpace),30))*_neighborEnd*_stopEnd*(16+Median_Turn_Transition_Depth):MedianTurnPocket(2)
+						|_neighborEnd*_stopEnd*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")
+						|(_Bike_Box_Gap("End")): Bike_Box_Left_Turn_Gap("End")}
+MedianTurnPocket(dir)-->
+	case dir==0:
+		scaleUV(0,-1,1)
+		split(u,unitSpace,0){Median_Turn_Transition_Depth:TransitionSpace(dir)
+		|~1:TurnLanePocket(dir)}
+	else:
+		scaleUV(0,1,-1)
+		split(u,unitSpace,0){Median_Turn_Transition_Depth:TransitionSpace(dir)
+		|~1:TurnLanePocket(dir)}
+TransitionSpace(dir)-->
+	split(v,unitSpace,0){Turn_Pocket_Curb_Width:Raised_Offset_Curb("Turn Lane Curb",1,"Auto",Turn_Pocket_Curb_Width)
+						|~1: AngledSplitTransition(dir)}			
+AngledSplitTransition(dir)-->
+	
+	split(u,unitSpace,0) { Split_Divider_Width:
+		split(v,unitSpace,0){'(1-(split.index/split.total)):Raised_Offset_Curb("Turn Lane Curb",1,"Auto",Center_Width)
+						|~1:Asphalt(true,0,"Auto")}}*
+
+TurnLanePocket(dir)-->
+	split(v,unitSpace,0){Turn_Pocket_Curb_Width:Raised_Offset_Curb("Turn Lane Curb",1,"Auto",Turn_Pocket_Curb_Width)
+						|{~Lane_Width:LaneMarkings(dir,5,"_stop_arrows_all_" + str(5))}*}
 Center_Turn_Lane-->
 	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
 						|_neighborBegin*_stopBegin*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")
@@ -1903,6 +1948,7 @@ Boulevard-->
 						|Boulevard_Center_Width:Boulevard_Center
 						|Boulevard_Inside_Width/2-(Boulevard_Center_Width/2): Boulevard_StopBars(2)
 						|~(case WalkWay_Width==0:1 else:WalkWay_Width):scaleUV(0,-1,-1)Raised_Curb("Boulevard",2)}
+
 Boulevard_StopBars(dir)-->
 	case Boulevard_Configuration=="Bus Lanes":
 		case dir==0:
@@ -1991,10 +2037,17 @@ Raised_Curb(Location,Dir)-->
 							|~1:Street_Pavement(0,Location,Dir)
 							| Curb_Depth:Curbs_Mass(false)}
 						| Curb_Depth:Curbs_Mass(true)}#End Curb
+						
+Raised_Offset_Curb(Location,Dir,Mode,Setback)-->
+	report("Mode Area (m^2)."+str((Mode)),geometry.area)# Buffer exception
+	Cut_And_Fill_Reporting(Location)
+	Street_Lamp_Center(Location,Dir)
+	setback(Setback){all:Street_Pavement(0,"Median Offset",0)
+	|remainder: Street_Pavement(0,"Median With Turn Lane",0)} #Does not have all options for median, auto oriented median.
+
 
 Street_Pavement(Boulevard_Side,Location,Dir)-->
-#Boulevard side is used when arranging the Benches where the WalkWay Side and Side of Boulevard are both needed
-#if it is not needed is is filled with string=="None"
+#Boulevard side is used when arranging String=="None"
 	case Location=="Buffer":
 		extrude(world.y, Sidewalk_Height )
 		comp(f){top=Buffer_Top}
@@ -2014,10 +2067,24 @@ Street_Pavement(Boulevard_Side,Location,Dir)-->
 	case Location=="Open Space":
 		extrude(world.y, Sidewalk_Height )
 		comp(f){top=OpenSpace_Planting}
+	case Location=="Median With Turn Lane":
+		extrude(world.y, Sidewalk_Height )
+		comp(f){top=Median_Plant_Side(0,Dir)} #Does not have all options for median, auto oriented median.
+	case Location=="Median Offset":#Extruded sidewalk texture with sides. 
+		extrude(world.y, Sidewalk_Height)
+		comp(f) {top= General_Sidewalk_Texture ("Median Offset")
+			|side= General_Sidewalk_Texture ("Median Offset")}
 	else:
 		extrude(world.y, Sidewalk_Height )
 		WalkWay_Texture
 		
+General_Sidewalk_Texture(Location)-->	
+		setupProjection(0,scope.zy,2,2,0,0,1)
+		texture(Sidewalk_Texture)
+		projectUV(0)
+		deleteUV(_Texture_Switch)
+		scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
+		rotateUV(0, Sidewalk_Texture_Rotation)
 
 Median_Top_Setup(Dir)-->
 	case Dir==0:
@@ -2050,7 +2117,7 @@ Boulevard_Center_Top(Dir)-->
 	else:
 		Buffer_Texture
 		
-Bus_Stop_Base_Setup(Location,Stop_Number)-->
+Bus_Stop_Base_Setup(Location,Stop_Number)-->#The Bus Stop, Bike Racks, and WayFinder are put here. 
 	case Median_Bus_Stop_Location=="Mid-Block":
 		split(v,unitSpace,0){'_Median_Midblock_Switch(0,"WalkWay"):WalkWay_Texture
 							|'_Median_Midblock_Switch(0,"BusStop"):Bus_Stop_Base(Location,0)
@@ -2088,9 +2155,9 @@ Main_Section_Construction(Boulevard_Side)--># Rename Walkway_Right/Walk_WayLeft-
 							|~1:Median_Plant_Side(Boulevard_Side,0)
 							|WalkWay_Width:Street_Pavement(Boulevard_Side,"WalkWay_Left",2)}
 	else:
-		NIL
+		Median_Plant_Side(Boulevard_Side,0)
 
-Median_Plant_Side(Boulevard_Side,Dir)-->#The Bus Stop, Bike Racks, and WayFinder are put here. 
+Median_Plant_Side(Boulevard_Side,Dir)-->
 	split(u,unitSpace,0){{~Median_Tree_Spacing/2:WalkWay_Texture 
 						|~Median_Planting_Length:Median_Plant_Base 
 						|~Median_Tree_Spacing/2:WalkWay_Texture }*}
@@ -2169,13 +2236,13 @@ OpenSpace_Planting-->
 	Pervious_Reporting
 	
 WalkWay_Texture-->
-	
 	tileUV(0,2,2) texture(Sidewalk_Texture)
 	deleteUV(_Texture_Switch)
 	scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
 	rotateUV(0, Sidewalk_Texture_Rotation)
 	color( _ModeClassifier ("Pedestrian"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	report("Center.Median Walkway Area (m^2)",geometry.area())
+
 #Object Loading Insertion
 Master_Split(Boulevard_Side,Start_Condition, Location,Dir)-->#The Bus Stop, Bike Racks, and WayFinder are put here. 
 	case Start_Condition:
@@ -2484,29 +2551,32 @@ Curbs(RotateUV) -->
 Sidewalk_Setup-->
 	case sidewalkSide=="Right":
 		extrude(world.y, Sidewalk_Height )
-		comp(f){top=SidewalkTop(sidewalkSide)|side:Pavement("Building Side") }
+		comp(f){top=SidewalkTop(sidewalkSide)|side: Sidewalk_Pavement ("Building Side") }
 	case sidewalkSide=="Left":
 		scaleUV(0,1,1)
 		extrude(world.y, Sidewalk_Height ) 
-		comp(f){top=SidewalkTop(sidewalkSide)|side:Pavement("Building Side") }
+		comp(f){top=SidewalkTop(sidewalkSide)|side: Sidewalk_Pavement ("Building Side") }
 	else:
 		print("Error: two right sidewalks as default- please map this attribute.") 
 		extrude(world.y, Sidewalk_Height ) 
-		comp(f){top=SidewalkTop(sidewalkSide)|side:Pavement("Building Side") }
+		comp(f){top=SidewalkTop(sidewalkSide)|side: Sidewalk_Pavement ("Building Side") }
 
 SidewalkTop(side)-->
 	case valency>1:
-		Pavement("Corners")
+		Sidewalk_Pavement ("Corners")
 	case Sidewalk_Ground_Cover =="None":
 		split(v,unitSpace,0) {CurbtoPlantingGap:Sign_Loader(side)
-							|_Side_Sidewalk_Planting_Width(side):Sidewalk_WOPlant_Loading_Section (case side=="Right":0 else:2)
-							|~1:Pavement("Through Zone") People}
+							|_Side_Sidewalk_Planting_Width(side):Sidewalk_WOPlant_Loading_Section (case side=="Right":0 else:2)# Uses a different loading section rule
+							|_Sidewalk_BikeLane_Width(case side=="Right":0 else: 2)	:Sidewalk_Bike_Lane_Loader(case side=="Right":0 else: 2)
+							|~1: Sidewalk_Pavement ("Through Zone") People}
 	else:
 		split(v,unitSpace,0){CurbtoPlantingGap:Sign_Loader(side)
 							|_Side_Sidewalk_Planting_Width(side): Sidewalk_WPlant_Loading_Section (case side=="Right":0 else:2)
-							|~1:Pavement("Through Zone") People}
+							|_Sidewalk_BikeLane_Width(case side=="Right":0 else: 2)	:Sidewalk_Bike_Lane_Loader(case side=="Right":0 else: 2)
+							|~1: Sidewalk_Pavement ("Through Zone") People}
+
 Sign_Loader(side)-->
-	Pavement("Sign Gap")
+	Sidewalk_Pavement ("Sign Gap")
 	Traffic_Light_Setup
 	Parking_Meter_Setup
 	Lamp_Setup
@@ -2596,7 +2666,7 @@ Parking_Meter_Loader(Parking_Length,Dir)-->
 						 |~Parking_Meters_Spacing:NIL}*
 						 |(_Sidewalk_CrossStop_Gap(Dir,"End")):NIL}
 
-Pavement(Location) -->
+Sidewalk_Pavement (Location) -->
 	case Location== "Through Zone" || Location=="Corners":
 		alignScopeToAxes(y)
 		tileUV(0,2,2)
@@ -2621,32 +2691,35 @@ Pavement(Location) -->
 		rotateUV(0, Sidewalk_Texture_Rotation)
 		
 Sidewalk_WPlant_Loading_Section (Dir)-->
-	split(u,unitSpace,0){(_Sidewalk_CrossStop_Gap(Dir,"Begin")):Pavement("Cross Walk Begin Gap")
+	split(u,unitSpace,0){(_Sidewalk_CrossStop_Gap(Dir,"Begin")): Sidewalk_Pavement ("Cross Walk Begin Gap")
 						|~_Bus_Sidewalk_Base("Near-side"):Bus_Stop_Base("Sidewalk",0)
 						|~geometry.du(0,unitSpace)/2:Sidewalk_Plant_Side("Begin")
 						|~_Bus_Sidewalk_Base("Mid-Block"):Bus_Stop_Base("Sidewalk",0)
 						|~geometry.du(0,unitSpace)/2:Sidewalk_Plant_Side("End")
 						|~_Bus_Sidewalk_Base("Far-side"):Bus_Stop_Base("Sidewalk",0)
-						|(_Sidewalk_CrossStop_Gap(Dir,"End") ):Pavement("Cross Walk End Gap")}
+						|(_Sidewalk_CrossStop_Gap(Dir,"End") ): Sidewalk_Pavement ("Cross Walk End Gap")}
 
 Sidewalk_WOPlant_Loading_Section (Dir)-->
-	split(u,unitSpace,0){(_Sidewalk_CrossStop_Gap(Dir,"Begin")):Pavement("Cross Walk Begin Gap")People
+	split(u,unitSpace,0){(_Sidewalk_CrossStop_Gap(Dir,"Begin")): Sidewalk_Pavement ("Cross Walk Begin Gap")People
 						|~_Bus_Sidewalk_Base("Near-side"):Bus_Stop_Base("Sidewalk",0)
-						|~geometry.du(0,unitSpace)/2:Pavement("Through Zone")People
+						|~geometry.du(0,unitSpace)/2: Sidewalk_Pavement ("Through Zone")People
 						|~_Bus_Sidewalk_Base("Mid-Block"):Bus_Stop_Base("Sidewalk",0)
-						|~geometry.du(0,unitSpace)/2:Pavement("Through Zone") People
+						|~geometry.du(0,unitSpace)/2: Sidewalk_Pavement ("Through Zone") People
 						|~_Bus_Sidewalk_Base("Far-side"):Bus_Stop_Base("Sidewalk",0)
-						|(_Sidewalk_CrossStop_Gap(Dir,"End") ):Pavement("Cross Walk End Gap")People}
-
+						|(_Sidewalk_CrossStop_Gap(Dir,"End") ): Sidewalk_Pavement ("Cross Walk End Gap")People}
+Sidewalk_Bike_Lane_Loader(Dir)-->
+	split(u,unitSpace,0){(_Sidewalk_CrossStop_Gap(Dir,"Begin")): Sidewalk_Pavement ("Cross Walk Begin Gap")
+						 |~1:BikeLane(-1,_Sidewalk_BikeLane_Width(Dir))
+						 |(_Sidewalk_CrossStop_Gap(Dir,"End")): Sidewalk_Pavement ("Cross Walk End Gap")}
 Sidewalk_Object_Split(RotationAng)-->
 	split(u,unitSpace,0){'_Bus_Alloc("Sidewalk"):Bus_Objects_Insert("Bus Stop",Bus_Stop_Object,RotationAng,Sidewalk_Bus_Stop_Setback,2,3,3.35)
 						|'_Bike_Rack_Alloc("Sidewalk"):Bike_Rack_Split(RotationAng,0)
 						|'_WayFinder_Alloc("Sidewalk"):Bus_Objects_Insert("Wayfinder",Wayfinder_Object,RotationAng,-.5,.3,3,1.2)}
 
 Sidewalk_Plant_Side(Plant_Side_Base_Switch)-->
-	split(u,unitSpace,0){~Sidewalk_Planting_Spacing /2:Pavement("Before Planting")
+	split(u,unitSpace,0){~Sidewalk_Planting_Spacing /2: Sidewalk_Pavement ("Before Planting")
 						|~Sidewalk_Planting_Length:Plant_Base 
-						|~Sidewalk_Planting_Spacing/2:Pavement("After Planting") Sidewalk_Bench_Loader(split.index,split.total,Plant_Side_Base_Switch)}*	
+						|~Sidewalk_Planting_Spacing/2: Sidewalk_Pavement ("After Planting") Sidewalk_Bench_Loader(split.index,split.total,Plant_Side_Base_Switch)}*	
 
 Sidewalk_Bench_Loader(splitNum,splitTotal,Plant_Side_Base_Switch)-->
 		case Sidewalk_Benches =="None":
@@ -2679,7 +2752,7 @@ Sidewalk_Bench_Insert(Dir,geometry_Len)-->
 		
 Plant_Base-->
 case Sidewalk_Ground_Cover =="None":
-	Pavement("Plant_Space")
+	Sidewalk_Pavement ("Plant_Space")
 else:
 	Sidewalk_Planting
 	Tree_Setup("Sidewalk", Sidewalk_Tree_1_Percentage , Sidewalk_Tree_1_Type, Sidewalk_Tree_2_Type )
@@ -2999,9 +3072,6 @@ PierShafts -->
 PierBase -->
 	s('1,scope.sy+5,'1) t(0,-5.3,0) i("builtin:cube")
 	comp(f){ side: BridgeSolid | top: roofHip(60) split(y){ 0.3: BridgeSolid } }
-
-
-
 
 BridgeSide -->
 	case isBridge:
