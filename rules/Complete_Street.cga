@@ -435,7 +435,7 @@ const Curb_Depth					= 0.1574
 const BusStop_Length				= 12.192
 const Parklet_Shift					= case Space_Management== "Best Fit" || (bool(Parking_Protection) && _Minof(Left_Buffer_Width+Street_Left_Bike_Lane_Width,Right_Buffer_Width+Street_Right_Bike_Lane_Width)>0):0 else:-_EmptySpace #if parking protection is on a shift will lead to geometric collision, but it will choose to collide if oneside does not have a bikelane/buffer (check later).   
 const Max_Sidewalk_Gap				= 5.4 #change this if you want a smaller or larger gap between first tree splits and crosswalks
-const Median_Turn_Transition_Depth  = 6
+const Median_Turn_Transition_Depth  = Center_Width*1.5
 const Minimum_Turn_Curb_Width		= 1.5/Feet
 const Turn_Pocket_Curb_Width		=_Maxof(Minimum_Turn_Curb_Width,Center_Width/10)
 const Split_Divider_Width			= case LOD_Setting=="Low":3/Feet case LOD_Setting=="High":1/Feet else: 1.5/Feet
@@ -1923,7 +1923,7 @@ AngledSplitTransition(dir)-->
 
 TurnLanePocket(dir)-->
 	split(v,unitSpace,0){Turn_Pocket_Curb_Width:Raised_Offset_Curb("Turn Lane Curb",1,"Auto",Turn_Pocket_Curb_Width)
-						|{~Lane_Width:LaneMarkings(dir,5,"_stop_arrows_all_" + str(5))}*}
+						|{~Lane_Width:LaneMarkings(dir,1,"_stop_arrows_all_" + str(1))}*}
 Center_Turn_Lane-->
 	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
 						|_neighborBegin*_stopBegin*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")
@@ -2709,7 +2709,9 @@ Sidewalk_WOPlant_Loading_Section (Dir)-->
 						|(_Sidewalk_CrossStop_Gap(Dir,"End") ): Sidewalk_Pavement ("Cross Walk End Gap")People}
 Sidewalk_Bike_Lane_Loader(Dir)-->
 	split(u,unitSpace,0){(_Sidewalk_CrossStop_Gap(Dir,"Begin")): Sidewalk_Pavement ("Cross Walk Begin Gap")
+						 |ThickPaintLineWidth: AsphaltPainted("white",true,1,"Bikeways")
 						 |~1:BikeLane(-1,_Sidewalk_BikeLane_Width(Dir))
+						  |ThickPaintLineWidth: AsphaltPainted("white",true,1,"Bikeways")
 						 |(_Sidewalk_CrossStop_Gap(Dir,"End")): Sidewalk_Pavement ("Cross Walk End Gap")}
 Sidewalk_Object_Split(RotationAng)-->
 	split(u,unitSpace,0){'_Bus_Alloc("Sidewalk"):Bus_Objects_Insert("Bus Stop",Bus_Stop_Object,RotationAng,Sidewalk_Bus_Stop_Setback,2,3,3.35)
