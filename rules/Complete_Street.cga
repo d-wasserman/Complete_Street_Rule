@@ -794,9 +794,7 @@ _Transit_Lane_Width_Switch(dir,Location)=
 			0
 	else:
 		0
-_tooShort(length,goal_len)= # This function will be equal to 0 (making a split length 0 via *) if the length of a segment is less than a goal length).
-	case length<goal_len: 0 else: 1
-	
+
 #Stop Tex/Neighbor Detection Functions
 _hasStop(neighbor) 	= neighbor=="CROSSING" || neighbor=="ROUNDABOUT" || neighbor=="JUNCTION_ENTRY"||neighbor=="JUNCTION"||neighbor=="DEAD_END"
 _hasStopSideSwitch(dir)= case dir==0: _neighborEnd else: _neighborBegin		
@@ -974,7 +972,14 @@ _Parklet_OneWay_Shift(Rotation)= # This function serves to make sure the parklet
 #Misc Functions	
 #_isEven(number) = (rint(abs(number))%2) == 0   #Make number positive, round to nearest integer just in case of 6 being 5.99999999999999, or 6.000000000000001.
 #_isOdd(number) = !_isEven(number)	
-
+_tooShort(length,goal_len)= # This function will be equal to 0 (making a split length 0 via *) if the length of a segment is less than a goal length).
+	case length<goal_len: 0 else: 1
+	
+_targetReturn(target,input,return)=
+	case input==target:
+		return
+	else:
+		0	
 _Maxof(num1,num2)= #Finds the max of two numbers
 	case num1>=num2:
 		num1
@@ -1096,7 +1101,6 @@ _GeneralThematic				=
 			Brightness
 	else:
 		Brightness
-
 
 _BikeSense_Modifier			=#changes combined "bike protection" width based orientation-with splitsum creates distance from through lane
 	case !bool(Buffer_Protection) && bool(Parking_Protection) :
@@ -2708,11 +2712,7 @@ Sidewalk_WOPlant_Loading_Section (Dir)-->
 						|~_Bus_Sidewalk_Base("Far-side"):Bus_Stop_Base("Sidewalk",0)
 						|(_Sidewalk_CrossStop_Gap(Dir,"End") ): Sidewalk_Pavement ("Cross Walk End Gap")People}
 Sidewalk_Bike_Lane_Loader(Dir)-->
-	split(u,unitSpace,0){(_Sidewalk_CrossStop_Gap(Dir,"Begin")): Sidewalk_Pavement ("Cross Walk Begin Gap")
-						 |ThickPaintLineWidth: AsphaltPainted("white",true,1,"Bikeways")
-						 |~1:BikeLane(-1,_Sidewalk_BikeLane_Width(Dir))
-						  |ThickPaintLineWidth: AsphaltPainted("white",true,1,"Bikeways")
-						 |(_Sidewalk_CrossStop_Gap(Dir,"End")): Sidewalk_Pavement ("Cross Walk End Gap")}
+	split(u,unitSpace,0){~1:BikeLane(-1,_Sidewalk_BikeLane_Width(Dir))}
 Sidewalk_Object_Split(RotationAng)-->
 	split(u,unitSpace,0){'_Bus_Alloc("Sidewalk"):Bus_Objects_Insert("Bus Stop",Bus_Stop_Object,RotationAng,Sidewalk_Bus_Stop_Setback,2,3,3.35)
 						|'_Bike_Rack_Alloc("Sidewalk"):Bike_Rack_Split(RotationAng,0)
