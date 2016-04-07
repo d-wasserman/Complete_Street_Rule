@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 4/3/2016
+ * Last Updated: 4/7/2016
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
 # ESRI Attribution License:
@@ -972,14 +972,12 @@ _Parklet_OneWay_Shift(Rotation)= # This function serves to make sure the parklet
 #Misc Functions	
 #_isEven(number) = (rint(abs(number))%2) == 0   #Make number positive, round to nearest integer just in case of 6 being 5.99999999999999, or 6.000000000000001.
 #_isOdd(number) = !_isEven(number)	
-_tooShort(length,goal_len)= # This function will be equal to 0 (making a split length 0 via *) if the length of a segment is less than a goal length).
-	case length<goal_len: 0 else: 1
+#_targetReturn(target,input,return)=case input==target: return else:		0	
+_tooShort(length,goal_len)= 
+	case length<goal_len: 0
+	else: 1
 	
-_targetReturn(target,input,return)=
-	case input==target:
-		return
-	else:
-		0	
+
 _Maxof(num1,num2)= #Finds the max of two numbers
 	case num1>=num2:
 		num1
@@ -1903,7 +1901,7 @@ MedianWTurnLane-->
 	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
 						|_neighborBegin*_stopBegin*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")
 						|(_tooShort(geometry.du(0,unitSpace),30))*_neighborBegin*_stopBegin*(16+Median_Turn_Transition_Depth):MedianTurnPocket(0)
-						|~1 :Raised_Offset_Curb("Median",1,"Auto",Center_Width/4)
+						|~1:Raised_Offset_Curb("Median",1,"Auto",Center_Width/4)
 						|(_tooShort(geometry.du(0,unitSpace),30))*_neighborEnd*_stopEnd*(16+Median_Turn_Transition_Depth):MedianTurnPocket(2)
 						|_neighborEnd*_stopEnd*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")
 						|(_Bike_Box_Gap("End")): Bike_Box_Left_Turn_Gap("End")}
@@ -2046,8 +2044,11 @@ Raised_Offset_Curb(Location,Dir,Mode,Setback)-->
 	report("Mode Area (m^2)."+str((Mode)),geometry.area)# Buffer exception
 	Cut_And_Fill_Reporting(Location)
 	Street_Lamp_Center(Location,Dir)
-	setback(Setback){all:Street_Pavement(0,"Median Offset",0)
-	|remainder: Street_Pavement(0,"Median With Turn Lane",0)} #Does not have all options for median, auto oriented median.
+	split(v,unitSpace,0){Setback:Street_Pavement(0,"Median Offset",0)
+		|~1:split(u,unitSpace,0){Setback:Street_Pavement(0,"Median Offset",0)
+		|~1:Street_Pavement(0,"Median With Turn Lane",0)
+		|Setback:Street_Pavement(0,"Median Offset",0)}
+		|Setback:Street_Pavement(0,"Median Offset",0)} #Does not have all options for median, auto oriented median.
 
 
 Street_Pavement(Boulevard_Side,Location,Dir)-->
@@ -2711,8 +2712,10 @@ Sidewalk_WOPlant_Loading_Section (Dir)-->
 						|~geometry.du(0,unitSpace)/2: Sidewalk_Pavement ("Through Zone") People
 						|~_Bus_Sidewalk_Base("Far-side"):Bus_Stop_Base("Sidewalk",0)
 						|(_Sidewalk_CrossStop_Gap(Dir,"End") ): Sidewalk_Pavement ("Cross Walk End Gap")People}
+
 Sidewalk_Bike_Lane_Loader(Dir)-->
 	split(u,unitSpace,0){~1:BikeLane(-1,_Sidewalk_BikeLane_Width(Dir))}
+
 Sidewalk_Object_Split(RotationAng)-->
 	split(u,unitSpace,0){'_Bus_Alloc("Sidewalk"):Bus_Objects_Insert("Bus Stop",Bus_Stop_Object,RotationAng,Sidewalk_Bus_Stop_Setback,2,3,3.35)
 						|'_Bike_Rack_Alloc("Sidewalk"):Bike_Rack_Split(RotationAng,0)
