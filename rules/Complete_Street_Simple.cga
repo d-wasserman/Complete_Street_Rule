@@ -1,9 +1,10 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 4/15/2016
+ * Last Updated: 4/23/2016
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
+ * Source: https://github.com/Holisticnature/Complete_Street_Rule
 # ESRI Attribution License:
 #	ESRI Derivative work
 #	http://mappingcenter.esri.com/downloads/AttributionAndLicense_05_09_07.pdf
@@ -452,7 +453,7 @@ const Street_Right_Bike_Lane_Width	=	case Bike_Lane_Type=="Sidewalk":0 else:Righ
 const Street_Left_Bike_Lane_Width	=	case Bike_Lane_Type=="Sidewalk":0 else:Left_Bike_Lane_Width
 const Sidewalk_Right_Bike_Lane_Width=	case Bike_Lane_Type=="Sidewalk":Right_Bike_Lane_Width else:0
 const Sidewalk_Left_Bike_Lane_Width	=	case Bike_Lane_Type=="Sidewalk":Left_Bike_Lane_Width else:0
-
+const Bike_Box_Buffer_Adapter		= case Buffer_Protection && Parking_Protection:1 else:0 #Helps with adjusting the stopbar to different buffer types. 
 #Vegetation Constants
 const Random_Grass					=(fileRandom(GrassFolder + "/*.jpg"))
 #Parking Constants
@@ -1694,12 +1695,12 @@ BikeBoxCreation(side)-->
 						  	  PaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")
 						  	  |~1:BikeBoxSymbol(side)
 						  	  |ThickPaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")}
-						  |Street_Left_Bike_Lane_Width -PaintLineWidth*_Bike_Paint_Adjuster:split(u,unitSpace,0){
+						  |(Street_Left_Bike_Lane_Width -PaintLineWidth*_Bike_Paint_Adjuster)*Bike_Box_Buffer_Adapter:split(u,unitSpace,0){
 						  		PaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")|~1:AsphaltPainted(Bike_Box_Color_Override,true,1,"Bikeways")}
 						  |PaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")}
 	else:
 		split(v, unitSpace,0) {PaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")
-							  | Street_Right_Bike_Lane_Width -PaintLineWidth*_Bike_Paint_Adjuster:split(u,unitSpace,0){
+							  |(Street_Right_Bike_Lane_Width -PaintLineWidth*_Bike_Paint_Adjuster)*Bike_Box_Buffer_Adapter:split(u,unitSpace,0){
 							  		~1:AsphaltPainted(Bike_Box_Color_Override,true,1,"Bikeways")|PaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")}
 						  	  |~1:split(u, unitSpace,0){
 						  	 	 ThickPaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")
