@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 4/23/2016
+ * Last Updated: 5/11/2016
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -211,7 +211,7 @@ attr Transit_Paint_Line_Sides		= "Both"
 attr Right_Bike_Lane_Width 		=0
 @Order(2)@Range(0,6)@Description("Desirable bike lane width adjacent to a curbface is 6 feet (1.8288m), but rideable surface adjacent  to a street edge is 4 feet (1.2192m) with minimum of 3 feet (0.9144m). In areas where illegal parking is an issue, at least 5 feet (1.524m) is suggested.")
 attr Left_Bike_Lane_Width		=0
-@Order(3)@Range("One-way","Two-way","Sharrow","Sidewalk")@Description("The one-way option uses the full lane width for each lane, while the two-way option will allocate half of the width to each sub-lane.")
+@Order(3)@Range("One-way","Two-way","Sharrow","Sidewalk","Two-way Sidewalk")@Description("The one-way option uses the full lane width for each lane, while the two-way option will allocate half of the width to each sub-lane.")
 attr Bike_Lane_Type				="One-way"
 @Order(4)@Range(0,6)@Description("Bicycle Buffers have desired minimums of about 3 feet, but should be at least 18 inches wide because it is impractical to mark a zone narrower than that.")
 attr Right_Buffer_Width			= 0
@@ -449,11 +449,12 @@ const Buffer_Stripe_Length			= 3.048 #Not used, but can be.
 const Center_Tube_Marker_Dist		=.1
 const _Default_Buffer_Object_Spacing= case Buffer_Type=="Curb Buffer with Trees":8 case Buffer_Type=="Cycle Track With Planters":2.5 else:1.5
 const BikeBoxGeometryThreshold		= Lane_Width *BikeBox_Fraction+_Maxof(Street_Right_Bike_Lane_Width,Street_Left_Bike_Lane_Width)-.1
-const Street_Right_Bike_Lane_Width	=	case Bike_Lane_Type=="Sidewalk":0 else:Right_Bike_Lane_Width
-const Street_Left_Bike_Lane_Width	=	case Bike_Lane_Type=="Sidewalk":0 else:Left_Bike_Lane_Width
-const Sidewalk_Right_Bike_Lane_Width=	case Bike_Lane_Type=="Sidewalk":Right_Bike_Lane_Width else:0
-const Sidewalk_Left_Bike_Lane_Width	=	case Bike_Lane_Type=="Sidewalk":Left_Bike_Lane_Width else:0
+const Street_Right_Bike_Lane_Width	=	case find(Bike_Lane_Type,"Sidewalk",0)!=-1:0 else:Right_Bike_Lane_Width
+const Street_Left_Bike_Lane_Width	=	case find(Bike_Lane_Type,"Sidewalk",0)!=-1:0 else:Left_Bike_Lane_Width
+const Sidewalk_Right_Bike_Lane_Width=	case find(Bike_Lane_Type,"Sidewalk",0)!=-1:Right_Bike_Lane_Width else:0
+const Sidewalk_Left_Bike_Lane_Width	=	case find(Bike_Lane_Type,"Sidewalk",0)!=-1:Left_Bike_Lane_Width else:0
 const Bike_Box_Buffer_Adapter		= case Buffer_Protection && Parking_Protection:1 else:0 #Helps with adjusting the stopbar to different buffer types. 
+const _Twoway_Bikelane_Bool			= find(Bike_Lane_Type,"Two-way",0)!=-1
 #Vegetation Constants
 const Random_Grass					=(fileRandom(GrassFolder + "/*.jpg"))
 #Parking Constants
@@ -764,7 +765,7 @@ _IsCycleTrack=
 		true
 	case _IsCycleTrackBuffer && (Street_Right_Bike_Lane_Width>0 || Street_Left_Bike_Lane_Width>0) &&_MaxParkingSum<=1 && _Orientation_Modified_SplitSum>=1.8288: #Plain Buffer
 		true
-	case Bike_Lane_Type=="Sidewalk" && (Sidewalk_Right_Bike_Lane_Width>0||Sidewalk_Left_Bike_Lane_Width>0):
+	case find(Bike_Lane_Type,"Sidewalk",0)!=-1 && (Sidewalk_Right_Bike_Lane_Width>0||Sidewalk_Left_Bike_Lane_Width>0):
 		true
 	else:
 		false
@@ -1534,7 +1535,7 @@ LeftBikeLaneSpace(list)-->
 	 
 	scaleUV(0,1,case bool(Buffer_Protection) : -1 else:1)
 	scaleUV(0,1,case bool(Parking_Protection) :-1 else:1)
-	split(v,unitSpace,0) { Street_Left_Bike_Lane_Width :LeftBikeLaneSection(list)
+	split(v,unitSpace,0) { Street_Left_Bike_Lane_Width :BikeLaneSection(-1,Street_Left_Bike_Lane_Width)
 						  |Left_Buffer_Width :BikeBuffer(Left_Buffer_Width,2)}
 
 RightBikeLaneSpace(list)-->
@@ -1542,23 +1543,16 @@ RightBikeLaneSpace(list)-->
 	scaleUV(0,1,case bool(Buffer_Protection) : -1 else:1)
 	scaleUV(0,1,case bool(Parking_Protection) :-1 else:1)
 	split(v,unitSpace,0) {Right_Buffer_Width :BikeBuffer(Right_Buffer_Width,0)
-						 |Street_Right_Bike_Lane_Width :RightBikeLaneSection(list)}
+						 |Street_Right_Bike_Lane_Width : BikeLaneSection (1,Street_Right_Bike_Lane_Width)}
 #BikeLane Start
-
-RightBikeLaneSection(list)-->
-	case Bike_Lane_Type=="Two-way":
-		split(v,unitSpace,0) {'.5:BikeLane(-1,Street_Right_Bike_Lane_Width)|~1:BikeLane(1,Street_Right_Bike_Lane_Width)}						
+BikeLaneSection (flip,Side_Width)-->
+	case _Twoway_Bikelane_Bool:
+		split(v,unitSpace,0) {'.5:BikeLane(-1,Side_Width)|~1:BikeLane(1,Side_Width)}						
 	else:
-		BikeLane(1,Street_Right_Bike_Lane_Width)
-		
-LeftBikeLaneSection(list)-->
-	case Bike_Lane_Type=="Two-way":
-		split(v,unitSpace,0) {'.5:BikeLane(-1,Street_Left_Bike_Lane_Width)| ~1:BikeLane(1,Street_Left_Bike_Lane_Width)}						
-	else:
-		BikeLane(-1,Street_Left_Bike_Lane_Width)
+		BikeLane(flip,Side_Width)
 		
 BikeLane(sideflip,Width)-->#Was Left,now both, fairly modular
-	Bikes((case sideflip==1:0 else: 2),(case Bike_Lane_Type=="Two-way":Width/2 else: Width))
+	Bikes((case sideflip==1:0 else: 2),(case _Twoway_Bikelane_Bool:Width/2 else: Width))
 	color( _ModeClassifier ("Bikeways"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	scaleUV(0,sideflip,sideflip)
 	split(v,unitSpace,0){PaintLineWidth*_PaintLineControl("Left", Bike_Paint_Line_Sides):BikeLaneLines
@@ -2715,7 +2709,7 @@ Sidewalk_WOPlant_Loading_Section (Dir)-->
 						|(_Sidewalk_CrossStop_Gap(Dir,"End") ): Sidewalk_Pavement ("Cross Walk End Gap")People}
 
 Sidewalk_Bike_Lane_Loader(Dir)-->
-	split(u,unitSpace,0){~1:scaleUV(0,DirectionalFlip,1)BikeLane(-1,_Sidewalk_BikeLane_Width(Dir))}
+	split(u,unitSpace,0){~1:scaleUV(0,DirectionalFlip,1)BikeLaneSection(-1,_Sidewalk_BikeLane_Width(Dir))}
 
 Sidewalk_Object_Split(RotationAng)-->
 	split(u,unitSpace,0){'_Bus_Alloc("Sidewalk"):Bus_Objects_Insert("Bus Stop",Bus_Stop_Object,RotationAng,Sidewalk_Bus_Stop_Setback,2,3,3.35)
