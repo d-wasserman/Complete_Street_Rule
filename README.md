@@ -1,7 +1,7 @@
 # Complete_Street_Rule
 This is an updated repository for a modified version of the ESRI Complete Street rule by the original rule author. 
 The rule uses the original assets folder of the ESRI Complete street rule, so in order to use it, you really only need the updated CGA file. 
-
+![alt tag](https://geonet.esri.com/servlet/JiveServlet/showImage/102-6915-27-160154/RoadDiet6.jpeg.jpg)
 The rules new features include: 
 
 Key changes to the rule include:
