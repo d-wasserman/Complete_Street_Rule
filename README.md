@@ -9,25 +9,23 @@ Key changes to the rule include:
 1. Best Fit setting allows the rule to make sure that the street has the option to not have exact geometry.
 This still needs to be tested more so please comment if you have any issues with the rule. The best fit feature works by calculating empty space and then adding it to the lane width. This means that your lane width attribute becomes the minimum width the lanes can take on before it subtracts lanes.
 
-2. Renamed reporting and creates subclasses to support new Dashboards in 2015.2.
+2. Renamed reporting and creates subclasses to support new Dashboards in 2015.2. Sample Dashboard template included in project. 
 
-3. Modal Preference replaced LTS rank
+3. Added Mode Area reporting and dashboards to the street rule. Get percentage area dedicated to each mode for different designs.
 
-4. Added Mode Area reporting and dashboards to the street rule. Get percentage area dedicated to each mode for different designs.
+4. Improved Default LOD Settings: If LOD is set to High, the street will now pick default population parameters to make the street seem occupied. LOD Settings are now Low (Asset choice changes to reduce polygon count), Moderate (high poly assets/choices), and High (high poly assets and populated streets).
 
-5. Sample Dashboard Text included in project
+5. Addition of Complete_Street_Simple.CGA: This additional included rule has about ~50 fewer attributes while maintaining the core functionality of the rule. This rule is intended to make demos or charrettes a little easier.
 
-6. Improved Default LOD Settings: If LOD is set to High, the street will now pick default population parameters to make the street seem occupied. LOD Settings are now Low (Asset choice changes to reduce polygon count), Moderate (high poly assets/choices), and High (high poly assets and populated streets).
+6. Addition of Sharrows + Sidewalk Side Bike Lanes: Added support for sharrows (shared use lanes). The sharrows only appear on the curb lane. In addition to sharrows, sidewalk side bike lanes were added after a lot of international demand was declared for them. These lanes do not have buffers, but are placed between the planting and the walkway when bike lane type is set to "Sidewalk". 
 
-7. Addition of Complete_Street_Simple.CGA: This additional included rule has about ~50 fewer attributes while maintaining the core functionality of the rule. This rule is intended to make demos or charrettes a little easier.
+7. Addition of Mode Focused Thematics: Allows a user to highlight specific improvements to a street with custom color choices. For example, if you add a bike lane and select "Bicycle Highlight" thematic, the solid color attribute will only highlight added bike lanes. Also, the addition of a All Mode Preference option helps visualize all the mode preference reports at once.  
 
-8. Addition of Sharrows + Sidewalk Side Bike Lanes: Added support for sharrows (shared use lanes). The sharrows only appear on the curb lane. In addition to sharrows, sidewalk side bike lanes were added after a lot of international demand was declared for them. These lanes do not have buffers, but are placed between the planting and the walkway when bike lane type is set to "Sidewalk". 
-
-9. Addition of Mode Focused Thematics: Allows a user to highlight specific improvements to a street with custom color choices. For example, if you add a bike lane and select "Bicycle Highlight" thematic, the solid color attribute will only highlight added bike lanes. Also, the addition of a All Mode Preference option helps visualize all the mode preference reports at once.  
-
-10. Other miscellaneous changes.
+8. Other miscellaneous changes.
 
 	-Dead end exception, dead ends, treated like they have a connection (for singular cross sections).
+	
+	- Modal Preference replaced LTS to provide more clarity of what the metrics represent across modes. 
 
 	-Fixed striping bug in right most lane that occurred as a result of floating point arithmetic/rounding error (a micro-lane is being created).
 
