@@ -1,6 +1,24 @@
 # Complete_Street_Rule
 This is an updated repository for a modified version of the ESRI Complete Street rule by the original rule author. 
 The rule uses the original assets folder of the ESRI Complete street rule, so in order to use it, you really only need the updated CGA file. 
+# Instructions
+To open and interact with this project, do the following:
+1.	Click Clone or Download > Download Zip above to download the project zip file to your computer.
+2.	Unzip the repository folder in a selected workspace.
+3.	Launch CityEngine.
+3.	Locate the unzipped project folder and click Open.
+5.	Keep the default settings and click Finish.
+6.	Expand the imported project folder in Navigator window and click the scenes folder.
+7.	Double click the .cej file to open the scene in CityEngine.
+If all you need is the rule for your current project: 
+1.	Click Clone or Download > Download Zip above to download the project zip file to your computer.
+2.	Unzip the repository folder in a selected workspace.
+3.	Go into the directory and find the "rules" and "assets" folder. 
+4.	Move the Complete_Streets folder in assets to your current project's assets folder. 
+5.	Move the files ending in .CGA in the rules folder to your current project's rules's folder. 
+6.	Open CityEngine. 
+7.	Apply rule to desired street segments.
+
 ![alt tag](https://geonet.esri.com/servlet/JiveServlet/showImage/102-6915-27-160154/RoadDiet6.jpeg.jpg)
 The rules new features include: 
 
@@ -25,7 +43,7 @@ This still needs to be tested more so please comment if you have any issues with
 
 	-Dead end exception, dead ends, treated like they have a connection (for singular cross sections).
 	
-	- Modal Preference replaced LTS to provide more clarity of what the metrics represent across modes. 
+	-Modal Preference replaced LTS to provide more clarity of what the metrics represent across modes. 
 
 	-Fixed striping bug in right most lane that occurred as a result of floating point arithmetic/rounding error (a micro-lane is being created).
 
