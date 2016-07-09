@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 6/11/2016
+ * Last Updated: 7/9/2016
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -441,6 +441,11 @@ const Median_Turn_Transition_Depth  = Center_Width*1.5
 const Minimum_Turn_Curb_Width		= 1.5/Feet
 const Turn_Pocket_Curb_Width		=_Maxof(Minimum_Turn_Curb_Width,Center_Width/10)
 const Split_Divider_Width			= case LOD_Setting=="Low":3/Feet case LOD_Setting=="High":1/Feet else: 1.5/Feet
+const Dimension_Center_Hexcode		= case Boulevard_Configuration=="Bus Lanes": NACTOTransit 
+									  case Boulevard_Configuration=="Normal Lanes": NACTOAuto 
+									  case Boulevard_Configuration=="Cycle Path":NACTOBike 
+									  case Boulevard_Configuration=="Open Space":NACTOPlanting
+									  else: NACTOConflictZone
 #Bike Constants
 const sharrowHeight					=0.005
 const Buffer_StartGap				=.2
@@ -532,7 +537,7 @@ const NACTOPlanting="#B5DC98"
 const NACTOConflictZone="#F9ECB7" #Crosswalk in book
 const NACTOBikeDark="#59995F"
 #Lane Constants:
-const Default_Mix_Bus= case Transit_Lane=="Bus Lane":.01 else: .2
+const Default_Mix_Bus= case Transit_Lane=="Bus Lane":.001 else: .2
 #####################
 #Tree.Generateed Rules		#
 #####################
@@ -3128,10 +3133,22 @@ DimensionStreet(dir,segment_side)-->
 	scaleUV(0,case segment_side=="Back":-1 else:1,1)	
 	split(u,unitSpace,0){~1:BridgeMaterial(NACTOConflictZone)
 			|(_RightSplitSum+ _Distribute_Right_Lanes* _Actual_Lane_Width+_Rt_Transit_Lane_Width):DimensionRightStreet(dir,segment_side)# Will flip with a change in driving direction
-			| _centerWidth											  : BridgeMaterial(NACTOConflictZone)# Will flip with a change in driving direction
+			| _centerWidth											  : DimensionCenterSection(dir,segment_side)# Will flip with a change in driving direction
 			|(_LeftSplitSum+nLanesLeft*_Actual_Lane_Width+_Lt_Transit_Lane_Width)	  :DimensionLeftStreet(dir,segment_side)# Will flip with a change in driving direction
 			|~1:BridgeMaterial(NACTOConflictZone)}
-		
+DimensionCenterSection(dir,segment_side)-->
+	case Center_Type=="Boulevard":
+		split(u,unitSpace,0) {~(case WalkWay_Width==0:1 else:WalkWay_Width):BridgeMaterial(NACTOConflictZone)
+			|Boulevard_Inside_Width:DimensionCenter(dir,segment_side)
+			|~(case WalkWay_Width==0:1 else:WalkWay_Width):BridgeMaterial(NACTOConflictZone)}
+	else:
+		BridgeMaterial(NACTOConflictZone)
+
+DimensionCenter(dir,segment_side)-->
+	split(u,unitSpace,0) {Boulevard_Inside_Width/2-(Boulevard_Center_Width/2):BridgeMaterial(Dimension_Center_Hexcode)
+						|Boulevard_Center_Width:BridgeMaterial(NACTOConflictZone)
+						|Boulevard_Inside_Width/2-(Boulevard_Center_Width/2): BridgeMaterial(Dimension_Center_Hexcode)}
+			
 DimensionRightStreet(dir,segment_side)-->
 # Divides the two street sides into left subsection made up of splitspace (holds bike, parking, and buffer),repeater conventional lanes, and transit lanes (activiated by Location Switch).  
 	split(u,unitSpace,0){(_Transit_Lane_Width_Switch(0,"Sidewalk Side")):BridgeMaterial(NACTOTransit)
@@ -3243,8 +3260,7 @@ BridgeSolid -->
       comp(f){ all: setupProjection(2,scope.xy,'1,'1) projectUV(2)
 		set(material.dirtmap,LanesFolder+"/dirtmap.1.512x512.jpg")
         BridgeMaterial("No Color") }
-DimensionMaterial()-->
-	NIL
+
 BridgeMaterial(color_chooser) -->
 	case find(str(color_chooser),"#",0)!=-1 && texturingOn:
 		color(color_chooser)
