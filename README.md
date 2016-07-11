@@ -53,6 +53,8 @@ This still needs to be tested more so please comment if you have any issues with
 
 7. Addition of Mode Focused Thematics: Allows a user to highlight specific improvements to a street with custom color choices. For example, if you add a bike lane and select "Bicycle Highlight" thematic, the solid color attribute will only highlight added bike lanes. Also, the addition of a All Mode Preference option helps visualize all the mode preference reports at once.  
 
+8. Dimension Extrusion: This added option to the bridge settings enables single cross sectional images to have the mode categorization be shown at the street's edge. This provides a starting place for report infographics that denote different modes served by different treatments. 
+
 8. Other miscellaneous changes.
 
 	-Dead end exception, dead ends, treated like they have a connection (for singular cross sections).
