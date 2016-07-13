@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 7/9/2016
+ * Last Updated: 7/12/2016
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -3186,8 +3186,8 @@ DimensionLeftBikeLaneSpace(dir,segment_side)-->
 DimensionRightBikeLaneSpace(dir,segment_side)-->
 	scaleUV(0,case bool(Buffer_Protection) : -1 else:1,1)
 	scaleUV(0,case bool(Parking_Protection) :-1 else:1,1)
-	split(u,unitSpace,0) { Street_Right_Bike_Lane_Width :BridgeMaterial(NACTOBike)
-						  |Right_Buffer_Width :BridgeMaterial(NACTOBikeDark)}						
+	split(u,unitSpace,0) {Right_Buffer_Width :BridgeMaterial(NACTOBikeDark)
+						  |Street_Right_Bike_Lane_Width :BridgeMaterial(NACTOBike)}						
 
 #BikeLane Start
 PierBase -->
