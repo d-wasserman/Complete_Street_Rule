@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 7/12/2016
+ * Last Updated: 7/13/2016
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -77,7 +77,7 @@ attr Solid_Color = "#FFFFFF"
 @Group("DISPLAY OPTIONS") @Order(4) @Description("When a mode emphasis thematic is chosen, the color fo the other streets is chosen by default by this hidden parameter.")@Hidden
 attr Secondary_Solid_Color= Brightness
 @Group("DISPLAY OPTIONS") @Range("Best Fit","Exact","Flag") @Order(5)@Description("Determines whether the lane width will be the best of fit, exact width, or flag unallocated space red when it is 1/3 the current lane width (usually 3-4 feet).")
-attr Space_Management="Best Fit"
+attr Space_Management= "Best Fit"
 @Group("DISPLAY OPTIONS") @Range("High","Moderate","Low") @Order(6)@Description("This attribute controls the level of detail of the selected textures and OBJs. Typically a lower LOD will decrease the polygon count and texture image resolution.")
 attr LOD_Setting	  ="Moderate"
 texturingOn = Display_Textures 	# Shorthand.
@@ -435,7 +435,7 @@ const Median_Stop_Adjuster			=-1
 const CurbtoPlantingGap				=.1
 const Curb_Depth					= 0.1574
 const BusStop_Length				= 12.192
-const Parklet_Shift					= case Space_Management== "Best Fit" || (bool(Parking_Protection) && _Minof(Left_Buffer_Width+Street_Left_Bike_Lane_Width,Right_Buffer_Width+Street_Right_Bike_Lane_Width)>0):0 else:-_EmptySpace #if parking protection is on a shift will lead to geometric collision, but it will choose to collide if oneside does not have a bikelane/buffer (check later).   
+const Parklet_Shift					= case _Actual_Space_Management== "Best Fit" || (bool(Parking_Protection) && _Minof(Left_Buffer_Width+Street_Left_Bike_Lane_Width,Right_Buffer_Width+Street_Right_Bike_Lane_Width)>0):0 else:-_EmptySpace #if parking protection is on a shift will lead to geometric collision, but it will choose to collide if oneside does not have a bikelane/buffer (check later).   
 const Max_Sidewalk_Gap				= 5.4 #change this if you want a smaller or larger gap between first tree splits and crosswalks
 const Median_Turn_Transition_Depth  = Center_Width*1.5
 const Minimum_Turn_Curb_Width		= 1.5/Feet
@@ -704,30 +704,31 @@ const DirectionalFlip	 	= case rightHandTraffic:1 else:-1 				# This is used to 
 const DirectionalRotation	= case rightHandTraffic:0 else:180
 
 #Other
-const _oneWayForward 		= (rightHandTraffic && Lane_Distribution>=1) || (leftHandTraffic && Lane_Distribution<=0)	# in direction of graph segment?
-const _oneWayReverse 		= oneWay && !_oneWayForward
-const _stopBegin 			= case Stop_Begin =="none" || _oneWayForward: 0 else: 1
-const _stopEnd 				= case Stop_End =="none"   || _oneWayReverse: 0 else: 1
-const _neighborBegin		= case _hasStop(connectionStart):1 else: 0
-const _neighborEnd			= case _hasStop(connectionEnd):1 else: 0
-const _crosswalkWidth		= case _Maxof(sidewalkWidthLeft,sidewalkWidthRight)==0:3 else:(_Maxof(sidewalkWidthLeft,sidewalkWidthRight)+0.05)//changed to match width of largest sidewalk +0.05 (2 inches), if 0 default is 2. 
-const _crosswalkBeginWidth	= case Crosswalk_Begin =="none": 0 else: (Crosswalk_Width)
-const _crosswalkEndWidth 	= case Crosswalk_End =="none"  : 0 else: (Crosswalk_Width)
-const _centerWidth	 		= case oneWay: 0 
-							  case Center_Type=="Barrier":.98
-							  case Center_Type=="Barrier & Shoulder":Center_Width
-							  case Center_Type != "None": Center_Width
-							  else:PaintLineWidth*4
-const _Texture_Switch		= case Display_Textures: 4 else: 0 # This switch will delete the opacity map UV if texturing is on- transparencys mess with the tree transparencies anyway. If you want UVset 4 you can change the 4 to a 999 and it should work...but only through an unhandled exception
-const _isnotCenterline		= case Center_Type != "None":0 else:1						  
-const _Bike_Paint_Adjuster	= case Bike_Paint_Line_Sides=="Right"||Bike_Paint_Line_Sides=="None":1 else:2
-const _EmptySpace			= (streetWidth-(nLanesTotal* Lane_Width +_LeftSplitSum +_RightSplitSum+_centerWidth+_Transit_Lane_Widths))/2  # is Per Side-so combined is this *2
-const _AdjEmptySpace		= (_EmptySpace*2)
-const _Actual_Lane_Width	= case Space_Management!= "Best Fit": Lane_Width else:((Lane_Width+(_AdjEmptySpace)/nLanesTotal)-.01)
+const _oneWayForward 		   = (rightHandTraffic && Lane_Distribution>=1) || (leftHandTraffic && Lane_Distribution<=0)	# in direction of graph segment?
+const _oneWayReverse 		   = oneWay && !_oneWayForward
+const _stopBegin 			   = case Stop_Begin =="none" || _oneWayForward: 0 else: 1
+const _stopEnd 				   = case Stop_End =="none"   || _oneWayReverse: 0 else: 1
+const _neighborBegin		   = case _hasStop(connectionStart):1 else: 0
+const _neighborEnd			   = case _hasStop(connectionEnd):1 else: 0
+const _crosswalkWidth		   = case _Maxof(sidewalkWidthLeft,sidewalkWidthRight)==0:3 else:(_Maxof(sidewalkWidthLeft,sidewalkWidthRight)+0.05)//changed to match width of largest sidewalk +0.05 (2 inches), if 0 default is 2. 
+const _crosswalkBeginWidth	   = case Crosswalk_Begin =="none": 0 else: (Crosswalk_Width)
+const _crosswalkEndWidth 	   = case Crosswalk_End =="none"  : 0 else: (Crosswalk_Width)
+const _centerWidth	 		   = case oneWay: 0 
+							       case Center_Type=="Barrier":.98
+							       case Center_Type=="Barrier & Shoulder":Center_Width
+							       case Center_Type != "None": Center_Width
+							       else:PaintLineWidth*4
+const _Texture_Switch		   = case Display_Textures: 4 else: 0 # This switch will delete the opacity map UV if texturing is on- transparencys mess with the tree transparencies anyway. If you want UVset 4 you can change the 4 to a 999 and it should work...but only through an unhandled exception
+const _isnotCenterline		   = case Center_Type != "None":0 else:1						  
+const _Bike_Paint_Adjuster	   = case Bike_Paint_Line_Sides=="Right"||Bike_Paint_Line_Sides=="None":1 else:2
+const _EmptySpace			   = (streetWidth-(nLanesTotal* Lane_Width +_LeftSplitSum +_RightSplitSum+_centerWidth+_Transit_Lane_Widths))/2  # is Per Side-so combined is this *2
+const _AdjEmptySpace		   = (_EmptySpace*2)
+const _Actual_Lane_Width	   = case _Actual_Space_Management!= "Best Fit": Lane_Width else:((Lane_Width+(_AdjEmptySpace)/nLanesTotal)-.01)
+const _Actual_Space_Management = case nLanesTotal==0:"Exact" else: Space_Management
 #Transit Lane Constants
 const _Transit_Lane_Widths	= case Transit_Lane=="None":0 case Transit_Lane_Sides=="Both": 2*Transit_Lane_Width else:Transit_Lane_Width# Is the combined width of transit lanes not in Center					  
 const _Rt_Transit_Lane_Width= case Transit_Lane=="None":0 case Transit_Lane_Sides=="Right" || Transit_Lane_Sides=="Both":Transit_Lane_Width else: 0
-const _Lt_Transit_Lane_Width= case Transit_Lane=="None":0 case Transit_Lane_Sides=="Left" || Transit_Lane_Sides=="Both":Transit_Lane_Width else: 0 #case Space_Management=="Best Fit":0
+const _Lt_Transit_Lane_Width= case Transit_Lane=="None":0 case Transit_Lane_Sides=="Left" || Transit_Lane_Sides=="Both":Transit_Lane_Width else: 0 #case _Actual_Space_Management=="Best Fit":0
 const _Transit_Lane_Dist_Adj= case Transit_Lane=="None":0 case oneWay:0 case Transit_Lane_Sides=="Left":1 else:0 #all this constant does is adjust the lane distribution so that transit lanes do not overly interfere with lane distribution calculations for right transit lanes (we want it to count as a "Lane")
 const _Transit_Lane_Count	= case Transit_Lane=="None":0 case Transit_Lane_Sides=="Both":2 else:1
 const _Rt_Transit_Lane_Count= case Transit_Lane=="None"||Transit_Lane=="Left":0 else:1
@@ -3324,7 +3325,7 @@ Rumble_Strip-->
 	Asphalt(false,1,"Auto")
 	
 Drainage-->
-	case geometry.dv(0,unitSpace)> Lane_Width /3 && Space_Management=="Flag":#Will flag the drainage area as Red if it is >1/3 the laneWidth-I mean really 1/3 of a lane is drainage? Put a bike lane or something
+	case geometry.dv(0,unitSpace)> Lane_Width /3 && _Actual_Space_Management=="Flag":#Will flag the drainage area as Red if it is >1/3 the laneWidth-I mean really 1/3 of a lane is drainage? Put a bike lane or something
 		tileUV(0,~1,'1)
 		cleanupGeometry(all, 0.001)
 		texture(LanesFolder+"/Drainage_Side.jpg")
