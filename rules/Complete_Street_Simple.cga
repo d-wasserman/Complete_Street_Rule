@@ -1,9 +1,9 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 7/13/2016
+ * Last Updated: 7/30/2016
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
- * License: ESRI Attribution License and Apache License.
+ * License: ESRI Atibution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
 # ESRI Attribution License:
 #	ESRI Derivative work
@@ -723,7 +723,7 @@ const _isnotCenterline		   = case Center_Type != "None":0 else:1
 const _Bike_Paint_Adjuster	   = case Bike_Paint_Line_Sides=="Right"||Bike_Paint_Line_Sides=="None":1 else:2
 const _EmptySpace			   = (streetWidth-(nLanesTotal* Lane_Width +_LeftSplitSum +_RightSplitSum+_centerWidth+_Transit_Lane_Widths))/2  # is Per Side-so combined is this *2
 const _AdjEmptySpace		   = (_EmptySpace*2)
-const _Actual_Lane_Width	   = case _Actual_Space_Management!= "Best Fit": Lane_Width else:((Lane_Width+(_AdjEmptySpace)/nLanesTotal)-.01)
+const _Actual_Lane_Width	   = case _Actual_Space_Management!= "Best Fit": Lane_Width else:((Lane_Width+(_AdjEmptySpace/nLanesTotal))-.01)
 const _Actual_Space_Management = case nLanesTotal==0:"Exact" else: Space_Management
 #Transit Lane Constants
 const _Transit_Lane_Widths	= case Transit_Lane=="None":0 case Transit_Lane_Sides=="Both": 2*Transit_Lane_Width else:Transit_Lane_Width# Is the combined width of transit lanes not in Center					  
@@ -3325,7 +3325,7 @@ Rumble_Strip-->
 	Asphalt(false,1,"Auto")
 	
 Drainage-->
-	case geometry.dv(0,unitSpace)> Lane_Width /3 && _Actual_Space_Management=="Flag":#Will flag the drainage area as Red if it is >1/3 the laneWidth-I mean really 1/3 of a lane is drainage? Put a bike lane or something
+	case geometry.dv(0,unitSpace)> Lane_Width /3 && Space_Management=="Flag":#Will flag the drainage area as Red if it is >1/3 the laneWidth-I mean really 1/3 of a lane is drainage? Put a bike lane or something
 		tileUV(0,~1,'1)
 		cleanupGeometry(all, 0.001)
 		texture(LanesFolder+"/Drainage_Side.jpg")
