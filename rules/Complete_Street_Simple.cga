@@ -1,9 +1,9 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 7/30/2016
+ * Last Updated: 8/7/2016
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
- * License: ESRI Atibution License and Apache License.
+ * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
 # ESRI Attribution License:
 #	ESRI Derivative work
@@ -537,7 +537,7 @@ const NACTOPlanting="#B5DC98"
 const NACTOConflictZone="#F9ECB7" #Crosswalk in book
 const NACTOBikeDark="#59995F"
 #Lane Constants:
-const Default_Mix_Bus= case Transit_Lane=="Bus Lane":.001 else: .2
+const Default_Mix_Bus= case Transit_Lane=="Bus Lane":.0001 else: .075
 #####################
 #Tree.Generateed Rules		#
 #####################
@@ -569,7 +569,7 @@ _getInitialCenterline	=
 	else											 : "yellow"		# Else a white centerline
 
 _getInitialStop(connection,nLanes) =
-	case _hasStop(connection) && (streetLength>30):
+	case _hasStop(connection) && (streetLength>20):
 		case connection=="ROUNDABOUT": 60%: "with stop marking" else: "arrows for right turn"
 		case nLanes>2				 : 25%: "line only" 25%: "with stop marking" 15%: "arrows on all lanes" 12%: "arrows on side lanes" 17%: "arrows for right turn" else: "line only"
 		else		 				 : 35%: "line only" 45%: "with stop marking" 10%: "arrows on all lanes" 10%: "arrows on side lanes" else: "line only"
@@ -745,6 +745,7 @@ const HardscapePaverCost = 25		# In square meters
 #Functions										  #
 ###################################################
 #Split Based and Misc Functions
+
 _RightSplitSum=
 	Street_Right_Bike_Lane_Width + Right_Parking_Width + Right_Buffer_Width				#Generates right road side features that need to be fractions of lanewidths
 	
@@ -987,7 +988,6 @@ _tooShort(length,goal_len)=
 	case length<goal_len: 0
 	else: 1
 	
-
 _Maxof(num1,num2)= #Finds the max of two numbers
 	case num1>=num2:
 		num1
@@ -1246,9 +1246,6 @@ hexString(hexValue) =
 	case hexValue == 15 : "E"
 	case hexValue == 16 : "F"
 	else : "" #Error.
-
-
-
 	
 	
 ################################
@@ -1373,6 +1370,7 @@ LeftSide-->
 ##
 # split lanes into a single lane each and respective transit lane (location based transit lanes)
 Lanes(dir,stopType) -->
+	
 	split(v,unitSpace,0){{~_Actual_Lane_Width : LaneReporting(dir,split.total,split.index,stopType,"MainLanes")}*}
 	#print(geometry.dv(0,unitSpace))
 	#print(split.total)
@@ -1414,7 +1412,6 @@ ConventionalLane(dir,lanestotal,lanenumber,stopType)-->
 		Asphalt(true,1,"Auto")
 		VehiclesOnLane(dir)
 		Sharrow(dir,lanestotal,lanenumber)
-		
 	case stopType!="none" && (lanenumber==lanestotal-1):# Makes sure with no stop type last lane has no lane with contiguous stripes
 		split(u,unitSpace,0){ ~1: Asphalt(true,1,"Auto")
  							| 14: LaneMarkings(dir,lanenumber,_stopTex(stopType,lanenumber,lanestotal)) }
@@ -1422,7 +1419,7 @@ ConventionalLane(dir,lanestotal,lanenumber,stopType)-->
  		Sharrow(dir,lanestotal,lanenumber)
 	else:	# Makes basic lanes that that are not next to the last lane or a bus/hov lane (if they are on).
 		split(u,unitSpace,0){ ~1: MainLaneMarkings(dir,lanenumber,"_stripes_white")
- 							| 14: LaneMarkings(dir,lanenumber,_stopTex(stopType,lanenumber,lanestotal))}
+ 							| _hasStopSideSwitch(dir)*14: LaneMarkings(dir,lanenumber,_stopTex(stopType,lanenumber,lanestotal))}
  		VehiclesOnLane(dir)
  		Sharrow(dir,lanestotal,lanenumber)
 	
@@ -1481,11 +1478,11 @@ Buslane_Texture_Rule(dir)-->
 							#Level 1-First split indentation
 							|~1:split(u,unitSpace,0){2:AsphaltPainted(Bus_Lane_Color,true,1,"Transit")
 								#Level 2- sub-split indentation
-								| ~Transit_Lane_Width:BuslaneStamp(dir)
+								| Transit_Lane_Width:BuslaneStamp(dir)
 								|~ Transit_Symbol_Spacing :AsphaltPainted(Bus_Lane_Color,true,1,"Transit")
-								|{ ~Transit_Lane_Width :BuslaneStamp(dir)
+								|{ Transit_Lane_Width :BuslaneStamp(dir)
 								|~ Transit_Symbol_Spacing :AsphaltPainted(Bus_Lane_Color,true,1,"Transit")}*
-								| ~_hasStopSideSwitch(dir)*Transit_Lane_Width:BuslaneStamp(dir)
+								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width:BuslaneStamp(dir)
 								|2:AsphaltPainted(Bus_Lane_Color,true,1,"Transit")}
 							|PaintLineWidth*_PaintLineControl("Left", Transit_Paint_Line_Sides ):AsphaltPainted("white",true,1,"Transit")}
 	BusOnLane(dir)
@@ -1505,11 +1502,11 @@ HOVlane_Texture(dir)-->
 							#Level 1-First split indentation
 							|~1:split(u,unitSpace,0){2:Asphalt(true,1,"Transit")
 								#Level 2- sub-split indentation
-								| ~Transit_Lane_Width:HOVlaneStamp(dir)
+								| Transit_Lane_Width:HOVlaneStamp(dir)
 								|~ Transit_Symbol_Spacing :Asphalt(true,1,"Transit")
-								|{ ~Transit_Lane_Width :HOVlaneStamp(dir)
+								|{ Transit_Lane_Width :HOVlaneStamp(dir)
 								|~ Transit_Symbol_Spacing :Asphalt(true,1,"Transit")}*
-								| ~_hasStopSideSwitch(dir)*Transit_Lane_Width :HOVlaneStamp(dir)
+								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width :HOVlaneStamp(dir)
 								|2:Asphalt(true,1,"Transit")}
 							|PaintLineWidth*2*_PaintLineControl("Left", Transit_Paint_Line_Sides ):AsphaltPainted("yellow",true,1,"Transit")}
 	VehiclesOnLane(dir)
@@ -1561,6 +1558,7 @@ BikeLaneSection (flip,Side_Width)-->
 		BikeLane(flip,Side_Width)
 		
 BikeLane(sideflip,Width)-->#Was Left,now both, fairly modular
+	
 	Bikes((case sideflip==1:0 else: 2),(case _Twoway_Bikelane_Bool:Width/2 else: Width))
 	color( _ModeClassifier ("Bikeways"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	scaleUV(0,sideflip,sideflip)
@@ -1568,11 +1566,11 @@ BikeLane(sideflip,Width)-->#Was Left,now both, fairly modular
 							#Level 1-First split indentation
 							|~1:split(u,unitSpace,0){2:AsphaltPainted(Bike_Lane_Color,true,1,"Bikeways")
 								#Level 2- sub-split indentation
-								| ~Width :BikeLaneStamp(Width  ,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
+								| Width :BikeLaneStamp(Width  ,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
 								|~ Bike_Symbol_Spacing :AsphaltPainted(Bike_Lane_Color,true,1,"Bikeways")
-								|{~Width  :BikeLaneStamp(Width  ,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
+								|{Width  :BikeLaneStamp(Width  ,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
 								|~ Bike_Symbol_Spacing :AsphaltPainted(Bike_Lane_Color,true,1,"Bikeways")}*
-								| ~_hasStopSideSwitch((case sideflip==1:0 else: 2))*Width  :BikeLaneStamp(Width,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
+								| _tooShort(geometry.du(0,unitSpace),Bike_Symbol_Spacing)*_hasStopSideSwitch((case sideflip==1:0 else: 2))*Width  :BikeLaneStamp(Width,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
 								| Bike_Conflict_Spacing :ConflictZone(Bike_Lane_Color)
 								|~1:AsphaltPainted((Bike_Lane_Color),true,1,"Bikeways")} 
 							|PaintLineWidth*_PaintLineControl("Right", Bike_Paint_Line_Sides):BikeLaneLines}
@@ -1742,9 +1740,9 @@ ParkingLane(Side,ParkingType,ParkingLength,ParkingWidth)-->
  	else:
  		color( _ModeClassifier ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
  		scaleUV(0,case Side=="Right":-1 else:1,1)
- 		split(u,unitSpace,0){~_Front_Parking_Spacing(ParkingType):Asphalt(true,1,"Auto")# Make sure to pass right parameters/type shoudl work here
+ 		split(u,unitSpace,0){~(_Front_Parking_Spacing(ParkingType)):Asphalt(true,1,"Auto")# Make sure to pass right parameters/type shoudl work here
  							|{ParkingLength:ParkingSpace(Side,ParkingType,split.index,split.total,ParkingLength,ParkingWidth)}*
- 							|~_Rear_Parking_Spacing(ParkingType):Asphalt(true,1,"Auto")}	
+ 							|~(_Rear_Parking_Spacing(ParkingType)):Asphalt(true,1,"Auto")}	
 
 ParkingSpace(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
  	case rand(0,100)<=Parklet_Percentage && SpaceNumber>1:
@@ -1904,9 +1902,9 @@ CenterSpace -->
 MedianWTurnLane-->
 	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
 						|_neighborBegin*_stopBegin*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")
-						|(_tooShort(geometry.du(0,unitSpace),30))*_neighborBegin*_stopBegin*(16+Median_Turn_Transition_Depth):MedianTurnPocket(0)
+						|(_tooShort(geometry.du(0,unitSpace),16+Median_Turn_Transition_Depth+ThickPaintLineWidth))*_neighborBegin*_stopBegin*(16+Median_Turn_Transition_Depth):MedianTurnPocket(0)
 						|~1:Raised_Offset_Curb("Median",1,"Auto",Center_Width/4)
-						|(_tooShort(geometry.du(0,unitSpace),30))*_neighborEnd*_stopEnd*(16+Median_Turn_Transition_Depth):MedianTurnPocket(2)
+						|(_tooShort(geometry.du(0,unitSpace),16+Median_Turn_Transition_Depth+ThickPaintLineWidth))*_neighborEnd*_stopEnd*(16+Median_Turn_Transition_Depth):MedianTurnPocket(2)
 						|_neighborEnd*_stopEnd*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")
 						|(_Bike_Box_Gap("End")): Bike_Box_Left_Turn_Gap("End")}
 MedianTurnPocket(dir)-->
@@ -1933,13 +1931,13 @@ TurnLanePocket(dir)-->
 Center_Turn_Lane-->
 	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
 						|_neighborBegin*_stopBegin*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")
-						|(_tooShort(geometry.du(0,unitSpace),30))*_neighborBegin*_stopBegin*18:CenterTurnLaneStamp("Transition_",180)
-						|~ Lane_Width :CenterTurnLaneStamp("",90)
+						|(_tooShort(geometry.du(0,unitSpace),18+ThickPaintLineWidth))*_neighborBegin*_stopBegin*18:CenterTurnLaneStamp("Transition_",180)
+						| ~Lane_Width :CenterTurnLaneStamp("",90)
 						|{~ Lane_Width :CenterTurnLaneStamp("",90)
 						| Lane_Width :CenterTurnLaneStamp("Turn_",90)
 						| ~Lane_Width :CenterTurnLaneStamp("",90)}*
-						|~ Lane_Width :CenterTurnLaneStamp("",90)
-						|(_tooShort(geometry.du(0,unitSpace),30))*_neighborEnd*_stopEnd*18:CenterTurnLaneStamp("Transition_",0)
+						| ~Lane_Width :CenterTurnLaneStamp("",90)
+						|(_tooShort(geometry.du(0,unitSpace),18+ThickPaintLineWidth))*_neighborEnd*_stopEnd*18:CenterTurnLaneStamp("Transition_",0)
 						|_neighborEnd*_stopEnd*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")
 						|(_Bike_Box_Gap("End")): Bike_Box_Left_Turn_Gap("End")}
 						
