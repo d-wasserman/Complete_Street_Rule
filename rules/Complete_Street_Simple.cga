@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 8/7/2016
+ * Last Updated: 8/9/2016
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -1570,9 +1570,9 @@ BikeLane(sideflip,Width)-->#Was Left,now both, fairly modular
 								|~ Bike_Symbol_Spacing :AsphaltPainted(Bike_Lane_Color,true,1,"Bikeways")
 								|{Width  :BikeLaneStamp(Width  ,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
 								|~ Bike_Symbol_Spacing :AsphaltPainted(Bike_Lane_Color,true,1,"Bikeways")}*
-								| _tooShort(geometry.du(0,unitSpace),Bike_Symbol_Spacing)*_hasStopSideSwitch((case sideflip==1:0 else: 2))*Width  :BikeLaneStamp(Width,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
+								| _tooShort(geometry.du(0,unitSpace)-Bike_Conflict_Spacing,Bike_Symbol_Spacing)*_hasStopSideSwitch((case sideflip==1:0 else: 2))*Width  :BikeLaneStamp(Width,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
 								| Bike_Conflict_Spacing :ConflictZone(Bike_Lane_Color)
-								|~1:AsphaltPainted((Bike_Lane_Color),true,1,"Bikeways")} 
+								|1:AsphaltPainted((Bike_Lane_Color),true,1,"Bikeways")} 
 							|PaintLineWidth*_PaintLineControl("Right", Bike_Paint_Line_Sides):BikeLaneLines}
 
 BikeLaneLines-->
