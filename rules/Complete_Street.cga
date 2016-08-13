@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 8/9/2016
+ * Last Updated: 8/12/2016
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -409,15 +409,15 @@ attr Base_Flood_Elevation=-.00001
 # User constants #
 ##################
 #Folder Constants
-const StreetTextureFolder 			= "Complete_Streets"
-const LanesFolder					= StreetTextureFolder+"/Lanes"
-const SidewalkFolder				= StreetTextureFolder+"/Sidewalks"
-const ObjectFolder					= StreetTextureFolder+"/Street_Furniture_and_Objects"
-const GrassFolder					= StreetTextureFolder+"/Sidewalks/Grass"
+const CompleteStreetFolder 			= case fileExists("Complete_Streets/Lanes/Center_Lane.jpg"):"Complete_Streets" else: "/ESRI.lib/assets/Streets"
+const LanesFolder					= CompleteStreetFolder +"/Lanes"
+const SidewalkFolder				= CompleteStreetFolder +"/Sidewalks"
+const ObjectFolder					= CompleteStreetFolder +"/Street_Furniture_and_Objects"
+const GrassFolder					= CompleteStreetFolder +"/Sidewalks/Grass"
 const TrafficControlFolder			= ObjectFolder +"/Dir_Traffic_controls"
 const TrafficSignFolder				= ObjectFolder +"/Dir_Traffic_signs"
 const LampsFolder					= ObjectFolder+"/Dir_Lamps"
-const MiscFolder					= StreetTextureFolder+"/Misc"
+const MiscFolder					= CompleteStreetFolder +"/Misc"
 #Paint Constants
 const ThickPaintLineWidth			= 0.5
 const PaintLineWidth				= 0.1 #uvSpace 36/256-about 4 in
@@ -1378,7 +1378,7 @@ Lanes(dir,stopType) -->
 LaneMarkings(dir,lanenumber,markings) -->	# is used for textures for intersection approach (stop,turn arrows etc). 
 	tileUV(0,~14,~Lane_Width )				# the tileUV operation makes sure that one unit in u-space corresponds to approx 14 meters, the v-coord is not touched in the case of 0 as parameter
 	normalizeUV(0,v,separatePerFace)
-	texture(StreetTextureFolder + "/Lanes/lanes_4"+markings+"_14x14m.jpg")
+	texture(LanesFolder+"/lanes_4"+markings+"_14x14m.jpg")
 	deleteUV(_Texture_Switch)
 	color( _ModeClassifier ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic.
 	AsphaltPainted("white",false,_stopTexPaintFractions(markings,lanenumber),"Auto")
@@ -1387,7 +1387,7 @@ LaneMarkings(dir,lanenumber,markings) -->	# is used for textures for intersectio
 MainLaneMarkings(dir,lanenumber,markings)-->	
 	tileUV(0,~14,~ Lane_Width )				# the tileUV operation makes sure that one unit in u-space corresponds to approx 14 meters, the v-coord is not touched in the case of 0 as parameter
 	scaleUV(0,_uScale,1/4)				    # flip direction if needed, handle short lanes with _uScale, and scaling the v coord for the texture (e.g. a street with 2 lanes has v coords from 0 to 2, this means it has to map onto 0 to 2/8 on our texture with its 8 lanes)	
-	texture(StreetTextureFolder + "/Lanes/lanes_4"+markings+"_14x14m.jpg")
+	texture( LanesFolder+"/lanes_4"+markings+"_14x14m.jpg")
 	deleteUV(_Texture_Switch)
 	color( _ModeClassifier ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic.
 	AsphaltPainted("white",false,MainLane_WhiteFraction,"Auto")
@@ -1996,7 +1996,7 @@ Center_Normal_Lanes(Dir)-->
 CenterLineMarkings(tex) -->
 	normalizeUV(0,v,collectiveAllFaces)
 	tileUV(0,~14,0)
-	texture(StreetTextureFolder + "/Lanes/centerline_" + tex + "_14m.jpg")
+	texture(LanesFolder+"/centerline_" + tex + "_14m.jpg")
 	deleteUV(_Texture_Switch)
 	AsphaltPainted("black",false,1-Center_Line_Paint_Fraction,"Auto")
 	AsphaltPainted(case Centerline_Color=="none":"white" else:Centerline_Color,false,Center_Line_Paint_Fraction,"Auto")#Slight over estimate for none-case. 
@@ -2437,7 +2437,7 @@ CrosswalkStripes(stripeWidth) -->
 	report("Crosswalk.Crosswalk Area",geometry.area())
 	cleanupGeometry(all, 0.001) 
 	tileUV(0,0,~1) scaleUV(0,1,1/8/stripeWidth) 		# to setup the v-direction: a continental crosswalk line is 1m width, and the texture contains 8 of these.
-	texture(StreetTextureFolder + "/Lanes/crosswalk_continental_"+ Crosswalk_Color +".jpg")
+	texture(LanesFolder + "/crosswalk_continental_"+ Crosswalk_Color +".jpg")
 	deleteUV(_Texture_Switch)
 	color( _ModeClassifier ("Conflict Zones"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	AsphaltPainted(Crosswalk_Color,false,Crosswalk_PaintFraction,"Conflict Zones")
@@ -2459,17 +2459,17 @@ CrosswalkWalkway(reporting)-->
 #
 #Many are only sent to Asphalt. This includes joints, crossings, and junctions. 
 # drive-through street segments
-Joint 		-->
+Joint-->
 	BridgeMain
 	report("Connection Shape Area.Joint Area",geometry.area())#Only reports given to Joints
 	Asphalt(true,1,"Auto")
 
-Junction 	--> 
+Junction --> 
 	BridgeMain
 	report("Connection Shape Area.Intersection Area",geometry.area())
 	Asphalt(true,1,"Auto")
 
-Freeway 	-->
+Freeway -->
 	
 	report("Connection Shape Area.Freeway Area",geometry.area())#Only reports given to freeways. 
 	set(streetWidth,geometry.dv(0,unitSpace))
@@ -2798,7 +2798,7 @@ AsphaltPainted(paintColor,TextureAndReport,Area_Fraction,Usage) -->
 	case TextureAndReport && paintColor!="black":# This makes sure that if the color is black, it is thrown into Asphalt Reporting
 		tileUV(0,7,7)
 		cleanupGeometry(all,0.001)
-		texture(StreetTextureFolder + "/Lanes/asphalt_painted_" + paintColor + "_7x7m.jpg")
+		texture(LanesFolder+"/asphalt_painted_" + paintColor + "_7x7m.jpg")
 		deleteUV(_Texture_Switch)
 		color( _ModeClassifier (Usage))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 		report("Mode Area (m^2)."+str(Usage),geometry.area*Area_Fraction)#Area Fraction avoids double counting some shapes
@@ -2821,7 +2821,7 @@ AsphaltPainted(paintColor,TextureAndReport,Area_Fraction,Usage) -->
 # 
 # -------------------------------------------
 
-vehicleAsset(type) = fileRandom(StreetTextureFolder + "/LowPolygon3D.com_Vehicles/" + type + "/*.obj")
+vehicleAsset(type) = fileRandom( CompleteStreetFolder + "/LowPolygon3D.com_Vehicles/" + type + "/*.obj")
 
 const vehiclesProb = ( Vehicles_Per_KM *minCarDistance)/1000
 const busProb	   = (Bus_Lane_Buses_Per_KM*minCarDistance)/1000
@@ -2881,7 +2881,7 @@ VehicleAsset(type) -->
 # 
 # -------------------------------------------
 
-bikeAsset = fileRandom(StreetTextureFolder + "/LowPolygon3D.com_Cyclists/*.obj")
+bikeAsset = fileRandom( CompleteStreetFolder + "/LowPolygon3D.com_Cyclists/*.obj")
 
 const bikeProb = (Bicycles_Per_KM * minBikeDistance)/1000
 const minBikeDistance = 2
@@ -2942,7 +2942,7 @@ Delete_Texture-->
 # 
 # -------------------------------------------
 
-peopleAsset = fileRandom(StreetTextureFolder + "/LowPolygon3D.com_People/*.obj")
+peopleAsset = fileRandom( CompleteStreetFolder + "/LowPolygon3D.com_People/*.obj")
 dirHuman = 50%: 90 else: -90
 
 People -->
@@ -3307,7 +3307,7 @@ Asphalt(TextureAndReport,Area_Fraction,Usage) -->
 	case TextureAndReport:
 		tileUV(0,14,14)
 		cleanupGeometry(all, 0.001)
-		texture(StreetTextureFolder + "/Lanes/asphalt_14x14m.jpg")
+		texture( LanesFolder+"/asphalt_14x14m.jpg")
 		deleteUV(_Texture_Switch)
 		color( _ModeClassifier (Usage))#If Display Thematics==Usage, goes to usage, if not, Thematic-strings might have other purpose later. 
 		report("Mode Area (m^2)."+str(Usage),geometry.area*Area_Fraction)
