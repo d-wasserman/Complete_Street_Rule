@@ -36,7 +36,7 @@ If all you need is the rule for your current project:
 ![alt tag](https://geonet.esri.com/servlet/JiveServlet/showImage/102-6915-27-160154/RoadDiet6.jpeg.jpg)
 The rules new features include: 
 
-Key changes to the rule include:
+# Key changes to the rule include:
 
 1. Best Fit setting allows the rule to make sure that the street has the option to not have exact geometry.
 This still needs to be tested more so please comment if you have any issues with the rule. The best fit feature works by calculating empty space and then adding it to the lane width. This means that your lane width attribute becomes the minimum width the lanes can take on before it subtracts lanes.
@@ -57,7 +57,7 @@ This still needs to be tested more so please comment if you have any issues with
 
 8. Other miscellaneous changes.
 
-	-Dead end exception, dead ends, treated like they have a connection (for singular cross sections).
+	-Dead end exception, dead ends, treated like they have a connection (for non-singular cross sections and shorter segments). 
 	
 	-Modal Preference replaced LTS to provide more clarity of what the metrics represent across modes. 
 
