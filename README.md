@@ -34,7 +34,7 @@ If all you need is the rule for your current project:
 7.	Apply rule to desired street segments.
 
 ![alt tag](https://geonet.esri.com/servlet/JiveServlet/showImage/102-6915-27-160154/RoadDiet6.jpeg.jpg)
-The rules new features include: 
+
 
 # Key changes to the rule include:
 
