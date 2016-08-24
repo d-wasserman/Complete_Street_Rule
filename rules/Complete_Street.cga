@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 8/12/2016
+ * Last Updated: 8/23/2016
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -409,7 +409,7 @@ attr Base_Flood_Elevation=-.00001
 # User constants #
 ##################
 #Folder Constants
-const CompleteStreetFolder 			= case fileExists("Complete_Streets/Lanes/Center_Lane.jpg"):"Complete_Streets" else: "/ESRI.lib/assets/Streets"
+const CompleteStreetFolder 			= case fileExists(fileRandom("Complete_Streets/Lanes*.jpg")):"Complete_Streets" else: "/ESRI.lib/assets/Streets"
 const LanesFolder					= CompleteStreetFolder +"/Lanes"
 const SidewalkFolder				= CompleteStreetFolder +"/Sidewalks"
 const ObjectFolder					= CompleteStreetFolder +"/Street_Furniture_and_Objects"
