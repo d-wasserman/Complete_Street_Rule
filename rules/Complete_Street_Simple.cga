@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 8/23/2016
+ * Last Updated: 9/15/2016
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -222,7 +222,7 @@ attr Left_Buffer_Width			= 0
 attr Buffer_Protection			= true
 @Order(7)@Description("If on/true, parking lane is closer to the through lane, and bicycle lane is protected from through traffic. Keep in mind how the door zone influences bicycle lane placement.")
 attr Parking_Protection 		= _IsCycleTrackBuffer
-@Order(8)@Range("Painted Stripes","Curb Buffer","Curb Buffer with Plantings","Curb Buffer with Trees","Solid White","Cycle Track With Planters","Cycle Track With Tubular Markers","Spaced Curb Buffer","Asphalt","Shoulder")@Description("This attribute controls the bicycle buffer type and form, but also can become plain asphalt or a shoulder.")
+@Order(8)@Range("Painted Stripes","Curb Buffer","Curb Buffer with Plantings","Curb Buffer with Trees","Solid White","Cycle Track With Planters","Cycle Track With Tubular Markers","Spaced Curb Buffer","Spaced Curb Buffer with Plantings","Spaced Curb Buffer with Trees","Asphalt","Shoulder")@Description("This attribute controls the bicycle buffer type and form, but also can become plain asphalt or a shoulder.")
 attr Buffer_Type				="Painted Stripes"
 @Order(9)@Range(0,10)@Description("Controls  the buffers spacing of objects such as tubular markers, planters, and tree/plantings (Trees/Plants match Sidewalk Plantings if selected).")@Hidden			
 attr Buffer_Object_Spacing		=_Default_Buffer_Object_Spacing
@@ -453,7 +453,7 @@ const Bike_Lane_Twoway_Distribution	=.5
 const BikeBox_Fraction				=.75
 const Buffer_Stripe_Length			= 3.048 #Not used, but can be. 
 const Center_Tube_Marker_Dist		=.1
-const _Default_Buffer_Object_Spacing= case Buffer_Type=="Curb Buffer with Trees":8 case Buffer_Type=="Cycle Track With Planters":2.5 else:1.5
+const _Default_Buffer_Object_Spacing= case Buffer_Type=="Curb Buffer with Trees":8 case find(Buffer_Type,"Spaced Curb",0)!=-1:6 case Buffer_Type=="Cycle Track With Planters":2.5 else:1.5
 const BikeBoxGeometryThreshold		= Lane_Width *BikeBox_Fraction+_Maxof(Street_Right_Bike_Lane_Width,Street_Left_Bike_Lane_Width)-.1
 const Street_Right_Bike_Lane_Width	=	case find(Bike_Lane_Type,"Sidewalk",0)!=-1:0 else:Right_Bike_Lane_Width
 const Street_Left_Bike_Lane_Width	=	case find(Bike_Lane_Type,"Sidewalk",0)!=-1:0 else:Left_Bike_Lane_Width
@@ -1419,7 +1419,7 @@ ConventionalLane(dir,lanestotal,lanenumber,stopType)-->
  		Sharrow(dir,lanestotal,lanenumber)
 	else:	# Makes basic lanes that that are not next to the last lane or a bus/hov lane (if they are on).
 		split(u,unitSpace,0){ ~1: MainLaneMarkings(dir,lanenumber,"_stripes_white")
- 							| _hasStopSideSwitch(dir)*14: LaneMarkings(dir,lanenumber,_stopTex(stopType,lanenumber,lanestotal))}
+ 							| _hasStopSideSwitch(dir)* 14: LaneMarkings(dir,lanenumber,_stopTex(stopType,lanenumber,lanestotal))}
  		VehiclesOnLane(dir)
  		Sharrow(dir,lanestotal,lanenumber)
 	
@@ -1619,7 +1619,7 @@ BikeBuffer(Buffer_Width,Dir)-->
 		color( _ModeClassifier ("Bikeways"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 		Striped_Buffer(Buffer_Width)
 		ObjectSetup("Tubular Marker",Buffer_Object_Spacing,"/Tubular_Marker.obj",Buffer_Width)
-	case Buffer_Type=="Spaced Curb Buffer":
+	case find(str(Buffer_Type),"Spaced Curb Buffer",0)!=-1:
 		color( _ModeClassifier ("(Bikeways"))
 		split(u,unitSpace,0) {{~Buffer_Object_Spacing:Asphalt(true,1,"Bikeways")
 								|~Buffer_Object_Spacing:Raised_Curb("Buffer",1)}*
@@ -1656,9 +1656,10 @@ Buffer_Top-->
 	case Buffer_Type=="Curb Buffer with Trees":
 		Sidewalk_Planting
 		Buffer_Tree_Split
-	case Buffer_Type=="Curb Buffer":
-		Buffer_Texture
-	case Buffer_Type=="Curb Buffer with Plantings":
+	case Buffer_Type=="Spaced Curb Buffer with Trees":
+		Sidewalk_Planting
+		Tree_Setup("Buffer", Sidewalk_Tree_1_Percentage , Sidewalk_Tree_1_Type,Sidewalk_Tree_2_Type )
+	case find(Buffer_Type,"Curb Buffer with Plantings",0)!=-1:
 		Sidewalk_Planting
 	else:
 		Buffer_Texture
