@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:11/13/2016
+ * Last Updated:11/16/2016
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -460,8 +460,8 @@ const Street_Left_Bike_Lane_Width	=	case find(Bike_Lane_Type,"Sidewalk",0)!=-1:0
 const Sidewalk_Right_Bike_Lane_Width=	case find(Bike_Lane_Type,"Sidewalk",0)!=-1:Right_Bike_Lane_Width else:0
 const Sidewalk_Left_Bike_Lane_Width	=	case find(Bike_Lane_Type,"Sidewalk",0)!=-1:Left_Bike_Lane_Width else:0
 const Bike_Box_Buffer_Adapter		= case Buffer_Protection_Bool && Parking_Protection_Bool:1 else:0 #Helps with adjusting the stopbar to different buffer types. 
-const Bike_Reversal_Switch			= case find(Bike_Lane_Type,"Reverse",0)!=-1:1 else: -1
-const _Twoway_Bikelane_Bool			= find(Bike_Lane_Type,"Two-way",0)!=-1
+const Bike_Reversal_Switch			= case find(Bike_Lane_Type,"Reverse",0)!=-1:-1 else: 1
+const _Twoway_Bikelane_Bool			= find(Bike_Lane_Type,"Two-way",0)!=-1 #Find(_)!=1 Pattern is ~ if it has this string, true.
 #Vegetation Constants
 const Random_Grass					=(fileRandom(GrassFolder + "/*.jpg"))
 #Parking Constants
@@ -718,8 +718,8 @@ const _oneWayForward 		   = (rightHandTraffic && Lane_Distribution>=1) || (leftH
 const _oneWayReverse 		   = oneWay && !_oneWayForward
 const _stopBegin 			   = case Stop_Begin =="none" || _oneWayForward: 0 else: 1
 const _stopEnd 				   = case Stop_End =="none"   || _oneWayReverse: 0 else: 1
-const _neighborBegin		   = case _hasStop(connectionStart):1 else: 0
-const _neighborEnd			   = case _hasStop(connectionEnd):1 else: 0
+const _neighborBegin		   = case Stop_Begin !="none" || _hasStop(connectionStart):1 else: 0
+const _neighborEnd			   = case Stop_End !="none" || _hasStop(connectionEnd):1 else: 0
 const _crosswalkWidth		   = case _Maxof(sidewalkWidthLeft,sidewalkWidthRight)==0:3 else:(_Maxof(sidewalkWidthLeft,sidewalkWidthRight)+0.05)//changed to match width of largest sidewalk +0.05 (2 inches), if 0 default is 2. 
 const _crosswalkBeginWidth	   = case Crosswalk_Begin =="none": 0 else: (Crosswalk_Width)
 const _crosswalkEndWidth 	   = case Crosswalk_End =="none"  : 0 else: (Crosswalk_Width)
