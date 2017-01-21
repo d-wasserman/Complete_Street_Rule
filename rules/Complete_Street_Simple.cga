@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:12/16/2016
+ * Last Updated:1/18/2017
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -231,7 +231,7 @@ attr Bike_Symbol_Spacing		= 24.5
 @Order(11)@Range(0,20) @Description("Creates conflict spacing made up by asphalt gaps in the bike lane for approaching interesections.")
 attr Bike_Conflict_Spacing		= 0
 @Order(12)@Range("green","black","red","blue") @Description("Determines the color of the bike lane and bike box. Paint reporting costs adjust based on color choices.")
-attr Bike_Lane_Color			= case Bike_Lane_Type=="Sharrow":"green" else: "black"
+attr Bike_Lane_Color			= case Bike_Lane_Type=="Sharrow" &&_Maxof(Left_Bike_Lane_Width,Right_Bike_Lane_Width)==0:"green" else: "black"
 @Order(13)@Range("Both","Right", "Left", "None")@Description("Controls the white lines on the sides of preferential lanes.")@Hidden
 attr Bike_Paint_Line_Sides  	="Both"
 @Order(14)@Range("Rare","Moderate","Frequent")@Description("Is a descriptive attribute relating to the probability that a bike lane might be blocked due to unloading or double parking that feeds into Thematic.")@Hidden
@@ -311,14 +311,16 @@ attr Sidewalk_Bike_Rack					="false"
 attr Vehicles_Per_KM 				= case Not_High_LOD:0 else: 100
 @Range(0,1) @Order(2)@Description("Determines the approximate percentage of vehicles that are buses on main throughways.")@Hidden		
 attr Mixed_Traffic_Bus_Percentage	= Default_Mix_Bus
+@Range(0,1) @Order(2)@Description("Determines the approximate percentage of vehicles that are bikes in the curb lane of main throughways.")@Hidden		
+attr Mixed_Traffic_Bike_Percentage	= Default_Mix_Bike
 @Range(0,1) @Order(3)@Description("Determines the approximate percentage of vehicles that are taxis on main throughways.")@Hidden		
 attr Taxi_Percentage 				= 0.2
 @Range(0,300) @Order(4)@Description("Determines the number of buses per KM of road length loaded onto bus lanes only.")@Hidden
 attr Bus_Lane_Buses_Per_KM			= case Not_High_LOD:0 else: 25
 @Order(5) @Range(0,1) @Description("Higher the percentage, the higher the number of people loaded onto sidewalks.")@Hidden
-attr People_Percentage 				= case Not_High_LOD:0 else: 1
+attr People_Percentage 				= case Not_High_LOD:0 else: 1*_PedRank
 @Order(6) @Range(0,100)@Description("Determines the number of bicyclists per KM of road length loaded onto bike lanes only.")@Hidden
-attr Bicycles_Per_KM				= case Not_High_LOD:0 else: 60
+attr Bicycles_Per_KM				= case Not_High_LOD:0 else: 60*_BikeRank
 @Order(7)@Range(0,1) @Description("Higher the percentage, the higher the parking occupancy.")@Hidden
 attr Parked_Car_Percentage			= case Not_High_LOD:0 else: .6
 @Order(8)@Hidden @Range(0,360) @Description("When parking is angled, this determines the angle of the vehicles placed in each right side angled parking spot.")
@@ -547,7 +549,8 @@ const NACTOPlanting="#B5DC98"
 const NACTOConflictZone="#F9ECB7" #Crosswalk in book
 const NACTOBikeDark="#59995F"
 #Lane Constants:
-const Default_Mix_Bus= case Transit_Lane=="Bus Lane":.0001 else: .075
+const Default_Mix_Bus = case Transit_Lane=="Bus Lane":.0001 else: .075
+const Default_Mix_Bike = case Bike_Lane_Type=="Sharrow" && _Maxof(Left_Bike_Lane_Width,Right_Bike_Lane_Width)==0:(.20*_BikeRank+.05) else: 0
 #####################
 #Tree.Generateed Rules		#
 #####################
@@ -784,7 +787,7 @@ _IsCycleTrack=
 		true
 	case bool(_IsCycleTrackBuffer) && (Street_Right_Bike_Lane_Width>0 || Street_Left_Bike_Lane_Width>0) &&_MaxParkingSum<=1 && _Orientation_Modified_SplitSum>=1.8288: #Plain Buffer
 		true
-	case find(Bike_Lane_Type,"Sidewalk",0)!=-1 && (Sidewalk_Right_Bike_Lane_Width>0||Sidewalk_Left_Bike_Lane_Width>0):
+	case find(Bike_Lane_Type,"Sidewalk",0)!=-1 && (Sidewalk_Right_Bike_Lane_Width>0||Sidewalk_Left_Bike_Lane_Width>0):#Sidewalk protected facility
 		true
 	else:
 		false
@@ -1421,17 +1424,17 @@ LaneReporting(dir,lanestotal,lanenumber,stopType,laneType)-->
 ConventionalLane(dir,lanestotal,lanenumber,stopType)-->
 	case stopType=="none" && (lanenumber==lanestotal-1):# Makes sure with no stop type last lane has no lane with contiguous stripes
 		Asphalt(true,1,"Auto")
-		VehiclesOnLane(dir)
+		MixedTrafficOnLane (dir,lanenumber,lanestotal)
 		Sharrow(dir,lanestotal,lanenumber)
 	case stopType!="none" && (lanenumber==lanestotal-1):# Makes sure with no stop type last lane has no lane with contiguous stripes
 		split(u,unitSpace,0){ ~1: Asphalt(true,1,"Auto")
  							| 14: LaneMarkings(dir,lanenumber,_stopTex(stopType,lanenumber,lanestotal)) }
- 		VehiclesOnLane(dir)
+ 		MixedTrafficOnLane (dir,lanenumber,lanestotal)
  		Sharrow(dir,lanestotal,lanenumber)
 	else:	# Makes basic lanes that that are not next to the last lane or a bus/hov lane (if they are on).
 		split(u,unitSpace,0){ ~1: MainLaneMarkings(dir,lanenumber,"_stripes_white")
  							| _hasStopSideSwitch(dir)* 14: LaneMarkings(dir,lanenumber,_stopTex(stopType,lanenumber,lanestotal))}
- 		VehiclesOnLane(dir)
+ 		MixedTrafficOnLane (dir,lanenumber,lanestotal)
  		Sharrow(dir,lanestotal,lanenumber)
 	
 
@@ -1520,7 +1523,7 @@ HOVlane_Texture(dir)-->
 								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width :HOVlaneStamp(dir)
 								|2:Asphalt(true,1,"Transit")}
 							|PaintLineWidth*2*_PaintLineControl("Left", Transit_Paint_Line_Sides ):AsphaltPainted("yellow",true,1,"Transit")}
-	VehiclesOnLane(dir)
+	MixedTrafficOnLane (dir,-999,-999)
 
 HOVlaneStamp(dir)-->
 	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
@@ -1571,7 +1574,7 @@ BikeLaneSection (flip,Side_Width)-->
 		
 BikeLane(sideflip,Width)-->#Was Left,now both, fairly modular
 	
-	Bikes((case sideflip==1:0 else: 2),(case _Twoway_Bikelane_Bool:Width/2 else: Width))
+	Bikes((case sideflip==1:0 else: 2),(case _Twoway_Bikelane_Bool:Width/2 else: Width),bikeProb)
 	color( _ModeClassifier ("Bikeways"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	scaleUV(0,sideflip,sideflip)
 	split(v,unitSpace,0){PaintLineWidth*_PaintLineControl("Left", Bike_Paint_Line_Sides):BikeLaneLines
@@ -2001,10 +2004,10 @@ Boulevard_Center-->
 	else:
 		CenterLineMarkings("double_"+(case Centerline_Color=="none":"yellow" else:Centerline_Color))
 
-Center_Normal_Lanes(Dir)-->
+Center_Normal_Lanes(dir)-->
 	 split(v,unitSpace,0) {~1:Drainage
-	 					  |{ Lane_Width :MainLaneMarkings(0,split.index,"_stripes_white") VehiclesOnLane(Dir)}*
-	 					  | Lane_Width :Asphalt(true,1,"Auto") VehiclesOnLane(Dir)}
+	 					  |{ Lane_Width :MainLaneMarkings(0,split.index,"_stripes_white") MixedTrafficOnLane (dir,-999,-999)}*
+	 					  | Lane_Width :Asphalt(true,1,"Auto") MixedTrafficOnLane (dir,-999,-999)}
 
 CenterLineMarkings(tex) -->
 	normalizeUV(0,v,collectiveAllFaces)
@@ -2847,13 +2850,15 @@ BusOnLane(dir)-->
 	else:
 		NIL
 
-VehiclesOnLane(dir) -->
+MixedTrafficOnLane (dir,lanenumber,lanestotal) -->
 	case geometry.du(0,unitSpace) > 1000:
-		split(u,unitSpace,0){ '0.5: VehiclesOnLane(dir) | '0.5: VehiclesOnLane(dir) }
+		split(u,unitSpace,0){ '0.5: MixedTrafficOnLane (dir,lanenumber,lanestotal) | '0.5: MixedTrafficOnLane (dir,lanenumber,lanestotal) }
 	case geometry.du(0,unitSpace) > 10 && p( Mixed_Traffic_Bus_Percentage):
-		split(u,unitSpace,0){ ~1: VehiclesOnLane(dir) | (rand(15,25)): Vehicle(dir,"bus") }
+		split(u,unitSpace,0){ ~1: MixedTrafficOnLane (dir,lanenumber,lanestotal) | (rand(15,25)): Vehicle(dir,"bus") }
+	case geometry.du(0,unitSpace) > 5 && p(Mixed_Traffic_Bike_Percentage)&& lanenumber==0: #Allocate only on Curb Lanes
+		split(u,unitSpace,0){ ~1: MixedTrafficOnLane (dir,lanenumber,lanestotal) | (rand(minCarDistance,8)): Bike(dir,Lane_Width,1) }
 	case geometry.du(0,unitSpace) > 5:
-		split(u,unitSpace,0){ ~1: VehiclesOnLane(dir) | (rand(minCarDistance,15)): VehicleTaxiOrCar(dir) }
+		split(u,unitSpace,0){ ~1: MixedTrafficOnLane (dir,lanenumber,lanestotal) | (rand(minCarDistance,15)): VehicleTaxiOrCar(dir) }
 	else:
 		NIL
 
@@ -2900,8 +2905,8 @@ bikeAsset = fileRandom( CompleteStreetFolder + "/LowPolygon3D.com_Cyclists/*.obj
 const bikeProb = (Bicycles_Per_KM * minBikeDistance)/1000
 const minBikeDistance = 2
 
-Bikes(dir,Bike_Lane_Width) -->
-	case bikeProb > 0:
+Bikes(dir,Bike_Lane_Width,bike_probability) -->
+	case bike_probability > 0:
 		BikesOnLane(dir,Bike_Lane_Width)		
 	else:
 		NIL
@@ -2909,16 +2914,14 @@ Bikes(dir,Bike_Lane_Width) -->
 BikesOnLane(dir,Bike_Lane_Width) --> #Fix: Lots of logic here that doesn't apply to bikes, since it was adapted from car logic.
 case geometry.du(0,unitSpace) > 1000:
 	split(u,unitSpace,0){ '0.5: BikesOnLane(dir,Bike_Lane_Width) | '0.5: BikesOnLane(dir,Bike_Lane_Width) }
-case geometry.du(0,unitSpace)> 10:
-	split(u,unitSpace,0){ ~1: BikesOnLane(dir,Bike_Lane_Width) | (rand(minBikeDistance,minBikeDistance*2)): Bike(dir,Bike_Lane_Width) }
 case geometry.du(0,unitSpace) > 5:
-		split(u,unitSpace,0){ ~1: BikesOnLane(dir,Bike_Lane_Width) | (rand(minBikeDistance,3)): Bike(dir,Bike_Lane_Width) }
+	split(u,unitSpace,0){ ~1: BikesOnLane(dir,Bike_Lane_Width) | (rand(minBikeDistance,3)): Bike(dir,Bike_Lane_Width,bikeProb) }
 else:
 	NIL
 
 	
-Bike(dir,Bike_Lane_Width) --> 
-	case p(bikeProb):
+Bike(dir,Bike_Lane_Width,bike_probability) --> 
+	case p(bike_probability):
 		split(u,unitSpace,0){ ~1: NIL | 0.5: alignScopeToGeometry(yUp,dir) BikeAsset(Bike_Lane_Width) | ~1: NIL }
 	else:
 		NIL	
