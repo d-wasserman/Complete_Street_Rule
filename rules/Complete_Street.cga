@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:1/18/2017
+ * Last Updated:3/30/2017
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -1145,7 +1145,7 @@ _BikeRank				=#Adapted from MTI Report 11-19 # Does not take into account Boulev
 			1 #LTS 1- 
 		case (Speed_Limit_in_MPH<25)||(floor((DirLaneTotal))<=2 && Speed_Limit_in_MPH<=30 && Level_of_Blockage=="Rare" &&_Orientation_Modified_SplitSum>=4.2672):
 			.66 #LTS 2
-		case (floor((DirLaneTotal))<=2 && Speed_Limit_in_MPH<=35 && Level_of_Blockage!="Frequent" &&_Orientation_Modified_SplitSum>=4.1148):
+		case Speed_Limit_in_MPH<=35 &&_Orientation_Modified_SplitSum>=4.1148:
 			.33 #LTS 3
 		else:
 			0 #LTS 4
@@ -1156,7 +1156,7 @@ _BikeRank				=#Adapted from MTI Report 11-19 # Does not take into account Boulev
 			1 #LTS 1
 		case (Speed_Limit_in_MPH<25)|| (Speed_Limit_in_MPH<=35  &&(floor((DirLaneTotal))<=(case Center_Type =="Median":2 else: 1)&& Level_of_Blockage=="Rare" && _Orientation_Modified_SplitSum>0)):
 			.66 #LTS 2-speed limit has no effect so it jumps to next highest speed limit
-		case (Speed_Limit_in_MPH<=35 && Level_of_Blockage!="Frequent"):
+		case (Speed_Limit_in_MPH<=35 && _Orientation_Modified_SplitSum>0):
 			.33 #LTS 3
 		else:
 			0 #LTS 4
