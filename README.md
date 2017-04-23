@@ -2,6 +2,9 @@
 Complete Streets is a robust procedural street example that incorporates knowledge and ideas from various sources of transportation planning knowledge including NACTO Design Guidelines, AASHTO Design Recommendations, and MUTCD standards. The goal of the rule is to represent a diversity of street configurations to support multimodal planning in urban areas, and provide some basis for before and after comparisons of street treatments and transportation investments in Esri CityEngine. Along with visualization, the street rule includes analytical reports on various aspects of the geometry of the street that can be used to inform rough cost estimates. In addition to these analytics, the street rule has various customizable thematics and reports that use information from the geometry and configuration of the street to suggest how it might impact the "stress levels" put on different modes. The street rule intends to represent transportation planning treatments for complete streets within urban areas and common highway configurations that might include shoulders, Jersey barriers, and HOV Lanes.
 This is an updated repository for a modified version of the ESRI Complete Street rule by the original rule author. 
 The rule uses the original assets folder of the ESRI Complete street rule, so in order to use it, you really only need the updated CGA file. 
+
+![alt tag](https://geonet.esri.com/servlet/JiveServlet/showImage/102-6915-36-347578/CityEngineCSRuleVideo.gif)
+
 # Instructions
 To open and interact with this project, do the following:
 1.	Click Clone or Download > Download Zip above to download the project zip file to your computer.
