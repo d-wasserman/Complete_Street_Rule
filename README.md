@@ -3,7 +3,7 @@ Complete Streets is a robust procedural street example that incorporates knowled
 This is an updated repository for a modified version of the ESRI Complete Street rule by the original rule author. 
 The rule uses the original assets folder of the ESRI Complete street rule, so in order to use it, you really only need the updated CGA file. 
 
-![alt tag](https://geonet.esri.com/servlet/JiveServlet/showImage/102-6915-36-347578/CityEngineCSRuleVideo.gif)
+![](https://geonet.esri.com/servlet/JiveServlet/showImage/102-6915-36-347578/CityEngineCSRuleVideo.gif)
 
 # Instructions
 To open and interact with this project, do the following:
