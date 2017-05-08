@@ -193,7 +193,7 @@ attr Median_Street_Lamps						="Both"
 @Order(12)@Range(0,50) @Description("Determines the spacing between each Street Lamp. No shape is created in the sections in between objects.")#@Hidden
 attr Median_Street_Lamp_Spacing				=10
 
-@Group("MULTIMODAL LANES LAYOUT", "Bus and HOV Lanes",4)@Order(1)@Range("None","Bus Lane","HOV Lane")@Description("The controls for the bus lane also control the HOV lane. They are grouped together because they are both considered :High Capacity Lanes:")
+@Group("MULTIMODAL LANES LAYOUT", "Bus and HOV Lanes",4)@Order(1)@Range("None","Bus Lane","HOV Lane","Bus-Bike Lane")@Description("The controls for the bus lane also control the HOV lane. They are grouped together because they are both considered :High Capacity Lanes:")
 attr Transit_Lane 				    ="None"
 @Order(2)@Range("Right", "Left", "Both")@Description("Determines side of street preferential lanes are allocated.")
 attr Transit_Lane_Sides 			=_Initital_Transit_Lane_Sides # If the street is oneway, will make initial bus lane side change accordingly
@@ -1344,13 +1344,13 @@ StreetWithEntries -->
 StopBox(RuleChoice)--> 
 	case RuleChoice=="RightSide":
 		case Right_Bike_Box_Bool && geometry.dv(0,unitSpace)>BikeBoxGeometryThreshold :#Must be enough room, turned on. 
-			split(u,unitSpace,0) {~1:RightSide| Bike_Box_Length :BikeBoxCreation("Right")}
+			split(u,unitSpace,0) {~1:RightSide| Bike_Box_Length :BikeBoxCreation(0)}
 		else:
 			split(u,unitSpace,0) {~1:RightSide|_stopEnd*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")}
 		
 	case RuleChoice=="LeftSide":
 		case  Left_Bike_Box_Bool && geometry.dv(0,unitSpace)>BikeBoxGeometryThreshold: #Must be enough room, turned on. 
-			split(u,unitSpace,0) { Bike_Box_Length :BikeBoxCreation("Left")|~1:LeftSide}
+			split(u,unitSpace,0) { Bike_Box_Length :BikeBoxCreation(2)|~1:LeftSide}
 		else:
 			split(u,unitSpace,0) {_stopBegin*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")|~1:LeftSide}	
 	else:
@@ -1480,28 +1480,48 @@ Transit_Lane_Reporting(dir)--> #Reports based on shape geometry and sends to all
 
 Transit_Lane_Allocator(dir)--> #Allocates the texture rule based on what type of transit lane is selected. 
 	case Transit_Lane=="Bus Lane":
-		Buslane_Texture_Rule(dir)
+		Bus_Lane_Texture_Rule(dir)
+	case Transit_Lane=="Bus-Bike Lane":
+		Bus_Bike_Lane_Texture_Rule(dir)
 	case Transit_Lane=="HOV Lane":
 		HOVlane_Texture(dir)
 	else: #Do not leave blank geometry. 
-		Buslane_Texture_Rule(dir)
+		Bus_Lane_Texture_Rule(dir)
 
 
-Buslane_Texture_Rule(dir)--> 
+Bus_Lane_Texture_Rule(dir)--> 
 	split(v,unitSpace,0){PaintLineWidth*_PaintLineControl("Right", Transit_Paint_Line_Sides ):AsphaltPainted("white",true,1,"Transit")
 							#Level 1-First split indentation
 							|~1:split(u,unitSpace,0){2:AsphaltPainted(Bus_Lane_Color,true,1,"Transit")
 								#Level 2- sub-split indentation
-								| Transit_Lane_Width:BuslaneStamp(dir)
+								| Transit_Lane_Width: Bus_Lane_Stamp (dir)
 								|~ Transit_Symbol_Spacing :AsphaltPainted(Bus_Lane_Color,true,1,"Transit")
-								|{ Transit_Lane_Width :BuslaneStamp(dir)
+								|{ Transit_Lane_Width : Bus_Lane_Stamp (dir)
 								|~ Transit_Symbol_Spacing :AsphaltPainted(Bus_Lane_Color,true,1,"Transit")}*
-								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width:BuslaneStamp(dir)
+								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width: Bus_Lane_Stamp (dir)
+								|2:AsphaltPainted(Bus_Lane_Color,true,1,"Transit")}
+							|PaintLineWidth*_PaintLineControl("Left", Transit_Paint_Line_Sides ):AsphaltPainted("white",true,1,"Transit")}
+	BusOnLane(dir)
+
+Bus_Bike_Lane_Texture_Rule(dir)--> 
+	split(v,unitSpace,0){PaintLineWidth*_PaintLineControl("Right", Transit_Paint_Line_Sides ):AsphaltPainted("white",true,1,"Transit")
+							#Level 1-First split indentation
+							|~1:split(u,unitSpace,0){2:AsphaltPainted(Bus_Lane_Color,true,1,"Transit")
+								#Level 2- sub-split 
+								| Transit_Lane_Width*.5: BikeBoxSymbolAllocation(dir,Transit_Lane_Width*.5, Transit_Lane_Width*.75,Bus_Lane_Color)
+								| Transit_Lane_Width: Bus_Lane_Stamp (dir)
+								|~ Transit_Symbol_Spacing :AsphaltPainted(Bus_Lane_Color,true,1,"Transit")
+								|{ Transit_Lane_Width*.5: BikeBoxSymbolAllocation(dir,Transit_Lane_Width*.5, Transit_Lane_Width*.75,Bus_Lane_Color)
+								|Transit_Lane_Width: Bus_Lane_Stamp (dir)
+								|~ Transit_Symbol_Spacing :AsphaltPainted(Bus_Lane_Color,true,1,"Transit")}*
+								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width: Bus_Lane_Stamp (dir)
 								|2:AsphaltPainted(Bus_Lane_Color,true,1,"Transit")}
 							|PaintLineWidth*_PaintLineControl("Left", Transit_Paint_Line_Sides ):AsphaltPainted("white",true,1,"Transit")}
 	BusOnLane(dir)
 	
-BuslaneStamp(dir)-->
+
+	
+Bus_Lane_Stamp(dir)-->
 			scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
  			rotateUV(0,90)
 			tileUV(0,~Transit_Lane_Width,~ Transit_Lane_Width ) 
@@ -1573,7 +1593,6 @@ BikeLaneSection (flip,Side_Width)-->
 		BikeLane(flip*Bike_Reversal_Switch,Side_Width)
 		
 BikeLane(sideflip,Width)-->#Was Left,now both, fairly modular
-	
 	Bikes((case sideflip==1:0 else: 2),(case _Twoway_Bikelane_Bool:Width/2 else: Width),bikeProb)
 	color( _ModeClassifier ("Bikeways"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	scaleUV(0,sideflip,sideflip)
@@ -1705,12 +1724,12 @@ Striped_Buffer(Buffer_Width)-->
 	AsphaltPainted("white",false,Buffer_WhiteFraction,"Bikeways")
 
 #Bike Box Creation Rule- controls the splits for the bike box. Works best if Bike lane is adjacent to sidewalk.
-BikeBoxCreation(side)-->
-	case side=="Left":
+BikeBoxCreation(dir)-->
+	case dir==2:#left
 	split(v, unitSpace,0) {PaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")|
 						  ~1:split(u, unitSpace,0){
 						  	  PaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")
-						  	  |~1:BikeBoxSymbol(side)
+						  	  |~1:BikeBoxSymbolAllocation(dir,Bike_Box_Symbol_Spacing,Lane_Width,Bike_Box_Color_Override)
 						  	  |ThickPaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")}
 						  |(Street_Left_Bike_Lane_Width -PaintLineWidth*_Bike_Paint_Adjuster)*Bike_Box_Buffer_Adapter:split(u,unitSpace,0){
 						  		PaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")|~1:AsphaltPainted(Bike_Box_Color_Override,true,1,"Bikeways")}
@@ -1721,20 +1740,21 @@ BikeBoxCreation(side)-->
 							  		~1:AsphaltPainted(Bike_Box_Color_Override,true,1,"Bikeways")|PaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")}
 						  	  |~1:split(u, unitSpace,0){
 						  	 	 ThickPaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")
-						  	 	 |~1:BikeBoxSymbol(side)
+						  	 	 |~1:BikeBoxSymbolAllocation(dir,Bike_Box_Symbol_Spacing,Lane_Width,Bike_Box_Color_Override)
 						  	 	 |PaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")}
 						  	  |PaintLineWidth:AsphaltPainted("white",true,1,"Bikeways")}					  				  		  
-BikeBoxSymbol(side)-->
-	case side=="Left":
+
+BikeBoxSymbolAllocation(dir,symbol_spacing,allocation_width,bike_box_color)-->
+	case dir==2: #left
 		scaleUV(0,-1,1)
-		split(v,unitSpace,0) {~ Bike_Box_Symbol_Spacing /2:AsphaltPainted(Bike_Box_Color_Override ,true,1,"Bikeways")
-								| Lane_Width *BikeBox_Fraction: BikeLaneStamp( Lane_Width ,Bike_Box_Color_Override +"_stamp_noarrow.jpg",Bike_Box_Color_Override)
-								|~ Bike_Box_Symbol_Spacing /2:AsphaltPainted(Bike_Box_Color_Override ,true,1,"Bikeways")}*
+		split(v,unitSpace,0) {~ symbol_spacing/2:AsphaltPainted(bike_box_color ,true,1,"Bikeways")
+								| allocation_width *BikeBox_Fraction: BikeLaneStamp( allocation_width,bike_box_color +"_stamp_noarrow.jpg",bike_box_color)
+								|~ symbol_spacing /2:AsphaltPainted(bike_box_color ,true,1,"Bikeways")}*
 	else:
 		scaleUV(0,1,1) 
-		split(v,unitSpace,0) {~ Bike_Box_Symbol_Spacing /2:AsphaltPainted(Bike_Box_Color_Override,true,1,"Bikeways")
-								| Lane_Width *BikeBox_Fraction:BikeLaneStamp( Lane_Width ,Bike_Box_Color_Override +"_stamp_noarrow.jpg",Bike_Box_Color_Override)
-								|~ Bike_Box_Symbol_Spacing /2:AsphaltPainted(Bike_Box_Color_Override,true,1,"Bikeways")}*
+		split(v,unitSpace,0) {~ symbol_spacing /2:AsphaltPainted(bike_box_color,true,1,"Bikeways")
+								| allocation_width*BikeBox_Fraction: BikeLaneStamp( allocation_width, bike_box_color +"_stamp_noarrow.jpg",bike_box_color)
+								|~ symbol_spacing /2:AsphaltPainted(bike_box_color,true,1,"Bikeways")}*
 								
 ########################
 #####Parking Lane Rules
@@ -1972,9 +1992,9 @@ Boulevard-->
 Boulevard_StopBars(dir)-->
 	case Boulevard_Configuration=="Bus Lanes":
 		case dir==0:
-			split(u,unitSpace,0) {~1:Buslane_Texture_Rule(dir)|_stopEnd*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")}
+			split(u,unitSpace,0) {~1:Bus_Lane_Texture_Rule(dir)|_stopEnd*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")}
 		else:
-			split(u,unitSpace,0) {_stopBegin*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")|~1:scaleUV(0,-1,-1)Buslane_Texture_Rule(dir)}
+			split(u,unitSpace,0) {_stopBegin*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")|~1:scaleUV(0,-1,-1)Bus_Lane_Texture_Rule(dir)}
 	case Boulevard_Configuration=="Normal Lanes":
 		case dir==0:
 			split(u,unitSpace,0) {~1:Center_Normal_Lanes(dir)|_stopEnd*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")}
