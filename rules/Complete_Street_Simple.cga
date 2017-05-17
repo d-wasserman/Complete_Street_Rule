@@ -222,7 +222,7 @@ attr Left_Buffer_Width			= 0
 attr Buffer_Protection			= "true"
 @Order(7) @Range("true","false") @Description("If on/true, parking lane is closer to the through lane, and bicycle lane is protected from through traffic. Keep in mind how the door zone influences bicycle lane placement.")
 attr Parking_Protection 		= _IsCycleTrackBuffer
-@Order(8)@Range("Painted Stripes","Curb Buffer","Curb Buffer with Plantings","Curb Buffer with Trees","Solid White","Cycle Track With Planters","Cycle Track With Tubular Markers","Spaced Curb Buffer","Spaced Curb Buffer with Plantings","Spaced Curb Buffer with Trees","Asphalt","Shoulder")@Description("This attribute controls the bicycle buffer type and form, but also can become plain asphalt or a shoulder.")
+@Order(8)@Range("Painted Stripes","Curb Buffer","Curb Buffer with Plantings","Curb Buffer with Trees","Solid White","Cycle Track With Planters","Cycle Track With Tubular Markers","Cycle Track With Bollards","Spaced Curb Buffer","Spaced Curb Buffer with Plantings","Spaced Curb Buffer with Trees","Asphalt","Shoulder")@Description("This attribute controls the bicycle buffer type and form, but also can become plain asphalt or a shoulder.")
 attr Buffer_Type				="Painted Stripes"
 @Order(9)@Range(0,10)@Description("Controls  the buffers spacing of objects such as tubular markers, planters, and tree/plantings (Trees/Plants match Sidewalk Plantings if selected).")@Hidden			
 attr Buffer_Object_Spacing		=_Default_Buffer_Object_Spacing
@@ -1653,6 +1653,10 @@ BikeBuffer(Buffer_Width,Dir)-->
 		color( _ModeClassifier ("Bikeways"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 		Striped_Buffer(Buffer_Width)
 		ObjectSetup("Tubular Marker",Buffer_Object_Spacing,"/Tubular_Marker.obj",Buffer_Width)
+	case Buffer_Type=="Cycle Track With Bollards":
+		color( _ModeClassifier ("Bikeways"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+		Striped_Buffer(Buffer_Width)
+		ObjectSetup("Bollard",Buffer_Object_Spacing,"/Bollard.obj",Buffer_Width)
 	case find(str(Buffer_Type),"Spaced Curb Buffer",0)!=-1:
 		color( _ModeClassifier ("(Bikeways"))
 		split(u,unitSpace,0) {{~Buffer_Object_Spacing:Asphalt(true,1,"Bikeways")
