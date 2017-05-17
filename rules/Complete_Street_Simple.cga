@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:3/30/2017
+ * Last Updated:5/16/2017
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -162,7 +162,7 @@ attr Boulevard_Center_Type				= "Center Line"
 attr Boulevard_Center_Width				= case Boulevard_Configuration=="Normal Lanes": PaintLineWidth*4 else: 0
 
 @Group("CENTER SECTION LAYOUT","Median Plantings",3)@Order(1)
-@Description("Chooses the grass texture for the planting locations within the Median.")@Range ("None","Random", "Standard Grass", "Lawn 1", "Lawn 2", "Park", "Bermuda 1", "Bermuda 2", "Bermuda Dark", "Bluegrass 1", "Bluegrass 2", "Grass Short", "Grass Thick", "St Augustine 1", "St Augustine 2", "Light Rye") @Order(2)
+@Description("Chooses the grass texture for the planting locations within the Median.")@Range ("None","Random", "Standard Grass", "Gravel","Grate","Lawn 1", "Lawn 2", "Park", "Bermuda 1", "Bermuda 2", "Bermuda Dark", "Bluegrass 1", "Bluegrass 2", "Grass Short", "Grass Thick", "St Augustine 1", "St Augustine 2", "Light Rye","Soil Small Stones","Paver Red Octagon Tile") @Order(2)
 attr Median_Ground_Cover = "Standard Grass"
 #@Range("Random", "Conifer", "Desert", "Eudicot", "Monocot")
 @Order(4)@Range(0,10) @Description("Is the approximate length of the green space accomodating trees, it can be used to space out trees more without walkway spacing.")
@@ -260,7 +260,7 @@ attr Sidewalk_Texture_Rotation		= 0
 attr Sidewalk_Height 				= 0.102  			# height of sidewalk of curbs(4 inch is standard thickness) curb depth is 1.5 times sidewalk height
 
 @Group("SIDEWALK LAYOUT", "Sidewalk Plantings",8)
-@Description("Chooses the grass texture for the planting locations on the Sidewalk or Center Island. Bus Stops and trees will not generate if this is set to None.")@Range ("None","Random", "Standard Grass", "Lawn 1", "Lawn 2", "Park", "Bermuda 1", "Bermuda 2", "Bermuda Dark", "Bluegrass 1", "Bluegrass 2", "Grass Short", "Grass Thick", "St Augustine 1", "St Augustine 2", "Light Rye") @Order(2)
+@Description("Chooses the grass texture for the planting locations on the Sidewalk or Center Island. Bus Stops and trees will not generate if this is set to None.")@Range ("None","Random", "Standard Grass", "Gravel","Grate","Lawn 1", "Lawn 2", "Park", "Bermuda 1", "Bermuda 2", "Bermuda Dark", "Bluegrass 1", "Bluegrass 2", "Grass Short", "Grass Thick", "St Augustine 1", "St Augustine 2", "Light Rye","Soil Small Stones","Paver Red Octagon Tile") @Order(2)
 attr Sidewalk_Ground_Cover			= "None"
 @Order(2)@Range(0,10)@Description("Controls the width of sidewalk planting space, and the setback of the bus stop.")
 attr Sidewalk_Planting_Width		= _PlantingWidth
@@ -287,7 +287,7 @@ attr Sidewalk_Bus_Stop_Location			= "Far-side"
 @Order(3) @Range(-4,4)@Description("As it stands, the Bus Stop will be as far back as the Planting Width, if more adjustment is required, this attribute can be used to set back the Bus Stop further back or move it closer to the curb.")
 attr Sidewalk_Bus_Stop_Setback			= 1
 @Order(4)@Range("None","Both","Right","Left")@Description("Will place benches in between the spacing between Trees on the sidewalk side chosen.")
-attr Sidewalk_Benches					=case Not_High_LOD || sidewalkWidth<3.5: "None" else: "Both"
+attr Sidewalk_Benches					=case Not_High_LOD || sidewalkWidth<5: "None" else: "Both"
 @Order(5)@Range("None","Both","Right","Left")@Description("Determines whether an object is placed and what side of the street or walkways relevant objects are placed.")
 attr Parking_Meters						="None"
 @Order(6)@Range(0,20) @Description("Determines the spacing between each parking meter. No shape is created in the sections in between objects.")@Hidden
