@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:5/16/2017
+ * Last Updated:5/23/2017
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -192,6 +192,8 @@ attr Median_Bench_Spacing				=10
 attr Median_Street_Lamps						="Both"
 @Order(12)@Range(0,50) @Description("Determines the spacing between each Street Lamp. No shape is created in the sections in between objects.")@Hidden
 attr Median_Street_Lamp_Spacing				=10
+@Order(9)@Range(-10,10) @Description("Determines the offset from the initial lamp insertion between each Street Lamp.")@Hidden
+attr Median_Street_Lamp_Offset		=0
 
 @Group("MULTIMODAL LANES LAYOUT", "Bus and HOV Lanes",4)@Order(1)@Range("None","Bus Lane","HOV Lane","Bus-Bike Lane")@Description("The controls for the bus lane also control the HOV lane. They are grouped together because they are both considered :High Capacity Lanes:")
 attr Transit_Lane 				    ="None"
@@ -298,6 +300,8 @@ attr Parking_Meter_Setback				= 9 #pushes or pulls parking meters away
 attr Sidewalk_Street_Lamps				= case Not_High_LOD: "None" else: "Both"
 @Order(9)@Range(0,50) @Description("Determines the spacing between each Street Lamp. No shape is created in the sections in between objects.")@Hidden
 attr Sidewalk_Street_Lamp_Spacing		=10
+@Order(9)@Range(-10,10) @Description("Determines the offset from the initial lamp insertion between each Street Lamp.")@Hidden
+attr Sidewalk_Street_Lamp_Offset		=0
 @Order(10)@Range("None","Both","Right","Left")@Description("Determines whether an object is placed and what side of the street or walkways relevant objects are placed.")
 attr Traffic_Lights						= case Not_High_LOD: "None" else: "Both"
 @Order(11) @Range("true","false") @Description("Will create a WayFinder near a bus stop.")@Hidden
@@ -2304,21 +2308,21 @@ Bench_Rule(Boulevard_Side,Dir)-->  # DEAL WITH BUSTOP ANOTHER WAY_ DO A SPLIT TH
 		case Center_Type=="Boulevard":
 			alignScopeToAxes(y)
 			alignScopeToGeometry(yUp, largest, Boulevard_Side)#Side corresponds to appropriate edge selection
-			Bench_Rotater(Dir)
+			Median_Bench_Rotator (Dir)
 		else:
 			alignScopeToAxes(y)
 			alignScopeToGeometry(yUp, largest, 0)
-			Bench_Rotater(Dir)
+			Median_Bench_Rotator (Dir)
 
-Bench_Rotater(Dir)-->
+Median_Bench_Rotator (Dir)-->
 	case Dir==2:
 		rotateScope(0,90,0)
-		Bench_Insert(Dir)
+		Median_Bench_Insert (Dir)
 	else: 
 		rotateScope(0,270,0)
-		Bench_Insert(Dir)		
+		Median_Bench_Insert (Dir)		
 
-Bench_Insert(Dir)-->
+Median_Bench_Insert (Dir)-->
 	case Dir==2 && (Median_Benches=="Both"||Median_Benches=="Left"):
 		s(1,1,2)
 		center(xz)
@@ -2350,23 +2354,24 @@ Street_Lamp_Center(Location,Dir)-->
 
 Street_Lamp_Sider(Dir)-->
 	case Median_Street_Lamps =="Both":
-		split(v,unitSpace,0) {.5:Lamp_Center_Asset(90,case Dir==0:0 else:2,Dir)
+		split(v,unitSpace,0) {.5:Lamp_Center_Asset(90,case Dir==0:0 else:2,Dir,Median_Street_Lamp_Offset)
 							 |~1:NIL
-							 |.5:Lamp_Center_Asset(-180,case Dir==0:5 else:3,Dir)}
+							 |.5:Lamp_Center_Asset(-180,case Dir==0:5 else:3,Dir,Median_Street_Lamp_Offset)}
 	case Median_Street_Lamps =="Right":
 		split(v,unitSpace,0) {~1:NIL
-							 |.5:Lamp_Center_Asset(-180,case Dir==0:5 else:3,Dir)}
+							 |.5:Lamp_Center_Asset(-180,case Dir==0:5 else:3,Dir,Median_Street_Lamp_Offset)}
 	case Median_Street_Lamps =="Left":
-		split(v,unitSpace,0) {.5:Lamp_Center_Asset(90,case Dir==0:0 else:2,Dir)
+		split(v,unitSpace,0) {.5:Lamp_Center_Asset(90,case Dir==0:0 else:2,Dir,Median_Street_Lamp_Offset)
 							 |~1:NIL}
 	else:
 		NIL
-Lamp_Center_Asset(Side_Rotation,Shape_Edge,Dir)-->
+Lamp_Center_Asset(Side_Rotation,Shape_Edge,Dir,Offset)-->
 	alignScopeToGeometry(yUp, largest,Shape_Edge)
 	alignScopeToAxes(y)		// place the Lamps vertically
 	center(xz)
 	s(0,5,0)				//set initital height to 5 others are based on OBJ
 	r(0,Side_Rotation,0)
+	t(0,0,Offset)
 	report("Objects.Street Lamp Count", 1)
 	i(Street_Lamp_Object)
 	deleteUV(_Texture_Switch)
@@ -2627,22 +2632,22 @@ Sign_Loader(side)-->
 	Sidewalk_Pavement ("Sign Gap")
 	Traffic_Light_Setup
 	Parking_Meter_Setup
-	Lamp_Setup
+	Sidewalk_Lamp_Setup
 	
-Lamp_Setup-->
+Sidewalk_Lamp_Setup -->
 	case Sidewalk_Street_Lamps =="None":
 		NIL
 	case sidewalkSide=="Right":
 		case Sidewalk_Street_Lamps =="Right" || Sidewalk_Street_Lamps =="Both":
 			split(u,unitSpace,0) {~ Sidewalk_Street_Lamp_Spacing :NIL
-								 |{.1:Lamp(0)
+								 |{.1: Sidewalk_Lamp (Sidewalk_Street_Lamp_Offset)
 								 |~ Sidewalk_Street_Lamp_Spacing :NIL}*}
 		else: 
 			NIL
 	case sidewalkSide=="Left":
 		case Sidewalk_Street_Lamps =="Left" || Sidewalk_Street_Lamps =="Both":
 			split(u,unitSpace,0) {~ Sidewalk_Street_Lamp_Spacing :NIL
-								 |{.1:Lamp(2)
+								 |{.1: Sidewalk_Lamp (Sidewalk_Street_Lamp_Offset)
 								 |~ Sidewalk_Street_Lamp_Spacing :NIL}*}
 		else: 
 			NIL
@@ -2680,16 +2685,18 @@ Traffic_Light_Asset(index)-->
 	i(Traffic_Light_Object)
 	deleteUV(_Texture_Switch)
 
-Lamp(index) -->
+Sidewalk_Lamp(offset) -->
 	alignScopeToAxes(y)		// place the Lamps vertically
 	center(xz)
 	s(0,5,0)				// set height to 5 meters
 	report("Objects.Street Lamp Count", 1)
-	LampAsset(index)		// since the scope's dimenstion are zero in x and z, these are set according to the asset
+	LampAsset(offset)		// since the scope's dimenstion are zero in x and z, these are set according to the asset
 
-LampAsset(nr) -->
-	case nr == 2 : r(0,90,0) i(Street_Lamp_Object)deleteUV(_Texture_Switch)
-	else         : r(0,90,0) i( Street_Lamp_Object)	deleteUV(_Texture_Switch)
+LampAsset(offset) -->
+	r(0,90,0)
+	i(Street_Lamp_Object)
+	t(.2,0,offset)
+	deleteUV(_Texture_Switch)
 
 Parking_Meter_Setup-->
 	case Parking_Meters=="None":
@@ -2791,7 +2798,7 @@ Sidewalk_Bench_Insert(Dir,geometry_Len)-->
 		alignScopeToGeometry(yUp, largest, 0)
 		rotateScope(0,90,0)
 		s(1,1,2)
-		t(.25,0,geometry_Len-1)#When geometry.du is used functionality is different (alignment issue?) passed parameter works best likely because it is before scope manipulation (rotate etc)dv. might work instead.
+		t(.25+(Sidewalk_Planting_Width/10),0,geometry_Len-1)#When geometry.du is used functionality is different (alignment issue?) passed parameter works best likely because it is before scope manipulation (rotate etc)dv. might work instead.
 		report("Objects.Bench Count",1)
 		i(Bench_Object)
 		deleteUV(_Texture_Switch)
