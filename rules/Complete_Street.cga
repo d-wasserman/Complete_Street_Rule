@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:5/23/2017
+ * Last Updated:5/24/2017
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -2356,10 +2356,10 @@ Street_Lamp_Sider(Dir)-->
 	case Median_Street_Lamps =="Both":
 		split(v,unitSpace,0) {.5:Lamp_Center_Asset(90,case Dir==0:0 else:2,Dir,Median_Street_Lamp_Offset)
 							 |~1:NIL
-							 |.5:Lamp_Center_Asset(-180,case Dir==0:5 else:3,Dir,Median_Street_Lamp_Offset)}
+							 |.5:Lamp_Center_Asset(-180,case Dir==0:5 else:3,Dir,-Median_Street_Lamp_Offset)}
 	case Median_Street_Lamps =="Right":
 		split(v,unitSpace,0) {~1:NIL
-							 |.5:Lamp_Center_Asset(-180,case Dir==0:5 else:3,Dir,Median_Street_Lamp_Offset)}
+							 |.5:Lamp_Center_Asset(-180,case Dir==0:5 else:3,Dir,-Median_Street_Lamp_Offset)}
 	case Median_Street_Lamps =="Left":
 		split(v,unitSpace,0) {.5:Lamp_Center_Asset(90,case Dir==0:0 else:2,Dir,Median_Street_Lamp_Offset)
 							 |~1:NIL}
