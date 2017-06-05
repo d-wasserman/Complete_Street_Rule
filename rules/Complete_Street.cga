@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:5/24/2017
+ * Last Updated:6/4/2017
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -162,9 +162,8 @@ attr Boulevard_Center_Type				= "Center Line"
 attr Boulevard_Center_Width				= case Boulevard_Configuration=="Normal Lanes": PaintLineWidth*4 else: 0
 
 @Group("CENTER SECTION LAYOUT","Median Plantings",3)@Order(1)
-@Description("Chooses the grass texture for the planting locations within the Median.")@Range ("None","Random", "Standard Grass", "Gravel","Grate","Lawn 1", "Lawn 2", "Park", "Bermuda 1", "Bermuda 2", "Bermuda Dark", "Bluegrass 1", "Bluegrass 2", "Grass Short", "Grass Thick", "St Augustine 1", "St Augustine 2", "Light Rye","Soil Small Stones","Paver Red Octagon Tile") @Order(2)
+@Description("Chooses the grass texture for the planting locations within the Median.")@Range("None","Random", "Standard Grass", "Gravel","Grate","Lawn 1", "Lawn 2", "Park", "Bermuda 1", "Bermuda 2", "Bermuda Dark", "Bluegrass 1", "Bluegrass 2", "Grass Short", "Grass Thick", "St Augustine 1", "St Augustine 2", "Light Rye","Soil Small Stones","Paver Red Octagon Tile") @Order(2)
 attr Median_Ground_Cover = "Standard Grass"
-#@Range("Random", "Conifer", "Desert", "Eudicot", "Monocot")
 @Order(4)@Range(0,10) @Description("Is the approximate length of the green space accomodating trees, it can be used to space out trees more without walkway spacing.")
 attr Median_Planting_Length				= case Center_Width<=Median_Layout_Threshold: 8+Speed_Related_Expansion else: 4
 @Order(5) @Range(0,15) @Description("Creates a walkway spacing between created trees.")
@@ -262,7 +261,7 @@ attr Sidewalk_Texture_Rotation		= 0
 attr Sidewalk_Height 				= 0.102  			# height of sidewalk of curbs(4 inch is standard thickness) curb depth is 1.5 times sidewalk height
 
 @Group("SIDEWALK LAYOUT", "Sidewalk Plantings",8)
-@Description("Chooses the grass texture for the planting locations on the Sidewalk or Center Island. Bus Stops and trees will not generate if this is set to None.")@Range ("None","Random", "Standard Grass", "Gravel","Grate","Lawn 1", "Lawn 2", "Park", "Bermuda 1", "Bermuda 2", "Bermuda Dark", "Bluegrass 1", "Bluegrass 2", "Grass Short", "Grass Thick", "St Augustine 1", "St Augustine 2", "Light Rye","Soil Small Stones","Paver Red Octagon Tile") @Order(2)
+@Description("Chooses the grass texture for the planting locations on the Sidewalk or Center Island. Bus Stops and trees will not generate if this is set to None.")@Range("None","Random", "Standard Grass", "Gravel","Grate","Lawn 1", "Lawn 2", "Park", "Bermuda 1", "Bermuda 2", "Bermuda Dark", "Bluegrass 1", "Bluegrass 2", "Grass Short", "Grass Thick", "St Augustine 1", "St Augustine 2", "Light Rye","Soil Small Stones","Paver Red Octagon Tile") @Order(2)
 attr Sidewalk_Ground_Cover			= "None"
 @Order(2)@Range(0,10)@Description("Controls the width of sidewalk planting space, and the setback of the bus stop.")
 attr Sidewalk_Planting_Width		= _PlantingWidth
