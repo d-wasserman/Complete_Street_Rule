@@ -1,0 +1,56 @@
+/**
+ * File:   Street_Text.cga
+ * Created: 8/12/2017
+ * Last Updated:8/12/2017
+ * Author:  David J. Wasserman
+ * License: Apache License.
+ * Source: https://github.com/Holisticnature/Complete_Street_Rule
+# Copyright 2015 David J. Wasserman
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------
+ */
+version "2017.0"
+
+@Hidden
+import Text : "/ESRI.lib/rules/General/Text.cga" 
+
+@Group("STREET TEXT",120) @Order(1) @Description("This determines the position of text relative to the current street segment. If none, no text is shown.") @Range("None","Above", "Front", "Back", "Front & Back")
+attr Text_Position="None"
+@Order(2)@Description("Controls what text is shown if the appropriate setting is used. Some settings are not based on this parameter.") 
+attr Text_Shown = ""
+@Order(3) @Description("Controls size of text generated if current settings allow.") @Range(0,10)
+attr Text_Size=2
+@Order(30) @Description("Controls rotation settings for generated text.") @Range(0,360)
+attr Rotation_X= 0	
+@Order(40) @Description("Controls rotation settings for generated text.") @Range(0,360)
+attr Rotation_Y= 0
+@Order(50) @Description("Controls rotation settings for generated text.") @Range(0,360)
+attr Rotation_Z= 0
+@Order(60)@Description("Controls translation settings for generated text.") @Range(0,360)
+attr Translate_X=0
+@Order(70)@Description("Controls translation settings for generated text.") @Range(0,360)
+attr Translate_Y=0
+@Order(80)@Description("Controls translation settings for generated text.") @Range(0,360)
+attr Translate_Z=0
+
+
+Street_Text-->
+	alignScopeToAxes(y)
+	center(xz)
+	r(90,0,0)
+	center(xyz)
+	Text.Letters(str(Text_Shown),Text_Size)
+	center(xz)
+	t(Translate_X,Translate_Y,Translate_Z)
+	r(Rotation_X,Rotation_Y,Rotation_Z)

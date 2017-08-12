@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:6/27/2017
+ * Last Updated:8/12/2017
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -387,6 +387,7 @@ attr Pier_Distance = 23
 @Group("BRIDGES") @Order(50) @Description("Determines the width of the Piers.")#@Hidden
 attr Pier_Width = 2.3
 
+
 # Mapped Attributes (comming from graph)
 #@Group("LINK TO OBJECT ATTRIBUTES",99)
 @Hidden @Order(5)@Description("For internal use and reporting, must be set to 'Source=Object'.")
@@ -414,7 +415,7 @@ attr Base_Flood_Elevation=-.00001
 ##################
 # User constants #
 ##################
-#Folder Constants
+#Folder Constants-Asset Links
 const CompleteStreetFolder 			= case fileExists(fileRandom("Complete_Streets/Lanes*.jpg")):"Complete_Streets" else: "/ESRI.lib/assets/Streets"
 const LanesFolder					= CompleteStreetFolder +"/Lanes"
 const SidewalkFolder				= CompleteStreetFolder +"/Sidewalks"
@@ -557,11 +558,13 @@ const NACTOBikeDark="#59995F"
 const Default_Mix_Bus = case Transit_Lane=="Bus Lane":.0001 else: .075
 const Default_Mix_Bike = case Bike_Lane_Type=="Sharrow" && _Maxof(Left_Bike_Lane_Width,Right_Bike_Lane_Width)==0:(.20*_BikeRank+.05) else: 0
 #####################
-#Tree.Generateed Rules		#
+#Tree.Generated Rules		#
 #####################
-
 import Tree : "/ESRI.lib/rules/Plants/Plant_Loader.cga" # Taken from ESRI.lib and uses its assets. Keep this in mind when using rule. 
-
+#####################
+#Text.Generated Rules		# - Uncomment out anything with Street_Text.X for functionality. 
+#####################
+#import Street_Text : "Street_Text.cga" #- Work in Progress
 
 ###################################################
 # Initial attribute settings
@@ -1006,7 +1009,8 @@ _Parklet_OneWay_Shift(Rotation)= # This function serves to make sure the parklet
 _tooShort(length,goal_len)= 
 	case length<goal_len: 0
 	else: 1
-	
+_round(num,sig_fig)=
+	rint(num*pow(10,sig_fig))/pow(10,sig_fig)	
 _Maxof(num1,num2)= #Finds the max of two numbers
 	case num1>=num2:
 		num1
@@ -1028,6 +1032,8 @@ _PaintCost(paintColor)=
 		Red_Paint_Cost_Per_Square_FT
 	else:
 		Other_Paint_Cost_Per_Square_FT
+
+	
 		
 ################################################
 #Thematic Functions
@@ -1322,6 +1328,7 @@ Street -->	#DeleteUV if texturing is off
  		set( Stop_Begin ,"none")
  		set( Stop_End ,"none")
  		StreetWithEntries
+ 		
  
 # split away the crosswalks at the end (if any) using the special UVSET 2
 StreetWithCrosswalkEnd -->	
@@ -1336,13 +1343,13 @@ CrossWalkGap-->
 						 |~1:StreetWithEntries
 						 |( End_Crosswalk_To_Stop_Bar ):Asphalt(true,1,"Auto")} 
 # split into the two street sides (if not oneway)
-StreetWithEntries -->		
-	
+StreetWithEntries -->
 	split(v,unitSpace,0) {~1:Drainage
 						|(_RightSplitSum+ _Distribute_Right_Lanes* _Actual_Lane_Width+_Rt_Transit_Lane_Width):scaleUV(0,DirectionalFlip,1)StopBox("RightSide")# Will flip with a change in driving direction
 						| _centerWidth											  : scaleUV(0,DirectionalFlip,1)CenterLineReporting# Will flip with a change in driving direction
 						|(_LeftSplitSum+nLanesLeft*_Actual_Lane_Width+_Lt_Transit_Lane_Width)	  :scaleUV(0,DirectionalFlip,1)StopBox("LeftSide")# Will flip with a change in driving direction
 						|~1:Drainage}
+
 
 #The StopBox rule creates both the stop line and Bikebox when they are selected, 
 #and then moves the rest of the space left to the dedicated lane spaces. 
