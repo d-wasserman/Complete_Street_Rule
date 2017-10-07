@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:8/12/2017
+ * Last Updated:10/6/2017
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -80,6 +80,8 @@ attr Secondary_Solid_Color= Brightness
 attr Space_Management= "Best Fit"
 @Group("DISPLAY OPTIONS") @Range("Very High","High","Moderate","Low") @Order(6)@Description("This attribute controls the level of detail of the selected textures and OBJs. Typically a lower LOD will decrease the polygon count and texture image resolution.")
 attr LOD_Setting	  ="Moderate"
+@Group("DISPLAY OPTIONS") @Range(0,1) @Order(7)@Description("This attribute controls the transparency of the street models created by the rule.")@Hidden
+attr Transparency	  = 0
 texturingOn = bool(Display_Textures) 	# Shorthand.
 thematicsOn = Display_Thematics != "Thematics Off"
 coloringOn = !thematicsOn && texturingOn	# Shorthand.
@@ -1303,6 +1305,7 @@ const NormalMax = 1
 # split away the crosswalks at the beginning (if any) using the special UVSET 1
 Street -->	#DeleteUV if texturing is off
 	case _uScale==1: #IF the Street is long enough continue normally. 
+		set(material.opacity,1-Transparency)
 		report("Modal Preference (0 to 1).Bicycle", _BikeRank)
 		report("Modal Preference (0 to 1).Pedestrian", _PedRank)
 		report("Modal Preference (0 to 1).Transit", _TransitRank)
@@ -1315,6 +1318,7 @@ Street -->	#DeleteUV if texturing is off
 					  | _crosswalkBeginWidth  : Crosswalk( Crosswalk_Begin ,1)
  					  | ~1			  		  : StreetWithCrosswalkEnd }
  	else: #If the street is too short no stop lines, no bike boxes. 
+ 		set(material.opacity,1-Transparency)
  		report("Modal Preference (0 to 1).Bicycle", _BikeRank)
 		report("Modal Preference (0 to 1).Pedestrian", _PedRank)
 		report("Modal Preference (0 to 1).Transit", _TransitRank)
@@ -2527,17 +2531,19 @@ CrosswalkWalkway(reporting)-->
 #Many are only sent to Asphalt. This includes joints, crossings, and junctions. 
 # drive-through street segments
 Joint-->
+	set(material.opacity,1-Transparency)
 	BridgeMain
 	report("Connection Shape Area.Joint Area",geometry.area())#Only reports given to Joints
 	Asphalt(true,1,"Auto")
 
 Junction --> 
+	set(material.opacity,1-Transparency)
 	BridgeMain
 	report("Connection Shape Area.Intersection Area",geometry.area())
 	Asphalt(true,1,"Auto")
 
 Freeway -->
-	
+	set(material.opacity,1-Transparency)
 	report("Connection Shape Area.Freeway Area",geometry.area())#Only reports given to freeways. 
 	set(streetWidth,geometry.dv(0,unitSpace))
 	set( Lane_Width ,streetWidth/geometry.dv(0,uvSpace))
@@ -2547,14 +2553,15 @@ Freeway -->
 	BridgeMain
 # crossing is just Asphalt for now
 
-Crossing 	-->
+Crossing -->
+	set(material.opacity,1-Transparency)
 	BridgeMain
 	report("Connection Shape Area.Crossing Area", geometry.area())#Only reports given to crossings
 	Asphalt(true,1,"Auto")
 # freeway entries have an additional striped line (splits the shape into lanes but also splits away a shape just for the striped line using special UVSET 1
 
 FreewayEntry -->
-	
+	set(material.opacity,1-Transparency)
 	report("Connection Shape Area.Freeway Entry Area",geometry.area())#Only reports given to freeways. 
 	set(streetWidth,geometry.dv(0,unitSpace))
 	set(Lane_Width ,streetWidth/geometry.dv(0,uvSpace))
@@ -2568,14 +2575,14 @@ FreewayEntry -->
 #
 
 Roundabout   --> 
-	case valency>1: Asphalt(true,1,"Auto") BridgeMain#split(v,unitSpace,0){ 1: MainLaneMarkings(0,split.index,"_stripes_white") }* 
-	else		  : Asphalt(true,1,"Auto") BridgeMain							# cul-de-sac is Asphalt only
+	case valency>1: set(material.opacity,1-Transparency) Asphalt(true,1,"Auto") BridgeMain#split(v,unitSpace,0){ 1: MainLaneMarkings(0,split.index,"_stripes_white") }* 
+	else		  : set(material.opacity,1-Transparency) Asphalt(true,1,"Auto") BridgeMain							# cul-de-sac is Asphalt only
 
 RoundaboutIsland --> 
-	case Sidewalk_Ground_Cover !="None": IslandWithGreen BridgeMain
-	else		  : Asphalt(true,1,"Auto")	BridgeMain# cul-de-sac is Asphalt only
+	case Sidewalk_Ground_Cover !="None": set(material.opacity,1-Transparency) IslandWithGreen BridgeMain
+	else		  : set(material.opacity,1-Transparency) Asphalt(true,1,"Auto")	BridgeMain# cul-de-sac is Asphalt only
 
-IslandWithGreen --> 
+IslandWithGreen -->
 	offset(- Sidewalk_Height )
 	comp(f){ inside: Tree_Scatter
 		   | border: setupProjection(0,scope.xy,'1,'1) projectUV(0) Curbs_Mass(false) }
@@ -2596,6 +2603,7 @@ Tree_Scatter-->
 #
 
 Sidewalk-->
+	set(material.opacity,1-Transparency)
 	BridgeSide
 	set(sidewalkWidth,scope.sz)
 	set(sidewalkLength,scope.sx)
