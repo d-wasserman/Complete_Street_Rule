@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:10/6/2017
+ * Last Updated:10/19/2017
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -140,9 +140,13 @@ attr Left_Parking_Width			= _ParkingWidth("Left")
 attr Left_Parking_Length		= _ParkingLength("Left")
 @Order(7)@Range(0,100) @Description("Will create Parklets in Parking spaces, it is best if the parking spaces are contiguous to the sidewalk. The default OBJ does not have bollards or curb stops suggested by NACTO.")
 attr Parklet_Percentage			= 0
-@Order(8)@Range(0,10) @Hidden @Description("This hidden attribute controls the spacing the parking areas have before the current directions stopbar.")
+@Order(8)@Range("None","Passenger Loading","Freight Loading") @Description("Describes the type of parking space reallocation at targeted locations on the street.") @Hidden
+attr Curbside_Management        ="None"
+@Order(9)@Range("None","Mid-Block & End Spaces","End Spaces","Far-side","Near-side","Mid-Block") @Description("Describes how reallocated street space is used in parking lanes.")@Hidden
+attr Parking_Allocation_Position = "Mid-Block & End Spaces"
+@Order(10)@Range(0,10) @Hidden @Description("This hidden attribute controls the spacing the parking areas have before the current directions stopbar.")
 attr Front_Parking_Spacing 		= 0
-@Order(9)@Range(0,10) @Hidden @Description("This hidden attribute controls the spacing the parking areas have after the crosswalk at the start of the street in the current direction.")
+@Order(11)@Range(0,10) @Hidden @Description("This hidden attribute controls the spacing the parking areas have after the crosswalk at the start of the street in the current direction.")
 attr Rear_Parking_Spacing		= 0
 
 
@@ -651,6 +655,36 @@ _ParkingLength(side)				=
 			6.1
 		else:
 			2.6
+			
+_AllocateCurbside(Allocation_Position,TotalSpacesonSide,SpaceNumber,Begin_Offset, End_Offset )	=
+	case find(Allocation_Position,"Mid-Block",0)!=-1 && find(Allocation_Position,"End Spaces",0)!=-1:
+		case rint(TotalSpacesonSide/2)-rint( End_Offset /2) == SpaceNumber ||SpaceNumber== Begin_Offset||SpaceNumber>=TotalSpacesonSide- End_Offset :	
+			true
+		else:
+			false
+	case find(Allocation_Position,"Mid-Block",0)!=-1:
+		case rint(TotalSpacesonSide/2)-rint( End_Offset /2) == SpaceNumber:
+			true
+		else:
+			false
+	case find(Allocation_Position,"End Spaces",0)!=-1:
+		case SpaceNumber== Begin_Offset||SpaceNumber==TotalSpacesonSide- End_Offset :
+			true
+		else:
+			false
+	case Allocation_Position=="Far-side":
+		case SpaceNumber==TotalSpacesonSide- End_Offset :
+			true
+		else:
+			false
+	case Allocation_Position=="Near-side":
+		case SpaceNumber==Begin_Offset:
+			true
+		else:
+			false
+	else:
+		false
+		
 _Side_Sidewalk_Planting_Width(side) =
  	case side=="Right":
  		Right_Sidewalk_Planting_Width
@@ -1795,8 +1829,7 @@ ParkingLane(Side,ParkingType,ParkingLength,ParkingWidth)-->
  			case Lane_Distribution==0:
  				1
  			else:	
- 				case Side=="Right":-1 else:1
- 				,1)
+ 				case Side=="Right":-1 else:1,1)
  		split(u,unitSpace,0) {~_Front_Parking_Spacing(ParkingType):Asphalt(true,1,"Auto")
  								|{ParkingLength:ParkingSpace(Side,ParkingType,split.index,split.total,ParkingLength,ParkingWidth)}*
  								|~_Rear_Parking_Spacing(ParkingType):Asphalt(true,1,"Auto")}
@@ -1808,17 +1841,34 @@ ParkingLane(Side,ParkingType,ParkingLength,ParkingWidth)-->
  							|~(_Rear_Parking_Spacing(ParkingType)):Asphalt(true,1,"Auto")}	
 
 ParkingSpace(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
+ 	case Curbside_Management != "None" && _AllocateCurbside(Parking_Allocation_Position,TotalSpacesonSide,SpaceNumber,1,2)
+ 	||_AllocateCurbside(Parking_Allocation_Position,TotalSpacesonSide,SpaceNumber,2,3) && ParkingType=="Parallel":
+ 		Curbside_Allocator(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength, ParkingWidth)
  	case rand(0,100)<=Parklet_Percentage && SpaceNumber>1:
  		Asphalt(true,1,"Pedestrian")
- 		Parklet_Insert(ParkingLength,case Side=="Right":0 else: 180)
- 				
+ 		Parklet_Insert(ParkingLength,case Side=="Right":0 else: 180)			
  	case ParkingType=="Angled Nose In":
  		AngledNoseIn(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)
- 		
  	case ParkingType=="Parallel":
  		ParallelParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)
  	else:
  		AngledNoseOutParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)
+
+Curbside_Allocator(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength, ParkingWidth)-->
+	case find(Curbside_Management,"Freight",0)!=-1:
+		setback(PaintLineWidth) {
+			all:AsphaltPainted("yellow",true,1,"Auto")|
+			remainder: Project_Zebra_Stripe ("yellow")}
+	case find(Curbside_Management,"Passenger",0)!=-1:
+		ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth)# Fix Parking Angle on oneway Streets
+		Project_Zebra_Stripe ("white")
+	else:
+		Asphalt(true,1,"Auto")
+		
+Project_Zebra_Stripe (Color)-->
+	setupProjection(0,scope.xz,'1,'1)
+	texture(LanesFolder +"/crosswalk_zebra_"+Color+".jpg")
+	projectUV(0)
 
 Parklet_Insert(ParkingLength,Rotation)-->
 	alignScopeToGeometry(yUp, largest, 1)
@@ -1868,7 +1918,6 @@ ParallelParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,Par
 			ParkingReport(Side,ParkingType,true)
 			
  		case SpaceNumber==1:
- 			
  			scaleUV(0,1,(case Side=="Right":
  							(case Parking_Protection_Bool :1 else:-1)
  						 else:
