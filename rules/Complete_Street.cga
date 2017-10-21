@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:10/19/2017
+ * Last Updated:10/20/2017
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -69,22 +69,26 @@ version "2016.1"
 
 @Group("DISPLAY OPTIONS",0) @Range("true","false")@Order(1)@Description("When true, textures are on display, when false textures are removed. If true it deletes an unused UVset (see comments for details).")
 attr Display_Textures = "true"
-@Group("DISPLAY OPTIONS") @Order(2) @Description("Visually colors the entire street model based on the attributes of a street. Usage thematic looks best when textures are turned off.")
+@Order(2) @Description("Visually colors the entire street model based on the attributes of a street. Usage thematic looks best when textures are turned off.")
 @Range("Thematics Off", "Solid Color", "Peak Runoff/Permeability","Bike Preference","Pedestrian Preference","Auto Preference","Transit Preference","All Mode Preference","Usage","Transit Highlight","Bicycle Highlight","Auto Highlight","Pedestrian Highlight","Planting Highlight","Flood Scenario")
 attr Display_Thematics = "Thematics Off" 
-@Group("DISPLAY OPTIONS") @Order(3) @Description("When the Solid Color thematic is used for highlighting certain streets or mode classes, this chooses the color that is utilized by the thematic.") #@Hidden
+@Order(3) @Description("When the Solid Color thematic is used for highlighting certain streets or mode classes, this chooses the color that is utilized by the thematic.") #@Hidden
 attr Solid_Color = "#FFFFFF"
-@Group("DISPLAY OPTIONS") @Order(4) @Description("When a mode emphasis thematic is chosen, the color fo the other streets is chosen by default by this hidden parameter.")@Hidden
+@Order(4) @Description("When a mode emphasis thematic is chosen, the color fo the other streets is chosen by default by this hidden parameter.")@Hidden
 attr Secondary_Solid_Color= Brightness
-@Group("DISPLAY OPTIONS") @Range("Best Fit","Exact","Flag") @Order(5)@Description("Determines whether the lane width will be the best of fit, exact width, or flag unallocated space red when it is 1/3 the current lane width (usually 3-4 feet).")
+@Range("Best Fit","Exact","Flag") @Order(5)@Description("Determines whether the lane width will be the best of fit, exact width, or flag unallocated space red when it is 1/3 the current lane width (usually 3-4 feet).")
 attr Space_Management= "Best Fit"
-@Group("DISPLAY OPTIONS") @Range("Very High","High","Moderate","Low") @Order(6)@Description("This attribute controls the level of detail of the selected textures and OBJs. Typically a lower LOD will decrease the polygon count and texture image resolution.")
+@Range("Very High","High","Moderate","Low") @Order(6)@Description("This attribute controls the level of detail of the selected textures and OBJs. Typically a lower LOD will decrease the polygon count and texture image resolution.")
 attr LOD_Setting	  ="Moderate"
-@Group("DISPLAY OPTIONS") @Range(0,1) @Order(7)@Description("This attribute controls the transparency of the street models created by the rule.")@Hidden
+@Range(0,1) @Order(7)@Description("This attribute controls the transparency of the street models created by the rule.")#@Hidden
 attr Transparency	  = 0
+@Range("true","false") @Order(7)@Description("This attribute controls whether key reporting elements are enabled. Low LOD defaults to turning reports off.") @Hidden
+attr Reporting_On = case LOD_Setting == "Low": "false" else: "true"
+
 texturingOn = bool(Display_Textures) 	# Shorthand.
 thematicsOn = Display_Thematics != "Thematics Off"
 coloringOn = !thematicsOn && texturingOn	# Shorthand.
+reportingOn = bool(Reporting_On)
 
 const peakRunoffDisplayOn = Display_Thematics == "Peak Runoff/Permeability"
 const Not_Low_LOD		  = case LOD_Setting!="Low": true else: false
@@ -1340,26 +1344,14 @@ const NormalMax = 1
 Street -->	#DeleteUV if texturing is off
 	case _uScale==1: #IF the Street is long enough continue normally. 
 		set(material.opacity,1-Transparency)
-		report("Modal Preference (0 to 1).Bicycle", _BikeRank)
-		report("Modal Preference (0 to 1).Pedestrian", _PedRank)
-		report("Modal Preference (0 to 1).Transit", _TransitRank)
-		report("Modal Preference (0 to 1).Auto", _AutoRank)
-		report("Speed.Braking Distance (ft)",Braking_Dist)#Assumes Level elevation
-		report("Speed.Braking Reaction Distance (ft)",Brake_Reaction_Dist)#Assumes Level elevation
-		report("Speed.Stopping Sight Distance (ft)",Stopping_Sight_Dist)#Design Value is rounded to nearest 5 feet,Assumes Level elevation
+		ReportMultimodalMetrics(reportingOn)
 		BridgeMain
 		split(u,uvSpace,1){_crosswalkBeginWidth/10: Asphalt(true,1,"Auto")
 					  | _crosswalkBeginWidth  : Crosswalk( Crosswalk_Begin ,1)
  					  | ~1			  		  : StreetWithCrosswalkEnd }
  	else: #If the street is too short no stop lines, no bike boxes. 
  		set(material.opacity,1-Transparency)
- 		report("Modal Preference (0 to 1).Bicycle", _BikeRank)
-		report("Modal Preference (0 to 1).Pedestrian", _PedRank)
-		report("Modal Preference (0 to 1).Transit", _TransitRank)
-		report("Modal Preference (0 to 1).Auto", _AutoRank)
-		report("Speed.Braking Distance (ft)",Braking_Dist)
-		report("Speed.Braking Reaction Distance (ft)",Brake_Reaction_Dist)
-		report("Speed.Stopping Sight Distance (ft)",Stopping_Sight_Dist)
+ 		ReportMultimodalMetrics(reportingOn)
  		BridgeMain
  		set( Right_Bike_Box ,"false")
  		set( Left_Bike_Box ,"false")
@@ -1367,6 +1359,19 @@ Street -->	#DeleteUV if texturing is off
  		set( Stop_End ,"none")
  		StreetWithEntries
  		
+ReportMultimodalMetrics(report_bool)-->
+	case report_bool:
+		report("Modal Preference (0 to 1).Bicycle", _BikeRank)
+		report("Modal Preference (0 to 1).Pedestrian", _PedRank)
+		report("Modal Preference (0 to 1).Transit", _TransitRank)
+		report("Modal Preference (0 to 1).Auto", _AutoRank)
+		report("Speed.Braking Distance (ft)",Braking_Dist)#Assumes Level elevation
+		report("Speed.Braking Reaction Distance (ft)",Brake_Reaction_Dist)#Assumes Level elevation
+		report("Speed.Stopping Sight Distance (ft)",Stopping_Sight_Dist)#Design Value is rounded to nearest 5 feet,Assumes Level elevation
+		NIL
+	else:
+		NIL
+		
  
 # split away the crosswalks at the end (if any) using the special UVSET 2
 StreetWithCrosswalkEnd -->	
