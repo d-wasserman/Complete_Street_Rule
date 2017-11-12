@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:10/20/2017
+ * Last Updated:11/11/2017
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -130,24 +130,23 @@ attr Custom_Crosswalk_Texture	= SidewalkFolder+"/Paver Brick Red Basket Weave.jp
 attr Crosswalk_Width			= _crosswalkWidth
 
 @Group("ROAD LAYOUT","On-Street Parking",5)
-@Order(1)@Range("None","Parallel","Angled Nose In","Angled Back In") @Description("Will create parking of that type with default lengths and widths. Keep in mind, adjusting the length/width will make it lock onto that value. To reset it to automatic default, set the Attribute Connection Editor back to rule-defined value.")
+@Order(1)@Range("None","Parallel","Angled Nose In","Angled Back In", "Parallel with Curbside Passenger Loading", "Parallel with Curbside Freight Loading") @Description("Will create parking of that type with default lengths and widths. Keep in mind, adjusting the length/width will make it lock onto that value. To reset it to automatic default, set the Attribute Connection Editor back to rule-defined value.")
 attr Right_Parking_Type			= "None"
 @Order(2)@Range(0,5)@Description("Good default is 8 feet (2.4384 m) with a minimum of 7 feet (2.1336 m) for low turn over locations for parallel parking. Angled parking varies on angle, but a 30-45 degree depth suggestion is 19 feet (5.7912 m). Design guidance on width varies with conditions. ")@Hidden
-attr Right_Parking_Width		= _ParkingWidth("Right") 
+attr Right_Parking_Width		= _ParkingWidth(Right_Parking_Type) 
 @Order(3)@Range(0,10)@Description("For Parallel Parking 6.1 to 7.5 meters long is suggested, for Angled Parking 2.4 to 3 m is suggested.")@Hidden
-attr Right_Parking_Length		= _ParkingLength("Right")
-@Order(4)@Range("None","Parallel","Angled Nose In","Angled Back In")@Description("Will create parking of that type with default lengths and widths. Keep in mind, adjusting the length/width will make it lock onto that value. To reset it to automatic default, set the Attribute Connection Editor back to rule-defined value.")
+attr Right_Parking_Length		= _ParkingLength(Right_Parking_Type)
+@Order(4)@Range("None","Parallel","Angled Nose In","Angled Back In", "Parallel with Curbside Passenger Loading", "Parallel with Curbside Freight Loading")@Description("Will create parking of that type with default lengths and widths. Keep in mind, adjusting the length/width will make it lock onto that value. To reset it to automatic default, set the Attribute Connection Editor back to rule-defined value.")
 attr Left_Parking_Type			= "None"
 @Order(5)@Range(0,5) @Description("Good default is 8 feet (2.4384 m) with a minimum of 7 feet (2.1336 m) for low turn over locations for parallel parking. Angled parking varies on angle, but a 30-45 degree depth suggestion is 19 feet (5.7912 m). Design guidance on width varies with conditions.")@Hidden
-attr Left_Parking_Width			= _ParkingWidth("Left") 
+attr Left_Parking_Width			= _ParkingWidth(Left_Parking_Type) 
 @Order(6)@Range(0,10)@Description("For Parallel Parking 6.1 to 7.5 meters long is suggested, for Angled Parking 2.4 to 3 m is suggested.")@Hidden
-attr Left_Parking_Length		= _ParkingLength("Left")
+attr Left_Parking_Length		= _ParkingLength(Left_Parking_Type)
 @Order(7)@Range(0,100) @Description("Will create Parklets in Parking spaces, it is best if the parking spaces are contiguous to the sidewalk. The default OBJ does not have bollards or curb stops suggested by NACTO.")
 attr Parklet_Percentage			= 0
-@Order(8)@Range("None","Passenger Loading","Freight Loading") @Description("Describes the type of parking space reallocation at targeted locations on the street.") @Hidden
-attr Curbside_Management        ="None"
-@Order(9)@Range("None","Mid-Block & End Spaces","End Spaces","Far-side","Near-side","Mid-Block") @Description("Describes how reallocated street space is used in parking lanes.")@Hidden
-attr Parking_Allocation_Position = "Mid-Block & End Spaces"
+
+@Order(9)@Range("None","Mid-Block & End Spaces","End Spaces","Far-side","Near-side","Mid-Block") @Description("Describes where on the street reallocated street space is used in parking lanes for parallen parking with curbside managment options.")@Hidden
+attr Curbside_Management_Position = "Mid-Block & End Spaces"
 @Order(10)@Range(0,10) @Hidden @Description("This hidden attribute controls the spacing the parking areas have before the current directions stopbar.")
 attr Front_Parking_Spacing 		= 0
 @Order(11)@Range(0,10) @Hidden @Description("This hidden attribute controls the spacing the parking areas have after the crosswalk at the start of the street in the current direction.")
@@ -338,9 +337,9 @@ attr Bicycles_Per_KM				= case Not_High_LOD:0 else: 60*_BikeRank
 @Order(7)@Range(0,1) @Description("Higher the percentage, the higher the parking occupancy.")@Hidden
 attr Parked_Car_Percentage			= case Not_High_LOD:0 else: .6
 @Order(8)@Hidden @Range(0,360) @Description("When parking is angled, this determines the angle of the vehicles placed in each right side angled parking spot.")
-attr Right_Parked_Car_Angle			= _Right_Car_Angle
+attr Right_Parked_Car_Angle			= _Car_Angle(Right_Parking_Type)
 @Order(9)@Hidden @Range(0,360)@Description("When parking is angled, this determines the angle of the vehicles placed in each left side angled parking spot.")
-attr Left_Parked_Car_Angle			= _Left_Car_Angle
+attr Left_Parked_Car_Angle			= _Car_Angle(Left_Parking_Type)
 
 @Group("CUSTOM OBJECTS",90) 
 @Order(1)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
@@ -629,36 +628,22 @@ _PlantingWidth=
 	else:
 		_Minof(_Maxof((sidewalkWidthLeft*0.33),0.66),1.8)
 
-_ParkingWidth(side)					=
-	case side=="Right":
-		case Right_Parking_Type=="None":
-			0
-		case Right_Parking_Type=="Parallel":
-			2.44 #Door zone should have another 1-1.5 ft if parking is on inside
-		else:
-			6.1
+_ParkingWidth(ParkingType)				=
+	case ParkingType=="None":
+		0
+	case find(ParkingType,"Parallel",0)!=-1:
+		2.44 #Door zone should have another 1-1.5 ft if parking is on inside
 	else:
-		case Left_Parking_Type=="None":
-			0
-		case Left_Parking_Type=="Parallel":
-			2.44 #Door zone should have another 1-1.5 ft if parking is on inside
-		else:
-			6.1
-_ParkingLength(side)				=
-	case side=="Right":
-		case Right_Parking_Type=="None":
-			0
-		case Right_Parking_Type=="Parallel":
-			6.1
-		else:
-			2.6
+		6.1
+	
+_ParkingLength(ParkingType)				=
+	case ParkingType=="None":
+		0
+	case find(ParkingType,"Parallel",0)!=-1:
+		6.1
 	else:
-		case Left_Parking_Type=="None":
-			0
-		case Left_Parking_Type=="Parallel":
-			6.1
-		else:
-			2.6
+		2.6
+	
 			
 _AllocateCurbside(Allocation_Position,TotalSpacesonSide,SpaceNumber,Begin_Offset, End_Offset )	=
 	case find(Allocation_Position,"Mid-Block",0)!=-1 && find(Allocation_Position,"End Spaces",0)!=-1:
@@ -688,7 +673,11 @@ _AllocateCurbside(Allocation_Position,TotalSpacesonSide,SpaceNumber,Begin_Offset
 			false
 	else:
 		false
-		
+_HasCurbsideManagement(ParkingType) =
+    case find(ParkingType,"Curbside",0)!=-1:
+    	true
+    else:
+    	false	
 _Side_Sidewalk_Planting_Width(side) =
  	case side=="Right":
  		Right_Sidewalk_Planting_Width
@@ -699,15 +688,8 @@ _Sidewalk_BikeLane_Width(Dir)		=
 		Sidewalk_Right_Bike_Lane_Width
 	else:
 		Sidewalk_Left_Bike_Lane_Width
-_Right_Car_Angle					=
-	case Right_Parking_Type	=="Parallel":
-		0
-	case leftHandTraffic:
-		120
-	else:
-		60
-_Left_Car_Angle						=
-	case Left_Parking_Type	=="Parallel":
+_Car_Angle(ParkingType)				=
+	case find(ParkingType,"Parallel",0)!=-1:
 		0
 	case leftHandTraffic:
 		120
@@ -717,7 +699,7 @@ _Front_Parking_Spacing(Parking_Type) =
 case Front_Parking_Spacing!=0:
 	Front_Parking_Spacing
 else:
-	case Parking_Type=="Parallel":
+	case find(Parking_Type,"Parallel",0)!=-1:
 		3
 	case Parking_Type=="Angled Nose In":
 		6
@@ -730,7 +712,7 @@ _Rear_Parking_Spacing(Parking_Type)  =
 case Rear_Parking_Spacing!=0:
 	Rear_Parking_Spacing
 else:
-	case Parking_Type=="Parallel":
+	case find(Parking_Type,"Parallel",0)!=-1:
 		1
 	case Parking_Type=="Angled Nose In":
 		3
@@ -1338,6 +1320,9 @@ const NormalMax = 1
 ###################################################
 # Street Lane Texturing
 #
+#setupProjection(2,scope.xz,2,2 )
+#set(material.dirtmap,LanesFolder+"/dirtmap.1.512x512.jpg")
+#projectUV(2)
 
 @StartRule
 # split away the crosswalks at the beginning (if any) using the special UVSET 1
@@ -1346,6 +1331,7 @@ Street -->	#DeleteUV if texturing is off
 		set(material.opacity,1-Transparency)
 		ReportMultimodalMetrics(reportingOn)
 		BridgeMain
+		
 		split(u,uvSpace,1){_crosswalkBeginWidth/10: Asphalt(true,1,"Auto")
 					  | _crosswalkBeginWidth  : Crosswalk( Crosswalk_Begin ,1)
  					  | ~1			  		  : StreetWithCrosswalkEnd }
@@ -1358,7 +1344,7 @@ Street -->	#DeleteUV if texturing is off
  		set( Stop_Begin ,"none")
  		set( Stop_End ,"none")
  		StreetWithEntries
- 		
+
 ReportMultimodalMetrics(report_bool)-->
 	case report_bool:
 		report("Modal Preference (0 to 1).Bicycle", _BikeRank)
@@ -1826,7 +1812,7 @@ BikeBoxSymbolAllocation(dir,symbol_spacing,allocation_width,bike_box_color)-->
 #####Parking Lane Rules
 ParkingLane(Side,ParkingType,ParkingLength,ParkingWidth)-->
 		
-	case ParkingType=="Parallel":
+	case find(ParkingType,"Parallel",0)!=-1:
 		color( _ModeClassifier ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
  		scaleUV(0,
  			case Lane_Distribution==1:
@@ -1846,25 +1832,26 @@ ParkingLane(Side,ParkingType,ParkingLength,ParkingWidth)-->
  							|~(_Rear_Parking_Spacing(ParkingType)):Asphalt(true,1,"Auto")}	
 
 ParkingSpace(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
- 	case Curbside_Management != "None" && _AllocateCurbside(Parking_Allocation_Position,TotalSpacesonSide,SpaceNumber,1,2)
- 	||_AllocateCurbside(Parking_Allocation_Position,TotalSpacesonSide,SpaceNumber,2,3) && ParkingType=="Parallel":
+ 	case _HasCurbsideManagement(ParkingType) && _AllocateCurbside( Curbside_Management_Position ,TotalSpacesonSide,SpaceNumber,1,2)
+ 	||_AllocateCurbside( Curbside_Management_Position ,TotalSpacesonSide,SpaceNumber,2,3) && find(ParkingType,"Parallel",0)!=-1:
  		Curbside_Allocator(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength, ParkingWidth)
  	case rand(0,100)<=Parklet_Percentage && SpaceNumber>1:
  		Asphalt(true,1,"Pedestrian")
  		Parklet_Insert(ParkingLength,case Side=="Right":0 else: 180)			
+	 case find(ParkingType,"Parallel",0)!=-1:
+ 		ParallelParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)
+ 
  	case ParkingType=="Angled Nose In":
  		AngledNoseIn(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)
- 	case ParkingType=="Parallel":
- 		ParallelParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)
  	else:
  		AngledNoseOutParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)
 
 Curbside_Allocator(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength, ParkingWidth)-->
-	case find(Curbside_Management,"Freight",0)!=-1:
+	case find(ParkingType,"Freight",0)!=-1:
 		setback(PaintLineWidth) {
 			all:AsphaltPainted("yellow",true,1,"Auto")|
 			remainder: Project_Zebra_Stripe ("yellow")}
-	case find(Curbside_Management,"Passenger",0)!=-1:
+	case find(ParkingType,"Passenger",0)!=-1:
 		ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth)# Fix Parking Angle on oneway Streets
 		Project_Zebra_Stripe ("white")
 	else:
@@ -1979,11 +1966,11 @@ ParkingReport(Side,ParkingType,Rear_Edge_Case)-->#This edge case parameter only 
 	case Rear_Edge_Case:
 		report("Parking."+Side+" Parking Space Area (m^2)",geometry.area)
 		report("Parking.Total Parking Space Area (m^2)",geometry.area)
-		AsphaltPainted("black",false,case ParkingType=="Parallel":1-ParallelPark_WhiteFraction else:1-AngledPark_WhiteFraction,"Auto")
-		AsphaltPainted("white",false,case ParkingType=="Parallel":ParallelPark_WhiteFraction else:AngledPark_WhiteFraction,"Auto")
+		AsphaltPainted("black",false,case find(ParkingType,"Parallel",0)!=-1:1-ParallelPark_WhiteFraction else:1-AngledPark_WhiteFraction,"Auto")
+		AsphaltPainted("white",false,case find(ParkingType,"Parallel",0)!=-1:ParallelPark_WhiteFraction else:AngledPark_WhiteFraction,"Auto")
 	else:
-		AsphaltPainted("black",false,case ParkingType=="Parallel":1-ParallelPark_WhiteFraction else:1-AngledPark_WhiteFraction,"Auto")
-		AsphaltPainted("white",false,case ParkingType=="Parallel":ParallelPark_WhiteFraction else:AngledPark_WhiteFraction,"Auto")
+		AsphaltPainted("black",false,case find(ParkingType,"Parallel",0)!=-1:1-ParallelPark_WhiteFraction else:1-AngledPark_WhiteFraction,"Auto")
+		AsphaltPainted("white",false,case find(ParkingType,"Parallel",0)!=-1:ParallelPark_WhiteFraction else:AngledPark_WhiteFraction,"Auto")
 ###################################################
 # Centerline and Center Section Code
 #
