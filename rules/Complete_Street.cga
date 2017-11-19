@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:11/11/2017
+ * Last Updated:11/19/2017
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -421,6 +421,17 @@ attr Thematics					= _GeneralThematic
 attr elevation = 0               # built in value attributes, needs to be sourced as Object (parent)
 @Hidden @Order(15) @Description("For internal use and is designed to be mapped to the segement line so that a street can be used in flood visualization.")
 attr Base_Flood_Elevation=-.00001
+##################
+# Handle Control #
+##################
+@Handle(shape=LampAsset^1,axis=x,type=move)@Hidden
+attr SLight_Translate_X = 0
+@Handle(shape=Traffic_Light^1,axis=x,type=move)@Hidden
+attr TLight_Translate_X = 0
+@Handle(shape=LampAsset^1,axis=z,type=move)@Hidden
+attr SLight_Translate_Z = 0
+@Handle(shape=Traffic_Light^1,axis=y,type=move)@Hidden
+attr TLight_Translate_Z = 0
 ##################
 # User constants #
 ##################
@@ -2747,6 +2758,7 @@ Traffic_Light_Setup-->
 
 Traffic_Light(index)-->
 	alignScopeToAxes(y)		// place the Lamps vertically
+	t(TLight_Translate_X,0,TLight_Translate_Z)
 	s(0,5,0)				// set height to 5 meters
 	Traffic_Light_Asset(index)
 
@@ -2765,6 +2777,7 @@ Sidewalk_Lamp(offset) -->
 	LampAsset(offset)		// since the scope's dimenstion are zero in x and z, these are set according to the asset
 
 LampAsset(offset) -->
+	t( SLight_Translate_X ,0, SLight_Translate_Z )
 	r(0,90,0)
 	i(Street_Lamp_Object)
 	t(.2,0,offset)
