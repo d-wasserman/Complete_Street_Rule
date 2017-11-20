@@ -2758,7 +2758,7 @@ Traffic_Light_Setup-->
 
 Traffic_Light(index)-->
 	alignScopeToAxes(y)		// place the Lamps vertically
-	t(TLight_Translate_X,0,TLight_Translate_Z)
+	t(TLight_Translate_X,0,-TLight_Translate_Z)
 	s(0,5,0)				// set height to 5 meters
 	Traffic_Light_Asset(index)
 
