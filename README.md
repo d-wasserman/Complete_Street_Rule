@@ -57,7 +57,9 @@ This still needs to be tested more so please comment if you have any issues with
 
 8. Dimension Extrusion: This added option to the bridge settings enables single cross sectional images to have the mode categorization be shown at the street's edge. This provides a starting place for report infographics that denote different modes served by different treatments. 
 
-8. Other miscellaneous changes.
+9. Handles Support: Local Edits allow randomly generated and spaced assets to be moved within a CityEngine model rather than post processed in PhotoShop or some other 3D modeling software. Current assets and elements that can be edited with handles include: Street Lamps|Traffic Lights.
+
+10. Other miscellaneous changes.
 
 	-Dead end exception, dead ends, treated like they have a connection (for non-singular cross sections and shorter segments). 
 	
@@ -70,3 +72,5 @@ This still needs to be tested more so please comment if you have any issues with
 	-Fixed how multimodal lanes handle non-intersections-the last stamps will not be added when they connect to joints and other "non-stop" neighbor shapes.
 
 	-Better default planting widths for sidewalks: Sidewalk planting width was changed to mimic general guidelines and suggestions from a NACTO Tree Maintenance Guidelines Document. If you have a narrow sidewalk, the planting strip will narrow to a minimum of 2 feet, and grow to a maximum of 6 feet.
+
+	-Furniture Zone Width Parameter was added to adjust the gap between the sidewalk and the curb. This parameter is set to small gap, but can be increased. 
