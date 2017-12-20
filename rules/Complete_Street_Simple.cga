@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:11/21/2017
+ * Last Updated:12/20/2017
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -1577,10 +1577,10 @@ Bus_Bike_Lane_Texture_Rule(dir)-->
 							#Level 1-First split indentation
 							|~1:split(u,unitSpace,0){2:AsphaltPainted(Bus_Lane_Color,true,1,"Transit")
 								#Level 2- sub-split 
-								| Transit_Lane_Width*.5: BikeBoxSymbolAllocation(dir,Transit_Lane_Width*.5, Transit_Lane_Width*.75,Bus_Lane_Color)
+								| Transit_Lane_Width*.5: BikeBoxSymbolAllocation(1,Transit_Lane_Width*.5, Transit_Lane_Width*.75,Bus_Lane_Color)
 								| Transit_Lane_Width: Bus_Lane_Stamp (dir)
 								|~ Transit_Symbol_Spacing :AsphaltPainted(Bus_Lane_Color,true,1,"Transit")
-								|{ Transit_Lane_Width*.5: BikeBoxSymbolAllocation(dir,Transit_Lane_Width*.5, Transit_Lane_Width*.75,Bus_Lane_Color)
+								|{ Transit_Lane_Width*.5: BikeBoxSymbolAllocation(1,Transit_Lane_Width*.5, Transit_Lane_Width*.75,Bus_Lane_Color)
 								|Transit_Lane_Width: Bus_Lane_Stamp (dir)
 								|~ Transit_Symbol_Spacing :AsphaltPainted(Bus_Lane_Color,true,1,"Transit")}*
 								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width: Bus_Lane_Stamp (dir)
