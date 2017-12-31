@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:12/20/2017
+ * Last Updated:12/30/2017
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -430,11 +430,11 @@ attr Base_Flood_Elevation=-.00001
 # Handle Control #
 ##################
 @Handle(shape=LampAsset^1,axis=x,type=move)@Hidden
-attr SLight_Translate_X = 0
+attr SLight_Translate_X = Sidewalk_Furniture_Zone_Width/2
 @Handle(shape=Traffic_Light^1,axis=x,type=move)@Hidden
 attr TLight_Translate_X = 0
 @Handle(shape=LampAsset^1,axis=z,type=move)@Hidden
-attr SLight_Translate_Z = 0
+attr SLight_Translate_Z = Sidewalk_Furniture_Zone_Width/2
 @Handle(shape=Traffic_Light^1,axis=y,type=move)@Hidden
 attr TLight_Translate_Z = 0
 ##################
