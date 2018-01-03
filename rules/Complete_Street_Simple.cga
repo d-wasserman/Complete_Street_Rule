@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:12/30/2017
+ * Last Updated:1/2/2017
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -1352,7 +1352,6 @@ Street -->	#DeleteUV if texturing is off
 		set(material.opacity,1-Transparency)
 		ReportMultimodalMetrics(reportingOn)
 		BridgeMain
-		
 		split(u,uvSpace,1){_crosswalkBeginWidth/10: Asphalt(true,1,"Auto")
 					  | _crosswalkBeginWidth  : Crosswalk( Crosswalk_Begin ,1)
  					  | ~1			  		  : StreetWithCrosswalkEnd }
@@ -1853,8 +1852,8 @@ ParkingLane(Side,ParkingType,ParkingLength,ParkingWidth)-->
  							|~(_Rear_Parking_Spacing(ParkingType)):Asphalt(true,1,"Auto")}	
 
 ParkingSpace(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
- 	case _HasCurbsideManagement(ParkingType) && _AllocateCurbside( Curbside_Management_Position ,TotalSpacesonSide,SpaceNumber,1,2)
- 	||_AllocateCurbside( Curbside_Management_Position ,TotalSpacesonSide,SpaceNumber,2,3) && find(ParkingType,"Parallel",0)!=-1:
+ 	case _HasCurbsideManagement(ParkingType) && (_AllocateCurbside( Curbside_Management_Position ,TotalSpacesonSide,SpaceNumber,1,2)
+ 	||_AllocateCurbside( Curbside_Management_Position ,TotalSpacesonSide,SpaceNumber,2,3)) && find(ParkingType,"Parallel",0)!=-1:
  		Curbside_Allocator(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength, ParkingWidth)
  	case rand(0,100)<=Parklet_Percentage && SpaceNumber>1:
  		Asphalt(true,1,"Pedestrian")
