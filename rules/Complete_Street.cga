@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:1/20/2018
+ * Last Updated:1/21/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -1486,7 +1486,7 @@ ConventionalLane(dir,lanestotal,lanenumber,stopType)-->
 		Asphalt(true,1,"Auto")
 		MixedTrafficOnLane (dir,lanenumber,lanestotal)
 		Sharrow(dir,lanestotal,lanenumber)
-	case (stopType!="none" && stopType!="line only") && (lanenumber==lanestotal-1):# Makes sure with no stop type last lane has no lane with contiguous stripes
+	case !(stopType=="none"||stopType=="line only") && (lanenumber==lanestotal-1):# Makes sure with no stop type last lane has no lane with contiguous stripes
 		split(u,unitSpace,0){ ~1: Asphalt(true,1,"Auto")
  							| 14: ApproachMarkings(dir,lanenumber,_stopTex(stopType,lanenumber,lanestotal)) }
  		MixedTrafficOnLane (dir,lanenumber,lanestotal)
