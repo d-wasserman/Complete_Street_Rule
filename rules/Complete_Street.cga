@@ -1449,9 +1449,10 @@ Lanes(dir,stopType) -->
 	#print(geometry.dv(0,unitSpace))
 	#print(split.total)
 # prepare the uv coordinates and texture the shape
-ApproachMarkings(dir,lanenumber,markings) -->	# is used for textures for intersection approach (stop,turn arrows etc). 
+ApproachMarkings(dir,lanenumber,lanestotal,markings) -->	# is used for textures for intersection approach (stop,turn arrows etc). 
 	tileUV(0,~14,~Lane_Width )				# the tileUV operation makes sure that one unit in u-space corresponds to approx 14 meters, the v-coord is not touched in the case of 0 as parameter
 	normalizeUV(0,v,separatePerFace)
+	scaleUV(0,1,(case (lanenumber==lanestotal-1):.95 else: 1))# Scale UV in V direction slightly to remove light line on lane closer to centerline. 
 	texture(LanesFolder+"/lanes_4"+markings+"_14x14m.jpg")
 	deleteUV(_Texture_Switch)
 	color( _ModeClassifier ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic.
@@ -1488,14 +1489,15 @@ ConventionalLane(dir,lanestotal,lanenumber,stopType)-->
 		Sharrow(dir,lanestotal,lanenumber)
 	case !(stopType=="none"||stopType=="line only") && (lanenumber==lanestotal-1):# Makes sure with no stop type last lane has no lane with contiguous stripes
 		split(u,unitSpace,0){ ~1: Asphalt(true,1,"Auto")
- 							| 14: ApproachMarkings(dir,lanenumber,_stopTex(stopType,lanenumber,lanestotal)) }
+ 							| 14: ApproachMarkings(dir,lanenumber,lanestotal,_stopTex(stopType,lanenumber,lanestotal)) }
  		MixedTrafficOnLane (dir,lanenumber,lanestotal)
  		Sharrow(dir,lanestotal,lanenumber)
 	else:	# Makes basic lanes that that are not next to the last lane or a bus/hov lane (if they are on).
 		split(u,unitSpace,0){ ~1: MainLaneMarkingLODChoice(dir,lanenumber,"_stripes_white")
- 							| _hasStopSideSwitch(dir)* 14: ApproachMarkings(dir,lanenumber,_stopTex(stopType,lanenumber,lanestotal))}
+ 							| _hasStopSideSwitch(dir)* 14: ApproachMarkings(dir,lanenumber,lanestotal,_stopTex(stopType,lanenumber,lanestotal))}
  		MixedTrafficOnLane (dir,lanenumber,lanestotal)
  		Sharrow(dir,lanestotal,lanenumber)
+ 		
 MainLaneMarkingLODChoice(dir,lanenumber,marking)-->
 	case Not_High_LOD:
 		MainLaneMarkings(dir,lanenumber,"_stripes_white")
@@ -1504,6 +1506,7 @@ MainLaneMarkingLODChoice(dir,lanenumber,marking)-->
 		
 HighLODLaneMarking(dir,lanenumber,mode)-->
 	split(v,unitSpace,0) {~1:Asphalt(true,1,mode)|PaintLineWidth:Repeated_Lane_Dash(mode)}
+
 Repeated_Lane_Dash(mode)-->
 	split(u,unitSpace,0) {~4:AsphaltPainted("white",true,1,mode)|~4:Asphalt(true,1,mode)}*	
 
@@ -2027,8 +2030,7 @@ Alternate_Centerline-->
 							| ~1		   : CenterLineMarkings("stripes_white")
 							| _stopEnd*21  : CenterLineMarkings("single_white") }
 	else:
-		Asphalt(true,1,"Auto")
-	
+		Asphalt(true,1,"Auto")	
 
 MedianWTurnLane-->
 	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
@@ -2038,6 +2040,7 @@ MedianWTurnLane-->
 						|(_tooShort(geometry.du(0,unitSpace),16+Median_Turn_Transition_Depth+ThickPaintLineWidth))*_neighborEnd*_stopEnd*(16+Median_Turn_Transition_Depth):MedianTurnPocket(2)
 						|_neighborEnd*_stopEnd*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")
 						|(_Bike_Box_Gap("End")): Bike_Box_Left_Turn_Gap("End")}
+
 MedianTurnPocket(dir)-->
 	case dir==0:
 		scaleUV(0,-1,1)
@@ -2047,6 +2050,7 @@ MedianTurnPocket(dir)-->
 		scaleUV(0,1,-1)
 		split(u,unitSpace,0){Median_Turn_Transition_Depth:TransitionSpace(dir)
 		|~1:TurnLanePocket(dir)}
+		
 TransitionSpace(dir)-->
 	split(v,unitSpace,0){Turn_Pocket_Curb_Width:Raised_Offset_Curb("Turn Lane Curb",1,"Auto",Turn_Pocket_Curb_Width)
 						|~1: AngledSplitTransition(dir)}			
@@ -2058,7 +2062,7 @@ AngledSplitTransition(dir)-->
 
 TurnLanePocket(dir)-->
 	split(v,unitSpace,0){Turn_Pocket_Curb_Width:Raised_Offset_Curb("Turn Lane Curb",1,"Auto",Turn_Pocket_Curb_Width)
-						|{~Lane_Width: ApproachMarkings(dir,1,"_stop_arrows_all_" + str(1))}*}
+						|{~Lane_Width: ApproachMarkings(dir,1,1,"_stop_arrows_all_" + str(1))}*}
 Center_Turn_Lane-->
 	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
 						|_neighborBegin*_stopBegin*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")
