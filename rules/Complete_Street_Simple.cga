@@ -1,13 +1,13 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:1/21/2018
+ * Last Updated:2/28/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
 # ESRI Attribution License:
 #	ESRI Derivative work
-#	http://mappingcenter.esri.com/downloads/AttributionAndLicense_05_09_07.pdf
+#	http://mappingcenter.esri.com/#@Hidownloads/AttributionAndLicense_05_09_07.pdf
 #
 # Copyright 2015 David J. Wasserman
 #
@@ -100,8 +100,6 @@ const LOD_Object_Choice   = case Not_Low_LOD:"High" else: "Low"
 attr Lane_Distribution 			= _getInitialLaneDistribution
 @Order(2)@Range(2.7,3.9624)@Description("Determines the widths of the main travel lanes. Typically, Freeways are about 12 feet (3.6 m), Arterials 11-12 feet (3.3-3.6 m), Collectors 10-12 feet (3.0-3.6 m), and Local roads 9-12 feet (2.7-3.6 m).")
 attr Lane_Width					= (laneWidth-.2)
-@Order(3) @Range("yellow","white","white stripe","none") @Description("Choses color for the centerline if there is a center line. This attribute does nothing to other center types.")
-attr Centerline_Color 			= _getInitialCenterline
 @Order(4) @Range("right-hand","left-hand")@Description("Orients the road for right vs. left traffic. Please note that some aspects of the rule do not *flip* when this is changed such as the median.")
 attr Traffic_Direction			= "right-hand"
 @Order(5) @Range(0,80) @Description("A descriptive attribute that feeds into reporting. If >= 40 mph, Design Speed is calculated as Speed_Limit +7.5, if less than 40, design speed is assumed equal to the Speed_Limit (see comments for details). 1 MPH==1.6093 KPH.")
@@ -154,10 +152,10 @@ attr Rear_Parking_Spacing		= 0
 
 
 @Group("CENTER SECTION LAYOUT","Basic Attributes", 2) 
-@Order(1) @Range("None","Median", "Boulevard", "Barrier","Barrier & Shoulder","Center Turn Lane","Median With Turn Lane")@Description("This attribute is key to picking a center type. If none, it is a centerline, but each choice creates different center section layouts.")
-attr Center_Type						= "None"
+@Order(1) @Range("None","Yellow Centerline","Median", "Boulevard", "Barrier","Barrier & Shoulder","Center Turn Lane","Median With Turn Lane","White Stripe Centerline","White Centerline")@Description("This attribute is key to picking a center type. If none, it is a centerline, but each choice creates different center section layouts.")
+attr Center_Type						= "Yellow Centerline"
 @Order(2) @Range(0,40) @Description("Is the combined center section width regardless of type. Does nothing for the barrier selection.")
-attr Center_Width						= 0
+attr Center_Width						= _getInitialCenterWidth
 @Order(3) @Range(0,4) @Description("Is the width of the walkways created by Median. They will override the planting width, and keep in mind there are two walkways for Plant:Walk:Plant.")
 attr WalkWay_Width 						= case Center_Width<=Median_Layout_Threshold: 0 else: 3+Median_Walkway_Expansion
 @Order(4) @Range("Walk:Plant:Walk","Walk:Plant","Plant:Walk","Plant:Walk:Plant") @Description("Lays out the median/boulevard walkway configurations. In the case of Plant:Walk:Plant-the walkway rule is used twice so adjust walkway width accordingly.") 
@@ -418,13 +416,13 @@ attr sidewalkWidthRight			= (geometry.dv(0,unitSpace))
 attr sidewalkWidth				= case sidewalkSide=="Right": sidewalkWidthRight else: sidewalkWidthLeft
 @Hidden @Order(11) @Description("For internal use and reporting, must be set to 'Source=Object'.")
 attr sidewalkLength				= 0
-@Order(12) @Hidden @Description("For internal use and reporting, must be set to 'Source=Object'.")
+@Hidden @Order(12) @Description("For internal use and reporting, must be set to 'Source=Object'.")
 attr sidewalkSide				= "Error"
-@Hidden @Order(13) @Description("For internal use and reporting, must be set to 'Source=Object'.")
+@Hidden @Order(14) @Description("For internal use and reporting, must be set to 'Source=Object'.")
 attr Thematics					= _GeneralThematic
-@Order(14) @Hidden @Description("For internal use and reporting, must be set to 'Source=Object'.")
+@Order(15) @Hidden @Description("For internal use and reporting, must be set to 'Source=Object'.")
 attr elevation = 0               # built in value attributes, needs to be sourced as Object (parent)
-@Hidden @Order(15) @Description("For internal use and is designed to be mapped to the segement line so that a street can be used in flood visualization.")
+@Hidden @Order(16) @Description("For internal use and is designed to be mapped to the segement line so that a street can be used in flood visualization.")
 attr Base_Flood_Elevation=-.00001
 ##################
 # Handle Control #
@@ -456,7 +454,7 @@ const PaintLineWidth				= 0.1 #uvSpace 36/256-about 4 in
 const Rumble_Strip_Len				= 1.5 #FWHA 7 in wide per bump with 5 in ashpalt spacing
 const Rumble_Strip_Wid				= .355 #FWHA-typically 12-16 in wide
 #SideWalk and Median Constants
-const Not_A_Colored_Centerline		= case Centerline_Color!="white" &&  Centerline_Color!= "yellow":true else: false
+const Centerline_Color				= case Center_Type == "White Centerline":"white" else: "yellow"
 const Median_Layout_Threshold		= case find(Center_Type,"Turn Lane",0)!=-1:Lane_Width*3 else: Lane_Width*2
 const Median_Walkway_Expansion		= ln(abs((Center_Width-Median_Layout_Threshold)/2))
 const Speed_Related_Expansion		= ln(abs(Speed_Limit_in_MPH/5))
@@ -609,11 +607,7 @@ _Initital_Transit_Lane_Sides=
 		"Left"
 	else:
 		"Both"
-_getInitialCenterline	=
-	case oneWay	|| initialShape.startRule=="Junction": "none" 		# one way does not need centerline, neither do junctions nor roundabouts
-	case _through									 : "yellow"		# to be consistent always yellow for through traffic (= a street/junction/freeway without stop markings at least on one side) 
-	else											 : "yellow"		# Else a white centerline
-
+	
 _getInitialStop(connection,nLanes) =
 	case _hasStop(connection) && (streetLength>20):
 		case connection=="ROUNDABOUT": 60%: "with stop marking" else: "arrows for right turn"
@@ -638,6 +632,11 @@ _getInitialGap(connection)=
 		2.4
 	else:
 		 -2
+_getInitialCenterWidth = case oneWay || Center_Type=="None": 0 
+					     case Center_Type=="Barrier":.98
+					     case Center_Type=="Boulevard" || Center_Type=="Barrier & Shoulder": 10
+					     case find(Center_Type,"Turn Lane",0)!=-1 || find(Center_Type,"Median",0)!=-1: Lane_Width+.1
+					     else:PaintLineWidth*4
 _PlantingWidth=
 	case sidewalkSide=="Right":
 		_Minof(_Maxof((sidewalkWidthRight*0.33),0.66),1.8)
@@ -777,13 +776,10 @@ const _neighborEnd			   = case Stop_End !="none" || _hasStop(connectionEnd):1 el
 const _crosswalkWidth		   = case _Maxof(sidewalkWidthLeft,sidewalkWidthRight)==0:3 else:(_Maxof(sidewalkWidthLeft,sidewalkWidthRight)+0.05)//changed to match width of largest sidewalk +0.05 (2 inches), if 0 default is 2. 
 const _crosswalkBeginWidth	   = case Crosswalk_Begin =="none": 0 else: (Crosswalk_Width)
 const _crosswalkEndWidth 	   = case Crosswalk_End =="none"  : 0 else: (Crosswalk_Width)
-const _centerWidth	 		   = case oneWay: 0 
-							       case Center_Type=="Barrier":.98
-							       case Center_Type=="Barrier & Shoulder":Center_Width
-							       case Center_Type != "None": Center_Width
-							       else:PaintLineWidth*4
-const _Texture_Switch		   = case bool(Display_Textures): 4 else: 0 # This switch will delete the opacity map UV if texturing is on- transparencys mess with the tree transparencies anyway. If you want UVset 4 you can change the 4 to a 999 and it should work...but only through an unhandled exception
-const _isnotCenterline		   = case Center_Type != "None":0 else:1						  
+const _centerWidth	 		   = case oneWay || Center_Type=="None": 0 
+							     case Center_Type != "None" && find(Center_Type,"Centerline",0)==-1: Center_Width
+							     else:PaintLineWidth*4
+const _Texture_Switch		   = case bool(Display_Textures): 4 else: 0 # This switch will delete the opacity map UV if texturing is on- transparencys mess with the tree transparencies anyway. If you want UVset 4 you can change the 4 to a 999 and it should work...but only through an unhandled exception					  
 const _Bike_Paint_Adjuster	   = case Bike_Paint_Line_Sides=="Right"||Bike_Paint_Line_Sides=="None":1 else:2
 const _EmptySpace			   = (streetWidth-(nLanesTotal* Lane_Width +_LeftSplitSum +_RightSplitSum+_centerWidth+_Transit_Lane_Widths))/2  # is Per Side-so combined is this *2
 const _AdjEmptySpace		   = (_EmptySpace*2)
@@ -1208,7 +1204,7 @@ _BikeRank				=#Adapted from MTI Report 11-19 # Does not take into account Boulev
 	case (Street_Right_Bike_Lane_Width>0 || Street_Left_Bike_Lane_Width>0) &&_MaxParkingSum<=1: # Bike Lanes not along parking lane
 		case floor((DirLaneTotal))<=1 &&  Speed_Limit_in_MPH<=30 && Level_of_Blockage=="Rare" && _Orientation_Modified_SplitSum>=1.8288:
 			1 #LTS 1
-		case (Speed_Limit_in_MPH<25)|| (Speed_Limit_in_MPH<=35  &&(floor((DirLaneTotal))<=(case Center_Type =="Median":2 else: 1)&& Level_of_Blockage=="Rare" && _Orientation_Modified_SplitSum>0)):
+		case (Speed_Limit_in_MPH<25)|| (Speed_Limit_in_MPH<=35  &&(floor((DirLaneTotal))<=(case find(Center_Type,"Median",0)!=-1:2 else: 1)&& Level_of_Blockage=="Rare" && _Orientation_Modified_SplitSum>0)):
 			.66 #LTS 2-speed limit has no effect so it jumps to next highest speed limit
 		case (Speed_Limit_in_MPH<=35 && _Orientation_Modified_SplitSum>0):
 			.33 #LTS 3
@@ -2019,18 +2015,19 @@ CenterSpace -->
 							 |Rumble_Strip_Wid:Rumble_Strip}
 	case Center_Type=="Center Turn Lane":
 		Center_Turn_Lane
-	case Not_A_Colored_Centerline:	
-		Alternate_Centerline
+	case Center_Type=="None":
+		Asphalt(true,1,"Auto")	
+	case Center_Type == "White Stripe Centerline":
+		Striped_Centerline
 	else:
 		CenterLineMarkings("double_"+ Centerline_Color )
 
-Alternate_Centerline-->
-	case Centerline_Color=="white stripe":
-		split(u,unitSpace,0){ _stopBegin*21: CenterLineMarkings("single_white")
-							| ~1		   : CenterLineMarkings("stripes_white")
-							| _stopEnd*21  : CenterLineMarkings("single_white") }
-	else:
-		Asphalt(true,1,"Auto")	
+Striped_Centerline-->
+	split(u,unitSpace,0){ _stopBegin*21: CenterLineMarkings("single_white")
+						| ~1		   : CenterLineMarkings("stripes_white")
+						| _stopEnd*21  : CenterLineMarkings("single_white") }
+
+
 
 MedianWTurnLane-->
 	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
@@ -2106,7 +2103,7 @@ Boulevard_StopBars(dir)-->
 			split(u,unitSpace,0) {_stopBegin*ThickPaintLineWidth:AsphaltPainted("white",true,1,"Auto")|~1:BikeLane(-1,geometry.dv(0,unitSpace))}
 Boulevard_Center-->
 	case Boulevard_Center_Type=="Center Line":
-		CenterLineMarkings("double_"+ (case Not_A_Colored_Centerline:"yellow" else:Centerline_Color))
+		CenterLineMarkings("double_"+ Centerline_Color)
 	case Boulevard_Center_Type=="Median":
 		Raised_Curb("Boulevard Center",1) #HAS no bus stop
 	case Boulevard_Center_Type=="Curb Buffer":
@@ -2121,7 +2118,7 @@ Boulevard_Center-->
 		split(u,unitSpace,0) {.3:NIL|~1:Fence("Boulevard Center")|.3:NIL}#The split only makes it so the fence poles are not put in the curb.
 		Raised_Curb("Boulevard Center",1)
 	else:
-		CenterLineMarkings("double_"+(case Not_A_Colored_Centerline:"yellow" else:Centerline_Color))
+		CenterLineMarkings("double_"+Centerline_Color)
 
 Center_Normal_Lanes(dir)-->
 	 split(v,unitSpace,0) {~1:Drainage
@@ -2134,20 +2131,19 @@ CenterLineMarkings(tex) --> #Come back too
 	texture(LanesFolder+"/centerline_" + tex + "_14m.jpg")
 	deleteUV(_Texture_Switch)
 	AsphaltPainted("black",false,1-Center_Line_Paint_Fraction,"Auto")
-	AsphaltPainted(case Not_A_Colored_Centerline:"white" else:Centerline_Color,false,Center_Line_Paint_Fraction,"Auto")#Slight over estimate for none-case. 
+	AsphaltPainted(Centerline_Color,false,Center_Line_Paint_Fraction,"Auto")#Slight over estimate for none-case. 
 	color( _ModeClassifier ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 		
 
 CenterTurnLaneStamp(texture_choice,degree)-->
-
-		normalizeUV(0,v,collectiveAllFaces)
-		rotateUV(0,degree)
-		tileUV(0, '1 ,'1)
-		texture(LanesFolder+"/Center_"+texture_choice+"Lane"+".jpg")
-		deleteUV(_Texture_Switch)
-		color( _ModeClassifier ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-		AsphaltPainted("black",false,1-CenterTurnLane_YellowFraction-(case texture_choice=="Turn_" || texture_choice=="Transition_":CenterTurnLane_WhiteFraction else: 0),"Auto")
-		AsphaltPainted("yellow",false,CenterTurnLane_YellowFraction,"Auto")
-		AsphaltPainted("white",false,case texture_choice=="Turn_" || texture_choice=="Transition_":CenterTurnLane_WhiteFraction else: 0,"Auto")
+	normalizeUV(0,v,collectiveAllFaces)
+	rotateUV(0,degree)
+	tileUV(0, '1 ,'1)
+	texture(LanesFolder+"/Center_"+texture_choice+"Lane"+".jpg")
+	deleteUV(_Texture_Switch)
+	color( _ModeClassifier ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+	AsphaltPainted("black",false,1-CenterTurnLane_YellowFraction-(case texture_choice=="Turn_" || texture_choice=="Transition_":CenterTurnLane_WhiteFraction else: 0),"Auto")
+	AsphaltPainted("yellow",false,CenterTurnLane_YellowFraction,"Auto")
+	AsphaltPainted("white",false,case texture_choice=="Turn_" || texture_choice=="Transition_":CenterTurnLane_WhiteFraction else: 0,"Auto")
 
 Bike_Box_Left_Turn_Gap(street_side)--> #If Bike boxes are on for the correct side 
 	case street_side=="Begin": split (u,unitSpace,0) {PaintLineWidth:AsphaltPainted("white",true,1,"Conflict Zones")
