@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:2/28/2018
+ * Last Updated:3/14/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -573,6 +573,7 @@ const Brightness="#d7d7d7"
 const NACTOPedestrian="#FFFFFF"
 const NACTOTransit="#AF4E57"
 const NACTOAuto="#C3C2C0"
+const NACTOStorage = "#CCCCCC"
 const NACTOBike="#6AAA70"
 const NACTOPlanting="#B5DC98"
 const NACTOConflictZone="#F9ECB7" #Crosswalk in book
@@ -1081,51 +1082,56 @@ _ModeClassifier (Usage)	=
 	case Display_Thematics=="Usage"||Display_Thematics=="All Mode Preference"||count(Display_Thematics,"Highlight")>0: 
 	#Please construct your own usage zones if the current ones are not sufficient-Colors based on NACTO illustrations
 		case Usage=="Pedestrian":
-		_PedestrianThematic
+		_PedestrianThematic(NACTOPedestrian)
 		case Usage=="Conflict Zones":
-		_ConflictZoneThematic
+		_ConflictZoneThematic(NACTOConflictZone)
 		case Usage=="Bikeways":
-		_BikewaysThematic
+		_BikewaysThematic(NACTOBike)
 		case Usage=="Auto":
-		_AutoThematic
+		_AutoThematic(NACTOAuto)
+		case Usage=="Storage":
+		_AutoThematic(NACTOStorage)
 		case Usage=="Transit":
-		_TransitThematic
+		_TransitThematic(NACTOTransit)
 		case Usage=="Plantings":
-		_PlantingThematic
+		_PlantingThematic(NACTOPlanting)
 		else:
 		"#000000"
 	else:
 		Thematics #Attribute that diverts to _Thematic
-_PedestrianThematic=
+		
+_PedestrianThematic(color)=
 	case Display_Thematics=="Usage":
-		NACTOPedestrian
+		color
 	case Display_Thematics=="Pedestrian Highlight":
 		Solid_Color
 	case Display_Thematics=="All Mode Preference":
 		getHexColorString(1-_PedRank,_PedRank,0)
 	else:
 		Secondary_Solid_Color
-_TransitThematic=
+
+_TransitThematic(color)=
 	case Display_Thematics=="Usage":
-		NACTOTransit
+		color
 	case Display_Thematics=="Transit Highlight":
 		Solid_Color
 	case Display_Thematics=="All Mode Preference":
 		getHexColorString(1-_TransitRank,_TransitRank,0)
 	else:
 		Secondary_Solid_Color
-_BikewaysThematic=
+		
+_BikewaysThematic(color)=
 	case Display_Thematics=="Usage":
-		NACTOBike
+		color
 	case Display_Thematics=="Bicycle Highlight":
 		Solid_Color
 	case Display_Thematics=="All Mode Preference":
 		getHexColorString(1-_BikeRank,_BikeRank,0)
 	else:
 		Secondary_Solid_Color
-_AutoThematic=
+_AutoThematic(color)=
 	case Display_Thematics=="Usage":
-		NACTOAuto
+		color
 	case Display_Thematics=="Auto Highlight":
 		Solid_Color
 	case Display_Thematics=="All Mode Preference":
@@ -1133,9 +1139,11 @@ _AutoThematic=
 	else:
 		Secondary_Solid_Color
 
-_PlantingThematic=
+
+
+_PlantingThematic(color)=
 	case Display_Thematics=="Usage":
-		NACTOPlanting
+		color
 	case Display_Thematics=="Planting Highlight":
 		Solid_Color
 	case Display_Thematics=="All Mode Preference":
@@ -1143,9 +1151,9 @@ _PlantingThematic=
 	else:
 		Secondary_Solid_Color
 
-_ConflictZoneThematic=
+_ConflictZoneThematic(color)=
 	case Display_Thematics=="Usage":
-		NACTOConflictZone
+		color
 	case Display_Thematics=="All Mode Preference":
 		getHexColorString(1-_PedRank,_PedRank,0)
 	else:
@@ -1832,7 +1840,7 @@ BikeBoxSymbolAllocation(dir,symbol_spacing,allocation_width,bike_box_color)-->
 ParkingLane(Side,ParkingType,ParkingLength,ParkingWidth)-->
 		
 	case find(ParkingType,"Parallel",0)!=-1:
-		color( _ModeClassifier ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+		color( _ModeClassifier ("Storage"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
  		scaleUV(0,
  			case Lane_Distribution==1:
  				-1
@@ -1844,7 +1852,7 @@ ParkingLane(Side,ParkingType,ParkingLength,ParkingWidth)-->
  								|{ParkingLength:ParkingSpace(Side,ParkingType,split.index,split.total,ParkingLength,ParkingWidth)}*
  								|~_Rear_Parking_Spacing(ParkingType):Asphalt(true,1,"Auto")}
  	else:
- 		color( _ModeClassifier ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+ 		color( _ModeClassifier ("Storage"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
  		scaleUV(0,case Side=="Right":-1 else:1,1)
  		split(u,unitSpace,0){~(_Front_Parking_Spacing(ParkingType)):Asphalt(true,1,"Auto")# Make sure to pass right parameters/type shoudl work here
  							|{ParkingLength:ParkingSpace(Side,ParkingType,split.index,split.total,ParkingLength,ParkingWidth)}*
@@ -1869,17 +1877,19 @@ Curbside_Allocator(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,
 	case find(ParkingType,"Freight",0)!=-1:
 		setback(PaintLineWidth) {
 			all:AsphaltPainted("yellow",true,1,"Auto")|
-			remainder: Project_Zebra_Stripe ("yellow")}
+			remainder: Project_Zebra_Stripe ("yellow","Conflict Zones")}
 	case find(ParkingType,"Passenger",0)!=-1:
 		ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth)# Fix Parking Angle on oneway Streets
-		Project_Zebra_Stripe ("white")
+		Project_Zebra_Stripe ("white","Conflict Zones")
 	else:
 		Asphalt(true,1,"Auto")
 		
-Project_Zebra_Stripe (Color)-->
+Project_Zebra_Stripe (Color,Mode_Class)-->
 	setupProjection(0,scope.xz,'1,'1)
 	texture(LanesFolder +"/crosswalk_zebra_"+Color+".jpg")
 	projectUV(0)
+	deleteUV(_Texture_Switch)
+	color( _ModeClassifier (Mode_Class))
 
 Parklet_Insert(ParkingLength,Rotation)-->
 	alignScopeToGeometry(yUp, largest, 1)
@@ -1900,7 +1910,7 @@ AngledNoseIn(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,Parkin
  	tileUV(0,~ParkingLength,~ParkingWidth)
 	texture(LanesFolder+"/AngledParking.jpg")
 	deleteUV(_Texture_Switch)
-	color( _ModeClassifier ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+	color( _ModeClassifier ("Storage"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	ParkingReport(Side,ParkingType,case SpaceNumber==1: false else:true)#Don't include last spot
 		
 AngledNoseOutParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
@@ -1912,7 +1922,7 @@ AngledNoseOutParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLengt
  		tileUV(0,~ParkingLength,~ParkingWidth)
 		texture(LanesFolder+"/AngledParking.jpg")
 	deleteUV(_Texture_Switch)
-	color( _ModeClassifier ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+	color( _ModeClassifier ("Storage"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	ParkingReport(Side,ParkingType,case SpaceNumber==1: false else:true) #Don't include last spot
 	
 ParallelParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
@@ -1925,7 +1935,7 @@ ParallelParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,Par
  			tileUV(0,~ParkingLength,~ParkingWidth)
 			texture(LanesFolder+"/ParallelParkFront.jpg")
 			deleteUV(_Texture_Switch)
-			color( _ModeClassifier ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+			color( _ModeClassifier ("Storage"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 			ParkingReport(Side,ParkingType,true)
 			
  		case SpaceNumber==1:
@@ -1936,7 +1946,7 @@ ParallelParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,Par
  			tileUV(0,~ParkingLength,~ParkingWidth)
 			texture(LanesFolder+"/ParallelParkRear.jpg")
 			deleteUV(_Texture_Switch)
-			color( _ModeClassifier ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+			color( _ModeClassifier ("Storage"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 			ParkingReport(Side,ParkingType,false)#it is the last texture, it does not make an actual parking space. 
  			
  		else:
@@ -1948,7 +1958,7 @@ ParallelParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,Par
  			tileUV(0,~ParkingLength,~ParkingWidth)
 			texture(LanesFolder+"/ParallelParkMid.jpg")
 			deleteUV(_Texture_Switch)
-			color( _ModeClassifier ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+			color( _ModeClassifier ("Storage"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 			ParkingReport(Side,ParkingType,true)
 			
 ParallelParkingCar(dir,ParkingLength, ParkingWidth) -->
@@ -3312,13 +3322,13 @@ DimensionStreetLanes(dir,segment_side)-->
 
 DimensionRightSplitSpace(dir,segment_side)-->
 	scaleUV(0,case Parking_Protection_Bool :-1 else:1,1)
-	split(u,unitSpace,0){Right_Parking_Width :BridgeMaterial(NACTOAuto)
+	split(u,unitSpace,0){Right_Parking_Width :BridgeMaterial(NACTOStorage)
 						|( Street_Right_Bike_Lane_Width + Right_Buffer_Width ):DimensionRightBikeLaneSpace(dir,segment_side)}
 						
 DimensionLeftSplitSpace(dir,segment_side)-->
 	scaleUV(0,case Parking_Protection_Bool :-1 else:1,1)
 	split(u,unitSpace,0){( Street_Left_Bike_Lane_Width + Left_Buffer_Width ):DimensionLeftBikeLaneSpace(dir,segment_side)
-							| Left_Parking_Width :BridgeMaterial(NACTOAuto)}
+							| Left_Parking_Width :BridgeMaterial(NACTOStorage)}
 
 DimensionLeftBikeLaneSpace(dir,segment_side)-->
 	scaleUV(0,case Buffer_Protection_Bool : -1 else:1,1)
