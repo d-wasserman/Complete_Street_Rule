@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:4/15/2018
+ * Last Updated:4/22/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -82,7 +82,9 @@ attr Space_Management= "Best Fit"
 attr LOD_Setting	  ="Moderate"
 @Range(0,1) @Order(7)@Description("This attribute controls the transparency of the street models created by the rule.")@Hidden
 attr Transparency	  = 0
-@Range("true","false") @Order(7)@Description("This attribute controls whether key reporting elements are enabled. Low LOD defaults to turning reports off.") @Hidden
+@Range(0,1) @Order(8) @Description("This attribute adjusts the global specularity of the street model.") @Hidden
+attr Specularity	  = 1
+@Range("true","false") @Order(9)@Description("This attribute controls whether key reporting elements are enabled. Low LOD defaults to turning reports off.") @Hidden
 attr Reporting_On = case LOD_Setting == "Low": "false" else: "true"
 
 texturingOn = bool(Display_Textures) 	# Shorthand.
@@ -1356,22 +1358,37 @@ const NormalMax = 1
 @StartRule
 # split away the crosswalks at the beginning (if any) using the special UVSET 1
 Street -->	#DeleteUV if texturing is off
-	case _uScale==1: #IF the Street is long enough continue normally. 
+	case Specularity==1:
 		set(material.opacity,1-Transparency)
-		ReportMultimodalMetrics(reportingOn)
-		BridgeMain
-		split(u,uvSpace,1){_crosswalkBeginWidth/10: Asphalt(1,"Auto")
+		Short_Long_Street
+	else:
+		set(material.opacity,1-Transparency)
+		set(material.specular.g,Specularity)
+		set(material.specular.b,Specularity)
+		set(material.specular.r,Specularity)
+		Short_Long_Street
+	
+Short_Long_Street-->
+	case _uScale==1: #IF the Street is long enough continue normally. 
+		Long_Street
+ 	else: #If the street is too short no stop lines, no bike boxes. 
+ 		Short_Street	
+
+Long_Street-->
+	ReportMultimodalMetrics(reportingOn)
+	BridgeMain
+	split(u,uvSpace,1){_crosswalkBeginWidth/10: Asphalt(1,"Auto")
 					  | _crosswalkBeginWidth  : Crosswalk( Crosswalk_Begin ,1)
  					  | ~1			  		  : StreetWithCrosswalkEnd }
- 	else: #If the street is too short no stop lines, no bike boxes. 
- 		set(material.opacity,1-Transparency)
- 		ReportMultimodalMetrics(reportingOn)
- 		BridgeMain
- 		set( Right_Bike_Box ,"false")
- 		set( Left_Bike_Box ,"false")
- 		set( Stop_Begin ,"none")
- 		set( Stop_End ,"none")
- 		StreetWithEntries
+
+Short_Street-->
+ 	ReportMultimodalMetrics(reportingOn)
+ 	BridgeMain
+ 	set( Right_Bike_Box ,"false")
+ 	set( Left_Bike_Box ,"false")
+ 	set( Stop_Begin ,"none")
+ 	set( Stop_End ,"none")
+ 	StreetWithEntries
 
 ReportMultimodalMetrics(report_bool)-->
 	case report_bool:
@@ -2170,7 +2187,6 @@ Bike_Box_Left_Turn_Gap(street_side)--> #If Bike boxes are on for the correct sid
 Barrier-->
 	alignScopeToGeometry(yUp, largest, 0)
 	i(ObjectFolder+"/Jersey_Barrier.obj")
-	report("Objects.Jersey Barrier Count",1)
 	r(0,90,0)
 	s(1,1,1.2)
 	center(x)
@@ -2428,13 +2444,11 @@ Median_Bench_Insert (Dir)-->
 		s(1,1,2)
 		center(xz)
 		t(-WalkWay_Width/2+Bench_Adjuster,0,0)
-		report("Objects.Bench Count",1)
 		i(Bench_Object)
 		deleteUV(_Texture_Switch)
 	case Dir==0 && (Median_Benches=="Both"||Median_Benches=="Right"):
 		s(1,1,2)
 		center(xz)
-		report("Objects.Bench Count",1)
 		t(-WalkWay_Width/2+Bench_Adjuster,0,0)
 		i(Bench_Object)
 		deleteUV(_Texture_Switch)
@@ -2678,7 +2692,17 @@ Tree_Scatter-->
 #
 
 Sidewalk-->
-	set(material.opacity,1-Transparency)
+	case Specularity==1:
+		set(material.opacity,1-Transparency)
+		Sidewalk_Generation
+	else:
+		set(material.opacity,1-Transparency)
+		set(material.specular.g,Specularity)
+		set(material.specular.b,Specularity)
+		set(material.specular.r,Specularity)
+		Sidewalk_Generation
+		
+Sidewalk_Generation-->
 	BridgeSide
 	set(sidewalkWidth,scope.sz)
 	set(sidewalkLength,scope.sx)
@@ -2688,6 +2712,7 @@ Sidewalk-->
 	split(v,unitSpace,0){Curb_Depth: Curbs_Mass(false) 
 						| ~1: Sidewalk_Setup }
 	Enclose_Shape #Enclose Shapes for Printing
+
 
 
 Curbs_Mass(RotateUV)-->
@@ -2907,7 +2932,6 @@ Sidewalk_Bench_Insert(Dir,geometry_Len)-->
 		rotateScope(0,90,0)
 		s(1,1,2)
 		t(.25+(Sidewalk_Planting_Width/10),0,geometry_Len-1)#When geometry.du is used functionality is different (alignment issue?) passed parameter works best likely because it is before scope manipulation (rotate etc)dv. might work instead.
-		report("Objects.Bench Count",1)
 		i(Bench_Object)
 		deleteUV(_Texture_Switch)
 	else:
