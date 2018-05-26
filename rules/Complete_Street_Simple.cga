@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:4/22/2018
+ * Last Updated:5/26/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -59,7 +59,7 @@
 #1 feet		==.3048  Meters
 #1/2 feet	==.1524  Meters
 #1 inch		==.0254  Meters
-version "2016.1"
+version "2017.1"
 
 
 
@@ -2051,12 +2051,12 @@ CenterSpace -->
 	case Center_Type == "White Stripe Centerline":
 		Striped_Centerline
 	else:
-		CenterLineMarkings("double_"+ Centerline_Color )
+		CenterLineMarkings("double_",Centerline_Color )
 
 Striped_Centerline-->
-	split(u,unitSpace,0){ _stopBegin*21: CenterLineMarkings("single_white")
-						| ~1		   : CenterLineMarkings("stripes_white")
-						| _stopEnd*21  : CenterLineMarkings("single_white") }
+	split(u,unitSpace,0){ _stopBegin*21: CenterLineMarkings("single_","white")
+						| ~1		   : CenterLineMarkings("stripes_","white")
+						| _stopEnd*21  : CenterLineMarkings("single_","white") }
 
 
 
@@ -2134,7 +2134,7 @@ Boulevard_StopBars(dir)-->
 			split(u,unitSpace,0) {_stopBegin*ThickPaintLineWidth:AsphaltPainted("white",1,"Auto")|~1:BikeLane(-1,geometry.dv(0,unitSpace))}
 Boulevard_Center-->
 	case Boulevard_Center_Type=="Center Line":
-		CenterLineMarkings("double_"+ Centerline_Color)
+		CenterLineMarkings("double_",Centerline_Color)
 	case Boulevard_Center_Type=="Median":
 		Raised_Curb("Boulevard Center",1) #HAS no bus stop
 	case Boulevard_Center_Type=="Curb Buffer":
@@ -2149,17 +2149,17 @@ Boulevard_Center-->
 		split(u,unitSpace,0) {.3:NIL|~1:Fence("Boulevard Center")|.3:NIL}#The split only makes it so the fence poles are not put in the curb.
 		Raised_Curb("Boulevard Center",1)
 	else:
-		CenterLineMarkings("double_"+Centerline_Color)
+		CenterLineMarkings("double_",Centerline_Color)
 
 Center_Normal_Lanes(dir)-->
 	 split(v,unitSpace,0) {~1:Drainage
 	 					  |{ Lane_Width :MainLaneMarkings(0,split.index,"_stripes_white") MixedTrafficOnLane (dir,-999,-999)}*
 	 					  | Lane_Width :Asphalt(1,"Auto") MixedTrafficOnLane (dir,-999,-999)}
 
-CenterLineMarkings(tex) --> #Come back too 
+CenterLineMarkings(tex,line_color) --> #Come back too 
 	normalizeUV(0,v,collectiveAllFaces)
 	tileUV(0,~14,0)
-	texture(LanesFolder+"/centerline_" + tex + "_14m.jpg")
+	texture(LanesFolder+"/centerline_" + tex + line_color + "_14m.jpg")
 	deleteUV(_Texture_Switch)
 	AsphaltPaintedReporter("black",1-Center_Line_Paint_Fraction,"Auto")
 	AsphaltPaintedReporter(Centerline_Color,Center_Line_Paint_Fraction,"Auto")#Slight over estimate for none-case. 
