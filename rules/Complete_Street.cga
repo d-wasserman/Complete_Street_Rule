@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:5/28/2018
+ * Last Updated:6/24/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -431,12 +431,19 @@ attr Base_Flood_Elevation=-.00001
 ##################
 @Handle(shape=LampAsset^1,axis=x,type=move)@Hidden
 attr SLight_Translate_X = Sidewalk_Furniture_Zone_Width/2
-@Handle(shape=Traffic_Light^1,axis=x,type=move)@Hidden
-attr TLight_Translate_X = 0
 @Handle(shape=LampAsset^1,axis=z,type=move)@Hidden
 attr SLight_Translate_Z = Sidewalk_Furniture_Zone_Width/2
+@Handle(shape=Traffic_Light^1,axis=x,type=move)@Hidden
+attr TLight_Translate_X = 0
 @Handle(shape=Traffic_Light^1,axis=y,type=move)@Hidden
 attr TLight_Translate_Z = 0
+@Handle(shape=Bench_Insert,axis=x,type=move)@Hidden
+attr SBench_Translate_X = 0
+@Handle(shape=Bench_Insert,axis=y,type=move)@Hidden
+attr SBench_Translate_Z = 0
+@Handle(shape=Bench_Insert,type=toggle)@Enum(true,false)@Hidden
+attr SBench_Toggle = true
+
 ##################
 # User constants #
 ##################
@@ -2442,14 +2449,12 @@ Median_Bench_Insert (Dir)-->
 		s(1,1,2)
 		center(xz)
 		t(-WalkWay_Width/2+Bench_Adjuster,0,0)
-		i(Bench_Object)
-		deleteUV(_Texture_Switch)
+		Bench_Insert
 	case Dir==0 && (Median_Benches=="Both"||Median_Benches=="Right"):
 		s(1,1,2)
 		center(xz)
 		t(-WalkWay_Width/2+Bench_Adjuster,0,0)
-		i(Bench_Object)
-		deleteUV(_Texture_Switch)
+		Bench_Insert
 	else:
 		NIL
 
@@ -2928,8 +2933,15 @@ Sidewalk_Bench_Insert(Dir,geometry_Len)-->
 		alignScopeToAxes(y)
 		alignScopeToGeometry(yUp, largest, 0)
 		rotateScope(0,90,0)
-		s(1,1,2)
+		s(0.75,1,2)
 		t(.25+(Sidewalk_Planting_Width/10),0,geometry_Len-1)#When geometry.du is used functionality is different (alignment issue?) passed parameter works best likely because it is before scope manipulation (rotate etc)dv. might work instead.
+		Bench_Insert
+	else:
+		NIL
+		
+Bench_Insert-->
+	case SBench_Toggle:
+ 		t( SBench_Translate_X ,0, SBench_Translate_Z )
 		i(Bench_Object)
 		deleteUV(_Texture_Switch)
 	else:
