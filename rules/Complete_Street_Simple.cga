@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:6/24/2018
+ * Last Updated:7/14/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -9,7 +9,7 @@
 #	ESRI Derivative work
 #	http://mappingcenter.esri.com/downloads/AttributionAndLicense_05_09_07.pdf
 #
-# Copyright 2015 David J. Wasserman
+# Copyright 2018 David J. Wasserman
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -390,7 +390,7 @@ attr Other_Paint_Cost_Per_Square_FT		=1.6
 ######################################################
 
 @Group("BRIDGES",110) @Order(1) @Description("Determines the various conditions by which the bridge rule will turn on. Occulsion functions are used in the bridge rule and might have some errant behavior.")
-@Range("Off","Concrete Extrusion Only", "Dimension Extrusion","On, By Elevation","On, Regardless","On, Show All Piers", "On, Flag Occlusions")
+@Range("Off","Concrete Extrusion Only", "Dimension Extrusion","On, By Elevation","On, Regardless","On, Show All Piers")
 attr Bridge_Display = "Off" 
 @Group("BRIDGES") @Order(20) @Description("Determines the threshold distance above the standard elevation for the bridge rule to trigger based on Elevation.")@Hidden
 attr Bridge_Starts_At = 3
@@ -429,6 +429,7 @@ attr Base_Flood_Elevation=-.00001
 ##################
 # Handle Control #
 ##################
+
 @Handle(shape=LampAsset^1,axis=x,type=move)@Hidden
 attr SLight_Translate_X = Sidewalk_Furniture_Zone_Width/2
 @Handle(shape=LampAsset^1,axis=z,type=move)@Hidden
@@ -1425,7 +1426,7 @@ CrossWalkGap-->
 StreetWithEntries -->
 	split(v,unitSpace,0) {~1:Drainage
 						|(_RightSplitSum+ _Distribute_Right_Lanes* _Actual_Lane_Width+_Rt_Transit_Lane_Width):scaleUV(0,DirectionalFlip,1)StopBox("RightSide")# Will flip with a change in driving direction
-						| _centerWidth											  : scaleUV(0,DirectionalFlip,1)CenterLineReporting# Will flip with a change in driving direction
+						| _centerWidth											  : scaleUV(0,DirectionalFlip,1)CenterSpaceReporting# Will flip with a change in driving direction
 						|(_LeftSplitSum+nLanesLeft*_Actual_Lane_Width+_Lt_Transit_Lane_Width)	  :scaleUV(0,DirectionalFlip,1)StopBox("LeftSide")# Will flip with a change in driving direction
 						|~1:Drainage}
 
@@ -2029,7 +2030,7 @@ ParkingReport(Side,ParkingType,Rear_Edge_Case)-->#This edge case parameter only 
 ###################################################
 # Centerline and Center Section Code
 #
-CenterLineReporting-->
+CenterSpaceReporting-->
 	report("Center.Center Section Area",geometry.area)
 	color( _ThematicRouter ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	CenterSpace
@@ -2161,10 +2162,13 @@ Center_Normal_Lanes(dir)-->
 	 					  |{ Lane_Width :MainLaneMarkings(0,split.index,"_stripes_white") MixedTrafficOnLane (dir,-999,-999)}*
 	 					  | Lane_Width :Asphalt(1,"Auto") MixedTrafficOnLane (dir,-999,-999)}
 
-CenterLineMarkings(tex,line_color) --> #Come back too 
+CenterLineMarkings(tex,line_color) --> 
 	normalizeUV(0,v,collectiveAllFaces)
 	tileUV(0,~14,0)
 	texture(LanesFolder+"/centerline_" + tex + line_color + "_14m.jpg")
+	CenterLineReporting
+	
+CenterLineReporting -->
 	deleteUV(_Texture_Switch)
 	AsphaltPaintedReporter("black",1-Center_Line_Paint_Fraction,"Auto")
 	AsphaltPaintedReporter(Centerline_Color,Center_Line_Paint_Fraction,"Auto")#Slight over estimate for none-case. 
@@ -2750,7 +2754,7 @@ Sidewalk_Setup-->
 
 SidewalkTop(side)-->
 	case valency>1:
-		Sidewalk_Pavement ("Corners")
+		Sidewalk_Pavement("Corners")
 	case Sidewalk_Ground_Cover =="None":
 		split(v,unitSpace,0) {_Side_Sidewalk_Furniture_Zone_Width(side):Sign_Loader(side)
 							|_Side_Sidewalk_Planting_Width(side):Sidewalk_WOPlant_Loading_Section (case side=="Right":0 else:2)# Uses a different loading section rule
@@ -3166,7 +3170,6 @@ Human -->
 
 isBridge = (Bridge_Display == "On, Regardless")
 	|| (Bridge_Display == "On, Show All Piers")
-	|| (Bridge_Display == "On, Flag Occlusions")
 	|| (Bridge_Display == "On, By Elevation" && isRaised) 
 
 
@@ -3226,30 +3229,8 @@ PierStep2 -->
 	# Check if pier will hit something.
 	PierCheck
 
-PierCheck -->
-	case (Bridge_Display == "On, Show All Piers"):
-		# Occlusion test is disabled, by "On, Show All piers".
-		PierShow
-	case (Bridge_Display == "On, Flag Occlusions"):
-		case overlaps(inter):
-			# This pier hits another model.
-			print("Occlusion true: Bridge pier overlaps another model!")
-			# Flag the pier in red. This is a debugging mode for the piers.
-			color(1,0,0)
-			PierShow
-		else:
-			# No occlusion so show the pier.
-			print("Occlusion false.")
-			PierShow
-	else:
-		# Use standard occlusion method. 
-		case overlaps(inter):
-			# Omit piers due to positive occlusion check.
-			# This means the pier would hit a street or other model.
-			NIL
-		else:
-			# No occlusion so show the pier.
-			PierShow
+PierCheck-->
+	PierShow
 
 PierShow -->
 	# Scale back occlusion feelers, reversing the feeler code.
