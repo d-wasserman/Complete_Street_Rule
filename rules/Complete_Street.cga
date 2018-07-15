@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:7/14/2018
+ * Last Updated:7/15/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -534,7 +534,6 @@ const BikeSymNoArr_WhiteFraction	= 0.2570
 const Buffer_WhiteFraction			= 0.1934
 const AngledPark_WhiteFraction		= 0.0256
 const ParallelPark_WhiteFraction	= 0.0049
-const Center_Line_Paint_Fraction	= 0.55
 const CenterLane_YellowFraction		= 0.1194
 const CenterTurnLane_YellowFraction = 0.1194#surprisingly this fraction is almost the same as the transitions...used it
 const CenterTurnLane_WhiteFraction  = 0.0632#surprisingly this the avg arrow fraction is almost the same as the transitions...used it
@@ -2057,12 +2056,12 @@ CenterSpace -->
 	case Center_Type == "White Stripe Centerline":
 		Striped_Centerline
 	else:
-		CenterLineMarkings("double_",Centerline_Color )
+		CenterLineMarkings(Centerline_Color)
 
 Striped_Centerline-->
-	split(u,unitSpace,0){ _stopBegin*21: CenterLineMarkings("single_","white")
-						| ~1		   : CenterLineMarkings("stripes_","white")
-						| _stopEnd*21  : CenterLineMarkings("single_","white") }
+	split(u,unitSpace,0){ _stopBegin*21: CenterLineMarkings("white")
+						| ~1		   : split(u,unitSpace,0){~5: CenterLineMarkings("white")|~5:Asphalt(1,"Auto")}*
+						| _stopEnd*21  : CenterLineMarkings("white") }
 
 
 
@@ -2140,7 +2139,7 @@ Boulevard_StopBars(dir)-->
 			split(u,unitSpace,0) {_stopBegin*ThickPaintLineWidth:AsphaltPainted("white",1,"Auto")|~1:BikeLane(-1,geometry.dv(0,unitSpace))}
 Boulevard_Center-->
 	case Boulevard_Center_Type=="Center Line":
-		CenterLineMarkings("double_",Centerline_Color)
+		CenterLineMarkings(Centerline_Color)
 	case Boulevard_Center_Type=="Median":
 		Raised_Curb("Boulevard Center",1) #HAS no bus stop
 	case Boulevard_Center_Type=="Curb Buffer":
@@ -2155,25 +2154,19 @@ Boulevard_Center-->
 		split(u,unitSpace,0) {.3:NIL|~1:Fence("Boulevard Center")|.3:NIL}#The split only makes it so the fence poles are not put in the curb.
 		Raised_Curb("Boulevard Center",1)
 	else:
-		CenterLineMarkings("double_",Centerline_Color)
+		CenterLineMarkings(Centerline_Color)
 
 Center_Normal_Lanes(dir)-->
 	 split(v,unitSpace,0) {~1:Drainage
 	 					  |{ Lane_Width :MainLaneMarkings(0,split.index,"_stripes_white") MixedTrafficOnLane (dir,-999,-999)}*
 	 					  | Lane_Width :Asphalt(1,"Auto") MixedTrafficOnLane (dir,-999,-999)}
 
-CenterLineMarkings(tex,line_color) --> 
-	normalizeUV(0,v,collectiveAllFaces)
-	tileUV(0,~14,0)
-	texture(LanesFolder+"/centerline_" + tex + line_color + "_14m.jpg")
-	CenterLineReporting
-	
-CenterLineReporting -->
-	deleteUV(_Texture_Switch)
-	AsphaltPaintedReporter("black",1-Center_Line_Paint_Fraction,"Auto")
-	AsphaltPaintedReporter(Centerline_Color,Center_Line_Paint_Fraction,"Auto")#Slight over estimate for none-case. 
+CenterLineMarkings(line_color) --> 
+	split(v,unitSpace,0) {~PaintLineWidth:AsphaltPainted(line_color,1,"Auto")|
+					 ~PaintLineWidth:Asphalt(1,"Auto")|
+					 ~PaintLineWidth:AsphaltPainted(line_color,1,"Auto")}
 	color( _ThematicRouter ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 		
-
+	
 CenterTurnLaneStamp(texture_choice,degree)-->
 	normalizeUV(0,v,collectiveAllFaces)
 	rotateUV(0,degree)
