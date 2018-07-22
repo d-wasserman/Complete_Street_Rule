@@ -391,14 +391,10 @@ attr Bus_Stop_Object						=Default_BusStop
 #Colored Pavement- bituminous pitch, sand/gravel/pigment-very durable, last as long as typical asphalt depending on conditions
 ##Material cost: Pigmented asphalt typically costs 30-50% more than  non colored structural asphalt, thin overlay applications have varying costs.
 @Order(1)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")@Hidden
-attr Green_Paint_Cost_Per_Square_FT		= 1.6
-@Order(2)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")@Hidden
 attr White_Paint_Cost_Per_Square_FT		= 1.6
-@Order(3)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")@Hidden
+@Order(2)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")@Hidden
 attr Yellow_Paint_Cost_Per_Square_FT	=1.6
-@Order(4)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")@Hidden
-attr Red_Paint_Cost_Per_Square_FT		=1.6
-@Order(5)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")@Hidden
+@Order(3)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")@Hidden
 attr Other_Paint_Cost_Per_Square_FT		=1.6
 ######################################################
 #Bridge Attributes									 #
@@ -1087,14 +1083,10 @@ _Minof(num1,num2)= #Finds the min of two numbers
 	else:
 		num2
 _PaintCost(paintColor)=
-	case paintColor=="green":
-		Green_Paint_Cost_Per_Square_FT
 	case paintColor=="white":
 		White_Paint_Cost_Per_Square_FT
 	case paintColor=="yellow":
 		Yellow_Paint_Cost_Per_Square_FT
-	case paintColor=="red":
-		Red_Paint_Cost_Per_Square_FT
 	else:
 		Other_Paint_Cost_Per_Square_FT
 
