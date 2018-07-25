@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:7/20/2018
+ * Last Updated:7/25/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -185,10 +185,10 @@ attr Median_Tree_1_Percentage 			= 1
 @Order(8)@Description("Determines the species of the tree/plant selected for secondary tree for more variation. If this is not None, Tree 2 will appear if Tree 1 does not fire with the current percentage. This does mean that you cannot drop tree density if you alternate trees.")@Range("None","Random","Alder Buckthorn","Amazon Sword Plant","American Chestnut","American Sycamore","Apricot","Australian Pine","Baldcypress","Balsam Fir","Bamboo","Banana Tree","Basswood","Bay Laurel","Black Locust","Blue Gum Eucalyptus","Boxwood","Cabbage Palm Fern","California Bay","California Incense Cedar","California Palm","California Redwood","California Walnut","Coconut Palm","Common Hawthorn","Common Whitebeam","Conker Tree","Date Palm","Desert Willow","Douglas Fir","European Beech","European Larch","Ficus","Field Elm","Flannelbush","Flowering Dogwood","Giant Sequoia","Hedgehog Agave","Japanese Angelica Tree","Lacy Tree Philodendron","Leyland Cypress","Lily of the Valley","Lodgepole Pine","Mediterranean Buckthorn","Mexican Palmetto","Mountain Mahogany","Northern Red Oak","Norway Maple","Norway Spruce","Orange Tree","Orchid","Oval-leaved Privet","Palm Lily","Palo Verde","Paper Birch","Parlour Palm","Prickly Pear Cactus","Red Alder","Red Hickory","Rhododendron Azaleas","Rose","Ruffle Palm","Saguaro Cactus","Sassafras","Scots Pine","Sea Islands Yucca","Shadbush","Snake Plant","Southern Magnolia","Spanish Broom","Strawberry Tree","Sugar Maple","Sunflower","Sweetgum","Umbrella Acacia","Western Juniper","White Ash","White Oak","White Poplar","White Willow","Witch Hazel","","_____________________________","GENERICS","","Generic Dead Tree","Generic Stump","Generic Unknown","","_____________________________","PROXIES","","Algarrobo","American Elderberry","American Pepper","American Silverberry","Athel Tamarisk","Avocado","Black Tupelo","Buttonbush","Canada Buffaloberry","Chinaberry Tree","Chinese Tallow Tree","Common Hackberry","Common Holly","Common Persimmon","Desert Bitterbrush","European Hornbeam","Giant Chinquapin","Honey Locust","Hophornbeam","Huckleberry Shrub","Japanese Hemlock","Japanese Nutmeg","Judas Tree","Lawson Cypress","Loblolly Bay","Mexican Buckeye","Necklacepod","Northern Bilberry","Northern White Cedar","Octopus Tree","Osage Orange","Paper Bark Tree","Pawpaw","Persian Silk Tree","Princess Tree","Smooth Sumac","Sourwood","Southern Wax Myrtle","Tanoak","Tree of Heaven","Turkish Hazel","Western Soapberry","White Mulberry","Yellow Poplar","Yew") #@Hidden
 attr Median_Tree_2_Type				= "None"
 @Order(9) @Range(0,80) @Description("This attributes controls the height of Median Trees Type 1.") #@Hidden
-@Handle(shape=Median_Tree_Insert_Setup^6,axis=y,type=linear,reference=center,color="#11FF11",skin=sphere)
+@Handle(shape=Median_Tree_Insert_Setup_1^3,axis=y,type=linear,reference=center,color="#11FF11",skin=sphere)
 attr Median_Tree_1_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk_Tree_1_Type))
 @Order(10) @Range(0,80) @Description("This attributes controls the height of Median Trees Type 2.") #@Hidden
-@Handle(shape=Median_Tree_Insert_Setup^6,axis=y,type=linear,reference=center,color="#11FF11",skin=sphere)
+@Handle(shape=Median_Tree_Insert_Setup_2^3,axis=y,type=linear,reference=center,color="#11FF11",skin=sphere)
 attr Median_Tree_2_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk_Tree_2_Type))
 
 @Group("CENTER SECTION LAYOUT","Basic Components", 4) 
@@ -303,10 +303,10 @@ attr Sidewalk_Tree_1_Percentage 		= 1
 @Order(12)@Description("Determines the species of the tree/plant selected for secondary tree for more variation. If this is not None, Tree 2 will appear if Tree 1 does not fire with the current percentage. This does mean that you cannot drop tree density if you alternate trees.")@Range("None","Random","Alder Buckthorn","Amazon Sword Plant","American Chestnut","American Sycamore","Apricot","Australian Pine","Baldcypress","Balsam Fir","Bamboo","Banana Tree","Basswood","Bay Laurel","Black Locust","Blue Gum Eucalyptus","Boxwood","Cabbage Palm Fern","California Bay","California Incense Cedar","California Palm","California Redwood","California Walnut","Coconut Palm","Common Hawthorn","Common Whitebeam","Conker Tree","Date Palm","Desert Willow","Douglas Fir","European Beech","European Larch","Ficus","Field Elm","Flannelbush","Flowering Dogwood","Giant Sequoia","Hedgehog Agave","Japanese Angelica Tree","Lacy Tree Philodendron","Leyland Cypress","Lily of the Valley","Lodgepole Pine","Mediterranean Buckthorn","Mexican Palmetto","Mountain Mahogany","Northern Red Oak","Norway Maple","Norway Spruce","Orange Tree","Orchid","Oval-leaved Privet","Palm Lily","Palo Verde","Paper Birch","Parlour Palm","Prickly Pear Cactus","Red Alder","Red Hickory","Rhododendron Azaleas","Rose","Ruffle Palm","Saguaro Cactus","Sassafras","Scots Pine","Sea Islands Yucca","Shadbush","Snake Plant","Southern Magnolia","Spanish Broom","Strawberry Tree","Sugar Maple","Sunflower","Sweetgum","Umbrella Acacia","Western Juniper","White Ash","White Oak","White Poplar","White Willow","Witch Hazel","","_____________________________","GENERICS","","Generic Dead Tree","Generic Stump","Generic Unknown","","_____________________________","PROXIES","","Algarrobo","American Elderberry","American Pepper","American Silverberry","Athel Tamarisk","Avocado","Black Tupelo","Buttonbush","Canada Buffaloberry","Chinaberry Tree","Chinese Tallow Tree","Common Hackberry","Common Holly","Common Persimmon","Desert Bitterbrush","European Hornbeam","Giant Chinquapin","Honey Locust","Hophornbeam","Huckleberry Shrub","Japanese Hemlock","Japanese Nutmeg","Judas Tree","Lawson Cypress","Loblolly Bay","Mexican Buckeye","Necklacepod","Northern Bilberry","Northern White Cedar","Octopus Tree","Osage Orange","Paper Bark Tree","Pawpaw","Persian Silk Tree","Princess Tree","Smooth Sumac","Sourwood","Southern Wax Myrtle","Tanoak","Tree of Heaven","Turkish Hazel","Western Soapberry","White Mulberry","Yellow Poplar","Yew")#@Hidden
 attr Sidewalk_Tree_2_Type				= "None"
 @Order(13) @Range(0,80) @Description("This attributes controls the height of Sidewalk Trees Type 1.")
-@Handle(shape=Sidewalk_Tree_Insert_Setup^6,axis=y,type=linear,reference=center,color="#11FF11",skin=sphere) #@Hidden
+@Handle(shape=Sidewalk_Tree_Insert_Setup_1^3,axis=y,type=linear,reference=center,color="#11FF11",skin=sphere) #@Hidden
 attr Sidewalk_Tree_1_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk_Tree_1_Type))
 @Order(14) @Range(0,80) @Description("This attributes controls the height of Sidewalk Trees Type 2.") #@Hidden
-@Handle(shape=Sidewalk_Tree_Insert_Setup^6,axis=y,type=linear,reference=center,color="#11FF11",skin=sphere)
+@Handle(shape=Sidewalk_Tree_Insert_Setup_2^3,axis=y,type=linear,reference=center,color="#11FF11",skin=sphere)
 attr Sidewalk_Tree_2_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk_Tree_2_Type))
 Tree_Radius(Type, Height) = Tree._radius(Tree._indexFromCommonName(Type),Height)
 
@@ -2520,21 +2520,34 @@ Tree_Location_Setup(Location,Percentage1,Tree_Type1,Tree_Type2,Tree_Height1,Tree
 		Sidewalk_Tree_Insert_Setup(Location,Percentage1,Tree_Type1,Tree_Type2,Tree_Height1,Tree_Height2)
 
 Median_Tree_Insert_Setup(Location,Percentage1,Tree_Type1,Tree_Type2,Tree_Height1,Tree_Height2)-->
-	Tree_Insert_Setup(Location,Percentage1,Tree_Type1,Tree_Type2,Tree_Height1,Tree_Height2)
-
-Sidewalk_Tree_Insert_Setup(Location,Percentage1,Tree_Type1,Tree_Type2,Tree_Height1,Tree_Height2)-->
-	Tree_Insert_Setup(Location,Percentage1,Tree_Type1,Tree_Type2,Tree_Height1,Tree_Height2)
-	
-Tree_Insert_Setup(Location,Percentage1,Tree_Type1,Tree_Type2,Tree_Height1,Tree_Height2)-->
-	case p(Percentage1): 
-		Tree_Insert_Type_1(Location,Tree_Type1,Tree_Height1)
-		
+	case p(Percentage1):
+		Median_Tree_Insert_Setup_1(Location,Tree_Type1,Tree_Height1)
 	case Tree_Type2!="None": #So if the percentage if 50%, and Tree1 does not fire, if tree 2 is not set to None, that tree 2 will be selected.
-		Tree_Insert_Type_2(Location,Tree_Type2,Tree_Height2)
+		Median_Tree_Insert_Setup_2(Location,Tree_Type2,Tree_Height2)
 	else:
-		NIL	
+		NIL
+Sidewalk_Tree_Insert_Setup(Location,Percentage1,Tree_Type1,Tree_Type2,Tree_Height1,Tree_Height2)-->
+	case p(Percentage1):
+		Sidewalk_Tree_Insert_Setup_1(Location,Tree_Type1,Tree_Height1)
+	case Tree_Type2!="None": #So if the percentage if 50%, and Tree1 does not fire, if tree 2 is not set to None, that tree 2 will be selected.
+		Sidewalk_Tree_Insert_Setup_2(Location,Tree_Type2,Tree_Height2)
+	else:
+		NIL
+
+Median_Tree_Insert_Setup_1(Location,Tree_Type,Tree_Height)-->
+	Tree_Insert_Type(Location,Tree_Type,Tree_Height)
+
+Median_Tree_Insert_Setup_2(Location,Tree_Type,Tree_Height)-->
+	Tree_Insert_Type(Location,Tree_Type,Tree_Height)
+
+Sidewalk_Tree_Insert_Setup_1(Location,Tree_Type,Tree_Height)-->
+	Tree_Insert_Type(Location,Tree_Type,Tree_Height)
+	
+Sidewalk_Tree_Insert_Setup_2(Location,Tree_Type,Tree_Height)-->
+	Tree_Insert_Type(Location,Tree_Type,Tree_Height)
+	
 			
-Tree_Insert_Type_1(Location,Tree_Type1,Tree_Height1)-->
+Tree_Insert_Type(Location,Tree_Type1,Tree_Height1)-->
 	case Tree_Height1<.001: #If Tree Height is reduced beyond a limit, remove tree. 
 		NIL
 	case texturingOn:
@@ -2552,25 +2565,7 @@ Tree_Insert_Type_1(Location,Tree_Type1,Tree_Height1)-->
 		set(Tree.Radius,Tree_Radius(Tree_Type1,Tree_Height1))
 		set(Tree.OverwriteColor, _ThematicRouter ("Plantings"))
 		Tree.Generate
-		
-Tree_Insert_Type_2(Location,Tree_Type2,Tree_Height2)-->
-	case Tree_Height2<.001: #If Tree Height is reduced beyond a limit, remove tree. 
-		NIL
-	case texturingOn:
-		s(0,0,0)
-		report("Vegetation.Construction, Tree Cost",TreeCostAverage)
-		set(Tree.Name, Tree_Type_Adjusted(Tree_Type2))
-		set(Tree.Height, Tree_Height2)
-		set(Tree.Radius,Tree_Radius(Tree_Type2,Tree_Height2))
-		Tree.Generate
-	else: #If Texturing is off, the tree texture is overrided to the current thematic color 
-		s(0,0,0)
-		report("Vegetation.Construction, Tree Cost",TreeCostAverage)
-		set(Tree.Name, Tree_Type_Adjusted(Tree_Type2))
-		set(Tree.Height, Tree_Height2)
-		set(Tree.Radius,Tree_Radius(Tree_Type2,Tree_Height2))
-		set(Tree.OverwriteColor, _ThematicRouter ("Plantings"))
-		Tree.Generate
+
 	
 	
 Tree_Type_Adjusted(Tree_Type) = 
