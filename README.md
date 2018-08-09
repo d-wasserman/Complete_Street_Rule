@@ -43,11 +43,11 @@ If all you need is the rule for your current project:
 1. Best Fit setting allows the rule to make sure that the street has the option to not have exact geometry.
 This still needs to be tested more so please comment if you have any issues with the rule. The best fit feature works by calculating empty space and then adding it to the lane width. This means that your lane width attribute becomes the minimum width the lanes can take on before it subtracts lanes.
 
-2. Renamed reporting and creates subclasses to support new Dashboards in 2015.2. Sample Dashboard template included in project. 
+2. Renamed reporting and creates subclasses to support new Dashboards capabilities in all versions of CityEngine beyond 2015.2.  
 
 3. Added Mode Area reporting and dashboards to the street rule. Get percentage area dedicated to each mode for different designs.
 
-4. Improved Default LOD Settings: If LOD is set to High, the street will now pick default population parameters to make the street seem occupied. LOD Settings are now Low (Asset choice changes to reduce polygon count), Moderate (high poly assets/choices), and High (high poly assets and populated streets).
+4. Improved Default LOD Settings: If LOD is set to High, the street will now pick default population parameters to make the street seem occupied. LOD Settings are now Low (Asset choice changes to reduce polygon count), Moderate (high polygon assets/choices), and High/Very High (high polygon assets and populated streets).
 
 5. Addition of Complete_Street_Simple.CGA: This additional included rule has about ~50 fewer attributes while maintaining the core functionality of the rule. This rule is intended to make demos or charrettes a little easier.
 
@@ -57,7 +57,7 @@ This still needs to be tested more so please comment if you have any issues with
 
 8. Dimension Extrusion: This added option to the bridge settings enables single cross sectional images to have the mode categorization be shown at the street's edge. This provides a starting place for report infographics that denote different modes served by different treatments. 
 
-9. Handles Support: Local Edits allow randomly generated and spaced assets to be moved within a CityEngine model rather than post processed in PhotoShop or some other 3D modeling software. Current assets and elements that can be edited with handles include: Street Lamps|Traffic Lights.
+9. Handles Support: Local Edits allow randomly generated and spaced assets to be moved within a CityEngine model rather than post processed in PhotoShop or some other 3D modeling software. Current assets and elements that can be edited with handles include: Street Lamps|Traffic Lights|Trees|Benches.
 
 10. Other miscellaneous changes.
 
