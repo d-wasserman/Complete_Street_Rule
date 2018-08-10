@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:7/25/2018
+ * Last Updated:8/10/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -378,24 +378,6 @@ attr Bike_Rack_Object						=Default_Bike_Rack
 attr Parklet_Object							=Default_Parklet
 @Order(6)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
 attr Bus_Stop_Object						=Default_BusStop
-@Group("REPORTING ATTRIBUTES","Paint Reports",100)
-#Default values taken from NACTO Urban Bike Design Guide, 2nd edition see comments for details. Costs can become dated due to inflation, change as needed.-DJW
-#Paint- pigment and binder, low durability (6 months-2 years based on conditions), low traffic
-##Material cost: $.06 Sq. Ft. raw material/ $1.20-$1.60 Sq.Ft. installed. 
-#Epoxy- epoxy/resin, moderate durability impacted by pavement quality( 3-5 years), moderate traffic
-##Material cost: $1-$3 Sq. Ft. raw material/ $8-$11 Sq.Ft. installed. 
-#MMA- acrylic based resin, moderate durability impacted by pavement quality (3-6 years), moderate traffic
-##Material cost: $3-$4 Sq. Ft. raw material/ $8-$11 Sq.Ft. installed. 
-#Thermoplastic- polymer resin, pigment, beads, filler- moderate-high durability (5 years or longer)
-##Material cost: $3-$6 Sq. Ft. raw material/ $10-$14 Sq.Ft. installed.
-#Colored Pavement- bituminous pitch, sand/gravel/pigment-very durable, last as long as typical asphalt depending on conditions
-##Material cost: Pigmented asphalt typically costs 30-50% more than  non colored structural asphalt, thin overlay applications have varying costs.
-@Order(1)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")@Hidden
-attr White_Paint_Cost_Per_Square_FT		= 1.6
-@Order(2)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")@Hidden
-attr Yellow_Paint_Cost_Per_Square_FT	=1.6
-@Order(3)@Range(0,20)@Description("Useful Installed costs/sq.ft.: Paint $1.6, Epoxy/MMA: $8-11, Thermoplastic $10-14, Colored pavement: Varies. See comments for details-(Cntr+F NACTO Urban Bike Design Guide). Costs can become dated due to inflation, change as needed.")@Hidden
-attr Other_Paint_Cost_Per_Square_FT		=1.6
 ######################################################
 #Bridge Attributes									 #
 ######################################################
@@ -539,22 +521,6 @@ const Sidewalk_Bike_Rack_Bool		= bool(Sidewalk_Bike_Rack)#Bool Conversion to sup
 const Median_Way_Finder_Bool		= bool(Median_Way_Finder)#Bool Conversion to support non-boolean database models
 const Median_Bike_Rack_Bool			= bool(Median_Bike_Rack)#Bool Conversion to support non-boolean database models
 #####Reporting Constants#####
-#Reporting fractions are based on the pixel counts of the images in question. If you change the texture, and want to recalculate the fraction-Download GIMP, and use the histogram tool on a selection.  
-const BikeSym_WhiteFraction			= 0.2178
-const BusSym_WhiteFraction			= 0.1373
-const BikeSymNoArr_WhiteFraction	= 0.2570
-const Buffer_WhiteFraction			= 0.1934
-const AngledPark_WhiteFraction		= 0.0256
-const ParallelPark_WhiteFraction	= 0.0049
-const CenterLane_YellowFraction		= 0.1194
-const CenterTurnLane_YellowFraction = 0.1194#surprisingly this fraction is almost the same as the transitions...used it
-const CenterTurnLane_WhiteFraction  = 0.0632#surprisingly this the avg arrow fraction is almost the same as the transitions...used it
-const Marking_Stop_WhiteFraction	= 0.0796
-const Marking_AvgArrow_WhiteFraction= 0.0666 #Is the average of the arrow textures, all of them were within 2% of each other error created by using an average is marginal
-const Marking_AvgPlain_WhiteFraction= 0.03
-const Crosswalk_PaintFraction		= 0.5
-const HOV_Diamond_WhiteFraction		= 0.0230
-const MainLane_WhiteFraction		= 0.0121
 #Stop Distance Reporting Constants
 #AASHTO Numbers of interest: Brake reaction time: 2.5 seconds (capabilities of most drivers), 90 percent deceleration rate: 11.2 ft/s^2- reports assume at grade-future iterations will adapt to percent max slope.
 const Brake_Reaction_Time			= 2.5 #s
@@ -905,13 +871,6 @@ _stopTex(stopType,lanenumber,lanestotal)			= #TODO: Add more lane options- D.J.W
 					  else									  : #Any time you see more case logic for the first trigger, it is a result of trying to work in the current framework
 					  		 "_stop_strip"
  
-_stopTexPaintFractions(markings,lanenumber)			=
-						
-					  case markings=="_stop_word"|| markings== "_stop_word_mirrored": Marking_Stop_WhiteFraction
-					  case count(markings,"_stop_arrows_all_")>0:Marking_AvgArrow_WhiteFraction
-					  case markings=="_stop_arrows_sides_1"|| markings=="_stop_arrows_sides_4":Marking_AvgArrow_WhiteFraction
-					  case markings=="_stop_arrows_right_1"|| markings=="_stop_arrows_right_4":Marking_AvgArrow_WhiteFraction
-					  else: Marking_AvgPlain_WhiteFraction 
 
 #Paintcontrol and Bus Furniture functions
 _PaintLineControl(side,Control_String)=
@@ -1082,14 +1041,6 @@ _Minof(num1,num2)= #Finds the min of two numbers
 		num1
 	else:
 		num2
-_PaintCost(paintColor)=
-	case paintColor=="white":
-		White_Paint_Cost_Per_Square_FT
-	case paintColor=="yellow":
-		Yellow_Paint_Cost_Per_Square_FT
-	else:
-		Other_Paint_Cost_Per_Square_FT
-
 	
 		
 ################################################
@@ -1494,8 +1445,8 @@ ApproachMarkings(dir,lanenumber,lanestotal,markings) -->	# is used for textures 
 	texture(LanesFolder+"/lanes_4"+markings+"_14x14m.jpg")
 	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic.
-	AsphaltPaintedReporter("white",_stopTexPaintFractions(markings,lanenumber),"Auto")
-	AsphaltReporter((1-_stopTexPaintFractions(markings,lanenumber)),"Auto")
+	ModeReporter (1,"Auto")
+	ModeReporter(1,"Auto")
 	#TODO-More combinations
 MainLaneMarkings(dir,lanenumber,markings)-->	
 	tileUV(0,~14,~ Lane_Width )				# the tileUV operation makes sure that one unit in u-space corresponds to approx 14 meters, the v-coord is not touched in the case of 0 as parameter
@@ -1503,8 +1454,7 @@ MainLaneMarkings(dir,lanenumber,markings)-->
 	texture( LanesFolder+"/lanes_4"+markings+"_14x14m.jpg")
 	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic.
-	AsphaltPaintedReporter("white",MainLane_WhiteFraction,"Auto")
-	AsphaltReporter((1-MainLane_WhiteFraction),"Auto")
+	ModeReporter (1,"Auto")
 #This rule contains the reports for the lanes defined by the lanes rule, no bike/pking lanes etc. 
 LaneReporting(dir,lanestotal,lanenumber,stopType,laneType)-->
 	report("Lane Width.Actual Lane Width (ft)",geometry.dv(0,unitSpace)*Feet) #Used to provide lane widths in feet
@@ -1637,8 +1587,7 @@ Bus_Lane_Stamp(dir)-->
 			texture(LanesFolder+"/BusLaneStamp"+(case Bus_Lane_Color=="black":"_black" else:"")+".jpg")#If Black change the stamp chosen, might make more elegant later. 
 			deleteUV(_Texture_Switch)
 			color( _ThematicRouter ("Transit"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-			AsphaltPaintedReporter(Bus_Lane_Color,1,"Transit")
-			AsphaltPaintedReporter("white",BusSym_WhiteFraction,"Transit")
+			ModeReporter (1,"Transit")
 	
 HOVlane_Texture(dir)-->
 	split(v,unitSpace,0){PaintLineWidth*2*_PaintLineControl("Right", Transit_Paint_Line_Sides ):AsphaltPainted("yellow",1,"Transit")
@@ -1661,8 +1610,7 @@ HOVlaneStamp(dir)-->
 	texture(LanesFolder+"/HOV_Diamond"+".jpg")#If Black change the stamp chosen, might make more elegant later. 
 	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Transit"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-	AsphaltPaintedReporter("white",HOV_Diamond_WhiteFraction,"Transit")
-	AsphaltReporter((1-HOV_Diamond_WhiteFraction),"Transit")
+	ModeReporter (1,"Transit")
 ##############################################################
 #Non-Carlane Split Space- This is the space where 
 #parking, bike, and buffer lanes are constructed. 
@@ -1729,8 +1677,7 @@ BikeLaneStamp(Stamp_Width,FileEnd, Color)-->
 	texture(LanesFolder+"/street_1bike_"+FileEnd)
 	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Bikeways"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-	AsphaltPaintedReporter(Color,1,"Bikeways")
-	AsphaltPaintedReporter("white",(case FileEnd==Color+"_stamp_noarrow.jpg":BikeSymNoArr_WhiteFraction else:BikeSym_WhiteFraction),"Bikeways")
+	ModeReporter (1,"Bikeways")
 
 ConflictZone(passedcolor)-->
 	split(u,unitSpace,0){~1: AsphaltPainted(passedcolor,1,"Conflict Zones")|~1:Asphalt(1,"Conflict Zones")}*
@@ -1833,8 +1780,7 @@ Striped_Buffer(Buffer_Width)-->
 	tileUV(0,~ Buffer_Width ,~Buffer_Width*1.5 )
 	texture(LanesFolder+"/street_1bike_"+"buffer2.jpg")
 	deleteUV(_Texture_Switch)
-	AsphaltPaintedReporter("black",1-Buffer_WhiteFraction,"Bikeways")
-	AsphaltPaintedReporter("white",Buffer_WhiteFraction,"Bikeways")
+	ModeReporter (1,"Bikeways")
 
 #Bike Box Creation Rule- controls the splits for the bike box. Works best if Bike lane is adjacent to sidewalk.
 BikeBoxCreation(dir)-->
@@ -2029,12 +1975,10 @@ ParkingReport(Side,ParkingType,Rear_Edge_Case)-->#This edge case parameter only 
 	case Rear_Edge_Case:
 		report("Parking."+Side+" Parking Space Area (m^2)",geometry.area)
 		report("Parking.Total Parking Space Area (m^2)",geometry.area)
-		AsphaltPaintedReporter("black",case find(ParkingType,"Parallel",0)!=-1:1-ParallelPark_WhiteFraction else:1-AngledPark_WhiteFraction,"Auto")
-		AsphaltPaintedReporter("white",case find(ParkingType,"Parallel",0)!=-1:ParallelPark_WhiteFraction else:AngledPark_WhiteFraction,"Auto")
+		ModeReporter (1,"Auto")
 	else:
-		AsphaltPaintedReporter("black",case find(ParkingType,"Parallel",0)!=-1:1-ParallelPark_WhiteFraction else:1-AngledPark_WhiteFraction,"Auto")
-		AsphaltPaintedReporter("white",case find(ParkingType,"Parallel",0)!=-1:ParallelPark_WhiteFraction else:AngledPark_WhiteFraction,"Auto")
-###################################################
+		ModeReporter (1,"Auto")
+	###################################################
 # Centerline and Center Section Code
 #
 CenterSpaceReporting-->
@@ -2182,10 +2126,8 @@ CenterTurnLaneStamp(texture_choice,degree)-->
 	texture(LanesFolder+"/Center_"+texture_choice+"Lane"+".jpg")
 	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-	AsphaltPaintedReporter("black",1-CenterTurnLane_YellowFraction-(case texture_choice=="Turn_" || texture_choice=="Transition_":CenterTurnLane_WhiteFraction else: 0),"Auto")
-	AsphaltPaintedReporter("yellow",CenterTurnLane_YellowFraction,"Auto")
-	AsphaltPaintedReporter("white",case texture_choice=="Turn_" || texture_choice=="Transition_":CenterTurnLane_WhiteFraction else: 0,"Auto")
-
+	ModeReporter (1,"Auto")
+	
 Bike_Box_Left_Turn_Gap(street_side)--> #If Bike boxes are on for the correct side 
 	case street_side=="Begin": split (u,unitSpace,0) {PaintLineWidth:AsphaltPainted("white",1,"Conflict Zones")
 									|~1:split(v,unitSpace,0)
@@ -2628,8 +2570,7 @@ CrosswalkStripes(stripeWidth) -->
 	texture(LanesFolder + "/crosswalk_continental_"+ Crosswalk_Color +".jpg")
 	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Conflict Zones"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-	AsphaltPaintedReporter(Crosswalk_Color,Crosswalk_PaintFraction,"Conflict Zones")
-	AsphaltReporter(1-Crosswalk_PaintFraction,"Conflict Zones")
+	ModeReporter (1,"Conflict Zones")
 
 CrosswalkWalkway(reporting)-->
 	case reporting:
@@ -3017,19 +2958,11 @@ AsphaltPainted(paintColor,Area_Fraction,Usage) -->
 		deleteUV(_Texture_Switch)
 		color( _ThematicRouter (Usage))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 		report("Mode Area (m^2)."+str(Usage),geometry.area*Area_Fraction)#Area Fraction avoids double counting some shapes
-		report("Paint."+paintColor+" Painted Area (m^2)",geometry.area*Area_Fraction)
-		report("Paint Cost Estimate."+paintColor+" Painted Area ($)",(geometry.area*Area_Fraction*SquareFeet)*_PaintCost(paintColor))
 	else:#If Black redirect to asphalt rule.
 		Asphalt(Area_Fraction,Usage)
 
-AsphaltPaintedReporter(paintColor,Area_Fraction,Usage)-->
-	case paintColor=="black":
-		AsphaltReporter(Area_Fraction,Usage)
-	else:#Only Reports no texturing desired.
-		report("Mode Area (m^2)."+str(Usage),geometry.area*Area_Fraction)#Area Fraction avoids double counting some shapes
-		report("Paint."+paintColor+" Painted Area (m^2)", (geometry.area*Area_Fraction))
-		report("Paint Cost Estimate."+paintColor+" Painted Area ($)",(geometry.area*Area_Fraction*SquareFeet)*_PaintCost(paintColor))
-
+ModeReporter (Area_Fraction,Usage)-->
+	report("Mode Area (m^2)."+str(Usage),geometry.area)#Area Fraction avoids double counting some shapes
 # ------------------Paint:-------------------------
 #######################################################################
 #Vehicles
@@ -3511,8 +3444,6 @@ Asphalt(Area_Fraction,Usage) -->
 		color( _ThematicRouter (Usage))#If Display Thematics==Usage, goes to usage, if not, Thematic-strings might have other purpose later. 
 		report("Mode Area (m^2)."+str(Usage),geometry.area*Area_Fraction)
 
-AsphaltReporter(Area_Fraction,Usage)-->
-		report("Mode Area (m^2)."+str(Usage),geometry.area*Area_Fraction)
 
 Rumble_Strip-->
 	tileUV(0,~Rumble_Strip_Len,~Rumble_Strip_Wid)
@@ -3520,7 +3451,7 @@ Rumble_Strip-->
 	texture(LanesFolder+"/Rumble_Strip.jpg")
 	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Auto"))
-	AsphaltReporter(1,"Auto")
+	ModeReporter (1,"Auto")
 	
 Drainage-->
 	case geometry.dv(0,unitSpace)> Lane_Width /3 && Space_Management=="Flag":#Will flag the drainage area as Red if it is >1/3 the laneWidth-I mean really 1/3 of a lane is drainage? Put a bike lane or something

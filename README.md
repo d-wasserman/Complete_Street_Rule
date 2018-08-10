@@ -74,3 +74,5 @@ This still needs to be tested more so please comment if you have any issues with
 	-Better default planting widths for sidewalks: Sidewalk planting width was changed to mimic general guidelines and suggestions from a NACTO Tree Maintenance Guidelines Document. If you have a narrow sidewalk, the planting strip will narrow to a minimum of 2 feet, and grow to a maximum of 6 feet.
 
 	-Furniture Zone Width Parameter was added to adjust the gap between the sidewalk and the curb. This parameter is set to small gap, but can be increased. 
+	
+	-Paint Reporting is removed from the rule. Feedback indicating it was slowing down the rule, and made editing the rule more difficult. 
