@@ -1,7 +1,7 @@
 /**
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:8/10/2018
+ * Last Updated:8/11/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -318,7 +318,7 @@ attr Sidewalk_Bus_Stop_Location			= "Far-side"
 @Order(3) @Range(-4,4)@Description("As it stands, the Bus Stop will be as far back as the Planting Width, if more adjustment is required, this attribute can be used to set back the Bus Stop further back or move it closer to the curb.")
 attr Sidewalk_Bus_Stop_Setback			= 1
 @Order(4)@Range("None","Both","Right","Left")@Description("Will place benches in between the spacing between Trees on the sidewalk side chosen.")
-attr Sidewalk_Benches					=case Not_High_LOD || sidewalkWidth<5: "None" else: "Both"
+attr Sidewalk_Benches					=case Not_High_LOD || sidewalkWidth<4: "None" else: "Both"
 @Order(5)@Range("None","Both","Right","Left")@Description("Determines whether an object is placed and what side of the street or walkways relevant objects are placed.")
 attr Parking_Meters						="None"
 @Order(6)@Range(0,20) @Description("Determines the spacing between each parking meter. No shape is created in the sections in between objects.")@Hidden
@@ -341,7 +341,7 @@ attr Sidewalk_Bike_Rack					="false"
 
 @Group("POPULATION",80) @Range(0,300) @Order(1) 
 @Description("Determines the number of vehicles per KM of road length loaded onto main throughways.")@Hidden
-attr Vehicles_Per_KM 				= case Not_High_LOD:0 else: 100
+attr Vehicles_Per_KM 				= case Not_Very_High_LOD:0 else: 100
 @Range(0,1) @Order(2)@Description("Determines the approximate percentage of vehicles that are buses on main throughways.")@Hidden		
 attr Mixed_Traffic_Bus_Percentage	= Default_Mix_Bus
 @Range(0,1) @Order(2)@Description("Determines the approximate percentage of vehicles that are bikes in the curb lane of main throughways.")@Hidden		
@@ -349,13 +349,13 @@ attr Mixed_Traffic_Bike_Percentage	= Default_Mix_Bike
 @Range(0,1) @Order(3)@Description("Determines the approximate percentage of vehicles that are taxis on main throughways.")@Hidden		
 attr Taxi_Percentage 				= 0.2
 @Range(0,300) @Order(4)@Description("Determines the number of buses per KM of road length loaded onto bus lanes only.")@Hidden
-attr Bus_Lane_Buses_Per_KM			= case Not_High_LOD:0 else: 25
+attr Bus_Lane_Buses_Per_KM			= case Not_Very_High_LOD:0 else: 25
 @Order(5) @Range(0,1) @Description("Higher the percentage, the higher the number of people loaded onto sidewalks.")@Hidden
-attr People_Percentage 				= case Not_High_LOD:0 else: 1*_PedRank
+attr People_Percentage 				= case Not_Very_High_LOD:0 else: 1*_PedRank
 @Order(6) @Range(0,100)@Description("Determines the number of bicyclists per KM of road length loaded onto bike lanes only.")@Hidden
-attr Bicycles_Per_KM				= case Not_High_LOD:0 else: 60*_BikeRank
+attr Bicycles_Per_KM				= case Not_Very_High_LOD:0 else: 60*_BikeRank
 @Order(7)@Range(0,1) @Description("Higher the percentage, the higher the parking occupancy.")@Hidden
-attr Parked_Car_Percentage			= case Not_High_LOD:0 else: .6
+attr Parked_Car_Percentage			= case Not_Very_High_LOD:0 else: .6
 @Order(8)@Hidden @Range(0,360) @Description("When parking is angled, this determines the angle of the vehicles placed in each right side angled parking spot.")
 attr Right_Parked_Car_Angle			= _Car_Angle(Right_Parking_Type)
 @Order(9)@Hidden @Range(0,360)@Description("When parking is angled, this determines the angle of the vehicles placed in each left side angled parking spot.")
