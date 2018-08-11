@@ -144,8 +144,7 @@ attr Left_Parking_Width			= _ParkingWidth(Left_Parking_Type)
 attr Left_Parking_Length		= _ParkingLength(Left_Parking_Type)
 @Order(7)@Range(0,100) @Description("Will create Parklets in Parking spaces, it is best if the parking spaces are contiguous to the sidewalk. The default OBJ does not have bollards or curb stops suggested by NACTO.")
 attr Parklet_Percentage			= 0
-
-@Order(9)@Range("None","Mid-Block & End Spaces","End Spaces","Far-side","Near-side","Mid-Block") @Description("Describes where on the street reallocated street space is used in parking lanes for parallen parking with curbside managment options.")#@Hidden
+@Order(9)@Range("None","Mid-Block & End Spaces","End Spaces","Far-side","Near-side","Mid-Block") @Description("Describes where on the street reallocated street space is used in parking lanes for parallel parking with curbside management options.")#@Hidden
 attr Curbside_Management_Position = "Mid-Block & End Spaces"
 @Order(10)@Range(0,10) @Hidden @Description("This hidden attribute controls the spacing the parking areas have before the current directions stopbar.")
 attr Front_Parking_Spacing 		= 0
