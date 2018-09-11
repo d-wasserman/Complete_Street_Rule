@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:8/17/2018
+ * Last Updated:9/10/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -210,7 +210,7 @@ attr Median_Street_Lamp_Spacing				=10
 @Order(9)@Range(-10,10) @Description("Determines the offset from the initial lamp insertion between each Street Lamp.")#@Hidden
 attr Median_Street_Lamp_Offset		=0
 
-@Group("MULTIMODAL LANES LAYOUT", "Bus and HOV Lanes",4)@Order(1)@Range("None","Bus Lane","HOV Lane","Bus-Bike Lane")@Description("The controls for the bus lane also control the HOV lane. They are grouped together because they are both considered :High Capacity Lanes:")
+@Group("MULTIMODAL LANES LAYOUT", "Bus and HOV Lanes",4)@Order(1)@Range("None","Bus Lane","HOV Lane","Bus-Bike Lane","Light Rail Lane")@Description("The controls for the bus lane also control the HOV lane. They are grouped together because they are both considered :High Capacity Lanes:")
 attr Transit_Lane 				    ="None"
 @Order(2)@Range("Right", "Left", "Both")@Description("Determines side of street preferential lanes are allocated.")
 attr Transit_Lane_Sides 			=_Initital_Transit_Lane_Sides # If the street is oneway, will make initial bus lane side change accordingly
@@ -496,6 +496,9 @@ const Sidewalk_Left_Bike_Lane_Width	=	case find(Bike_Lane_Type,"Sidewalk",0)!=-1
 const Bike_Box_Buffer_Adapter		= case Buffer_Protection_Bool && Parking_Protection_Bool:1 else:0 #Helps with adjusting the stopbar to different buffer types. 
 const Bike_Reversal_Switch			= case find(Bike_Lane_Type,"Reverse",0)!=-1:-1 else: 1
 const _Twoway_Bikelane_Bool			= find(Bike_Lane_Type,"Two-way",0)!=-1 #Find(_)!=1 Pattern is ~ if it has this string, true.
+#Transit Constants
+const Track_Gauge					= 1.435 #Standard 
+const Rail_Depth 					= .05
 #Vegetation Constants
 const Random_Grass					=(fileRandom(GrassFolder + "/*.jpg"))
 #Parking Constants
@@ -1224,9 +1227,9 @@ _AutoRank				= #Criteria is simply based on lanewidths, on-street parking presen
 			0
 
 _TransitRank			= #Criteria based on whether or not there are, proper lane widths, transit dedicated lanes, painted red is better,boulevard transit lanes are best performing (no ability to get into transit lane)-HOV lane is treated a like a preferential bus lane-essentially ranks a roads ability to provide preferential service
-		case Bus_Lane_Color== "red" && Transit_Lane =="Bus Lane" && Transit_Lane_Width >=3.35 && (rint((nLanesTotal/2))+(_Transit_Lane_Count/2))<=2 && Transit_Lane_Sides =="Both" ||Center_Type=="Boulevard" && Boulevard_Configuration=="Bus Lanes" && Boulevard_Inside_Width>=6.5:
+		case Bus_Lane_Color== "red" && (findFirst(Transit_Lane,"Bus")!=-1||findFirst(Transit_Lane,"Light Rail")!=-1) && Transit_Lane_Width >=3.35 && (rint((nLanesTotal/2))+(_Transit_Lane_Count/2))<=2 && Transit_Lane_Sides =="Both" ||Center_Type=="Boulevard" && Boulevard_Configuration=="Bus Lanes" && Boulevard_Inside_Width>=6.5:
 			1
-		case Bus_Lane_Color== "red" && Transit_Lane =="Bus Lane":
+		case Bus_Lane_Color== "red" && findFirst(Transit_Lane,"Bus")!=-1:
 			.8
 		case Transit_Lane !="None" && Lane_Width >=3.048 && (rint(((nLanesTotal/2))+(_Transit_Lane_Count/2)))<=3:
 			.6
@@ -1541,7 +1544,9 @@ Transit_Lane_Allocator(dir)--> #Allocates the texture rule based on what type of
 	case Transit_Lane=="Bus-Bike Lane":
 		Bus_Bike_Lane_Texture_Rule(dir)
 	case Transit_Lane=="HOV Lane":
-		HOVlane_Texture(dir)
+		HOV_Lane_Texture_Rule(dir)
+	case Transit_Lane =="Light Rail Lane":
+		Light_Rail_Lane_Texture(dir)
 	else: #Do not leave blank geometry. 
 		Bus_Lane_Texture_Rule(dir)
 
@@ -1576,7 +1581,24 @@ Bus_Bike_Lane_Texture_Rule(dir)-->
 							|PaintLineWidth*_PaintLineControl("Left", Transit_Paint_Line_Sides ):AsphaltPainted("white","Transit")}
 	BusOnLane(dir)
 	
+Light_Rail_Lane_Texture(dir)-->	
+	split(v,unitSpace,0){~1:Sidewalk_Pavement("Light Rail Lane")|
+						 Rail_Depth*3:Rail_Inset|
+						 Track_Gauge:Sidewalk_Pavement("Light Rail Lane")|
+						 Rail_Depth*3:Rail_Inset|
+						 ~1:Sidewalk_Pavement("Light Rail Lane")}
+						 
 
+Rail_Inset-->
+	split(v,unitSpace,0) {Rail_Depth:Metal_Texture|
+						  Rail_Depth: extrude(-Rail_Depth) comp(f){side:Metal_Texture|top:Metal_Texture}|
+						  Rail_Depth:Metal_Texture}
+
+Metal_Texture-->
+	normalizeUV(0,uvUniform,separatePerFace)
+	setupProjection(0,scope.xz,5,5)
+	texture(MiscFolder +"/Metal_Texture.jpg")
+	projectUV(0)
 	
 Bus_Lane_Stamp(dir)-->
 			scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
@@ -1587,7 +1609,7 @@ Bus_Lane_Stamp(dir)-->
 			color( _ThematicRouter ("Transit"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 			ModeReporter ("Transit")
 	
-HOVlane_Texture(dir)-->
+HOV_Lane_Texture_Rule(dir)-->
 	split(v,unitSpace,0){PaintLineWidth*2*_PaintLineControl("Right", Transit_Paint_Line_Sides ):AsphaltPainted("yellow","Transit")
 							#Level 1-First split indentation
 							|~1:split(u,unitSpace,0){2:Asphalt("Transit")
