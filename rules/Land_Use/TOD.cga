@@ -1,0 +1,858 @@
+/**
+ * File:    TOD.cga
+ * Created: 12 Sept 2018 18:18:06 GMT
+ * Author:  David J. Wasserman & Leilei Duan
+ *
+	Copyright 2018 David Joseph Wasserman & Leilei Duan
+	
+	This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+version "2018.0"
+######################
+#Rule Imports
+import Tree : "/ESRI.lib/rules/Plants/Plant_Loader.cga" # Taken from ESRI.lib and uses its assets. Keep this in mind when using rule. 
+######################
+#Attribute Declaration
+@Group("DISPLAY SETTINGS","Display",1)
+@Order(1)@Range("Color By Intensity","Color by Transit Service","Gradient Color Floor","Usage","Colored")
+attr Scenario_Representation ="Gradient Color Floor"
+@Order(2)@Range(0,1)
+attr Transparency=.33
+@Order(6)@Range("Low","Moderate","High") @Description("When low, windows, doors, and other building elements will be left as blank walls. When high or moderate, windows and walls will be split out and given detailing. High has web scene water and textures.")
+attr LOD_Setting="Low"
+@Order(7)@Range(-3,3) @Description("Translates the lot shape up or down. Helps for adjusting shape position to match sidewalk height, but can be used to demonstrate grade based adaptation.")
+attr Grade_Adjustment=0 #0.102
+
+@Group("ZONING","Transit Settings",3)
+@Range(0,5280)@Order(1) @Description("The proximity to transit measured in Feet.") #@Leilei - Miles?
+attr Proximity_To_Transit = 500 
+@Range(0,5280)@Order(2) @Description("The step interval for which transit proximity and transit bonuses are recalculated. For example, if 500, the increments for height bonuses are calculated at 500, 1000, 1500, etc feet.")
+attr Proximity_Increment = 500
+@Range(0,10)@Order(3) @Description("This is a linear decrease factor in the density bonus.")
+attr Proximity_Linear_Decay_Factor = 1
+@Range(0,10)@Order(4) @Description("This is an expoential decreasee factor in the density bonus.")
+attr Proximity_Exponential_Decay_Factor = 0
+@Range(0,100)@Order(5) @Description("This represents the number of high frequency routes within proximity to the target parcel.")
+attr Number_Of_High_Frequency_Routes = 1
+@Range(0,100)@Order(6) @Description("Additional height in stories per height increment.")
+attr Height_Bonus_Per_Service_Increment = 2 # How does this impact setbacks? Do you want to add a parameter for that?
+
+@Group("ZONING","Ground Level Setbacks",3)
+@Range(0,10)@Order(1)@Description("Creates a street oriented setback away from the front edge of the lot in meters.")
+attr Front_Yard_Depth	=1#_initialSetBacks("Front")
+@Range(0,10)@Order(2)@Description("Creates a street oriented setback away from the rear edge of the lot in meters.")
+attr Rear_Yard_Depth	=1#_initialSetBacks("Rear")
+@Range(0,10)@Order(3)@Description("Creates a street oriented setback away from the edge of the lot in meters. Controls the Right and Left Side Setback until the Left Side Setback is changed from its default value.")
+attr Right_Yard_Depth	=1#_initialSetBacks("Side")
+@Range(0,10)@Order(4)@Description("Creates a street oriented setback away from the left edge of the lot in meters, overrides existing Right Setback which it defaults to.")
+attr Left_Yard_Depth	=Right_Yard_Depth
+@Range(100,1000000)@Order(5)@Description("Threshold Area before the lot subdivision rule is triggered. Starts at 1.5 acres.")
+attr Lot_Area_Threshold=6070.28
+@Range(10,10000)@Order(6)@Description("Width in the X direction of the resulting subdivided lots if the area threshold is met.")
+attr Lot_X_Width=50
+@Range(10,10000)@Order(7)@Description("Width in the Z direction of the resulting subdivided lots if the area threshold is met.")
+attr Lot_Z_Width=50
+@Range(0,360) @Order(8) @Description("Controls the rotation of the underlying lot.")
+attr Lot_Rotation=0
+@Range("Align to Grid", "Align to Shape")@Order(9) @Description("Determines initial subdivision alignment.")
+attr Split_Offset = "Align to Shape"
+@Group("ZONING","Land Use",4)
+@Order(1) @Range("Single Family","Multi-Family Walk-Up","Multi-Family Elevator","Retail & Services","Commercial & Office","Industrial & Manufacturing","Transportation & Utility","Public Facilities & Institutions","Open Space & Outdoor Recreation","Parking","Vacant") @Description("General land use categories. You can map your data to this schema or alter the rule to fit your land use database")
+attr Land_Use_1 = case geometry.area()>4000:"Open Space & Outdoor Recreation"  case p(.5):"Single Family" case p(.15):"Multi-family Walk Up" else: "Commercial & Office"
+@Order(2) @Range("None","Single Family","Multi-Family Walk-Up","Multi-Family Elevator","Retail & Services","Commercial & Office","Industrial & Manufacturing","Transportation & Utility","Public Facilities & Institutions","Open Space & Outdoor Recreation","Parking","Vacant") @Description("General land use categories. You can map your data to this schema or alter the rule to fit your land use database")
+attr Land_Use_2 = "None"
+@Order(3) @Range(0,100) @Description("Number of floors of land use type 2.")
+attr Use_2_Floors= 2
+
+#@Order(6) @Range("Short Duration","Long Duration") @Description("Duration of the HAZUS Flood Hazard.")
+#attr HAZUS_Hazard_Duration = "Long Duration"
+#@Order(7) @Range("Fresh Water","Salt Water") @Description("Water Type of the HAZUS Flood Hazard.")
+#attr HAZUS_Water_Type = "Salt Water"
+
+@Group("ZONING","Buildable Volume",5)
+@Order(6) @Range("Square", "L-Shaped","U-Shaped", "O-Shaped","Forced Square") @Description("Controls the footprint configuration after the lots setbacks are applied. Depth of U/L/O wings is controlled by attributes below.")
+attr Footprint_Type= "Square" #_initialFootprint
+@Order(7) @Range("Flat", "Hip", "Gable", "Shed") @Description("Determines the roof types of the chosen building, or can be changed to an envelope that can be altered by a base height/setback angle.")
+attr Roof_Type=case Floor_Count<=3:"Hip" else:"Flat"
+@Order(8) @Range(0,20) @Description("Generally controls front and rear depths for the L/U/O operations. For L and U Shapes, controls the front depth, for O shapes it controls the Front and Rear Depths.")
+attr Front_Rear_Wing_Depth = (rand(9,12))
+@Order(9) @Range(0,20) @Description("Generally controls right and left depths for the L/U/O operations. For L, controls the left depth, for U and O controls left and right depth.")
+attr Right_Left_Wing_Depth = (rand(9,12))
+@Order(10) @Range(0,2000)  @Description("This is the starting height of the building. It determines the starting floor count and building height.")
+attr Building_Height	= 20#_initialBuildingHeight(DORUC_Land_Use)
+@Order(11) @Range(1,100)@Description("Total number of floors in the building. Is used by default to determine heights.")
+attr Floor_Count = ceil(Building_Height/Floor_Height)
+@Order(12) @Range(1,10000)@Description("Zoning Height Limit of Building. If this is exceeded, a report will be triggered, and it will show as faded red above the building equal to the difference.")
+attr Height_Limit = _initialTotalHeight 
+@Order(13)@Range(0,5)@Description("Determines the height of the 1st floor of the building.")
+attr Ground_Floor_Height = 3.75
+@Order(15)@Range(0,5)@Description("Determines the height of all floors other than the first floor.")
+attr Floor_Height		=3.25
+@Order(16)@Range(0,10) @Description("Determines the setback of of each floor from the previous floor. Stops at some minimum size.")
+attr Building_Setback= 1#_intitalBuildingSetback
+@Order(17)@Range("From Street","Front","Back","Right and Left Side","All Sides")@Description("Determines the size of building setback for the building. The setbacks adjust based on the setback type.")
+attr Building_Setback_Side="From Street"
+@Order(18)@Range(1,20)@Description("This attribute controls the floors on which setbacks start, with the first floor starting at one.")
+attr Building_Setback_Floor=2
+@Order(19)@Range("Wedding Cake","Alternating","One Setback")@Description("Determines the type of building setback for the building.")
+attr Building_Setback_Type="Alternating"
+@Order(20) @Range(5,30) @Description("A parameter that determines the threshold for width and length before a building is no longer being setback.")
+attr Setback_Size_Threshold =_initialSetbackThreshold
+@Order(21) @Hidden @Range(0,100)  @Description("Height of the front base of the building before the building angles back with the Envelope function. Changing the front will change the side and rear too.")
+attr Front_Baseheight	=_initialBaseHeights
+@Order(22)@Hidden @Range(0,100) 	@Description("Hidden: Height of the rear base of the building before the building angles back with the Envelope function. Changing the front will change the side and rear too.")
+attr Rear_Baseheight	=Front_Baseheight
+@Order(23)@Hidden @Range(0,100)	@Description("Hidden: Height of the side base of the building before the building angles back. Changing the front will change the side and rear too.")
+attr Side_Baseheight	=Front_Baseheight
+@Order(24)@Range(0,90)@Description("Determines the angle the building ascension inclines after the respective base heights are reached when evelopes are on, but when envelope are off it controls the angle of the roofs.")
+attr Roof_Angle = case Roof_Type=="Envelope":90 case Roof_Type=="Shed":2.5 else: 30
+
+
+
+
+@Group("STREETSCAPE CONNECTIONS","Greenspace",9)
+@Order(1) @Range("Grass","Trees & Plantings") @Description("Describes how green spaces is allocated. If Trees & Plantings is selected, trees can appear in sized greenspaces.")
+attr Greenspace_Type="Trees & Plantings"
+@Order(2) @Range(0,1000) @Description("Area required for planting placement in greenspace. ")
+attr Tree_Area_Requirement= 200
+@Order(3)@Range(0,100) @Description("Setback plantings are placed away from the building.")
+attr Planting_Setback = 2
+@Order(4) @Range(0,100) @Description("Number of plantings placed")
+attr Planting_Count= max(Lot_Area/500,5)
+@Order(5)@Description("Determines the species of the tree/plant selected for Tree 1. Random picks from 5 common tree types and is a good default.")@Range("Random","Alder Buckthorn","Amazon Sword Plant","American Chestnut","American Sycamore","Apricot","Australian Pine","Baldcypress","Balsam Fir","Bamboo","Banana Tree","Basswood","Bay Laurel","Black Locust","Blue Gum Eucalyptus","Boxwood","Cabbage Palm Fern","California Bay","California Incense Cedar","California Palm","California Redwood","California Walnut","Coconut Palm","Common Hawthorn","Common Whitebeam","Conker Tree","Date Palm","Desert Willow","Douglas Fir","European Beech","European Larch","Ficus","Field Elm","Flannelbush","Flowering Dogwood","Giant Sequoia","Hedgehog Agave","Japanese Angelica Tree","Lacy Tree Philodendron","Leyland Cypress","Lily of the Valley","Lodgepole Pine","Mediterranean Buckthorn","Mexican Palmetto","Mountain Mahogany","Northern Red Oak","Norway Maple","Norway Spruce","Orange Tree","Orchid","Oval-leaved Privet","Palm Lily","Palo Verde","Paper Birch","Parlour Palm","Prickly Pear Cactus","Red Alder","Red Hickory","Rhododendron Azaleas","Rose","Ruffle Palm","Saguaro Cactus","Sassafras","Scots Pine","Sea Islands Yucca","Shadbush","Snake Plant","Southern Magnolia","Spanish Broom","Strawberry Tree","Sugar Maple","Sunflower","Sweetgum","Umbrella Acacia","Western Juniper","White Ash","White Oak","White Poplar","White Willow","Witch Hazel","","_____________________________","GENERICS","","Generic Dead Tree","Generic Stump","Generic Unknown","","_____________________________","PROXIES","","Algarrobo","American Elderberry","American Pepper","American Silverberry","Athel Tamarisk","Avocado","Black Tupelo","Buttonbush","Canada Buffaloberry","Chinaberry Tree","Chinese Tallow Tree","Common Hackberry","Common Holly","Common Persimmon","Desert Bitterbrush","European Hornbeam","Giant Chinquapin","Honey Locust","Hophornbeam","Huckleberry Shrub","Japanese Hemlock","Japanese Nutmeg","Judas Tree","Lawson Cypress","Loblolly Bay","Mexican Buckeye","Necklacepod","Northern Bilberry","Northern White Cedar","Octopus Tree","Osage Orange","Paper Bark Tree","Pawpaw","Persian Silk Tree","Princess Tree","Smooth Sumac","Sourwood","Southern Wax Myrtle","Tanoak","Tree of Heaven","Turkish Hazel","Western Soapberry","White Mulberry","Yellow Poplar","Yew")
+attr Greenspace_Tree_1_Type				= "Random"
+@Order(6) @Range(0,1)@Description("Reduces the probability of Tree 1 appearing in a typical designated location, but also controls the Tree quantity at round abouts.")#@Hidden
+attr Greenspace_Tree_1_Percentage 		= 1
+@Order(7)@Description("Determines the species of the tree/plant selected for secondary tree for more variation. If this is not None, Tree 2 will appear if Tree 1 does not fire with the current percentage. This does mean that you cannot drop tree density if you alternate trees.")@Range("None","Random","Alder Buckthorn","Amazon Sword Plant","American Chestnut","American Sycamore","Apricot","Australian Pine","Baldcypress","Balsam Fir","Bamboo","Banana Tree","Basswood","Bay Laurel","Black Locust","Blue Gum Eucalyptus","Boxwood","Cabbage Palm Fern","California Bay","California Incense Cedar","California Palm","California Redwood","California Walnut","Coconut Palm","Common Hawthorn","Common Whitebeam","Conker Tree","Date Palm","Desert Willow","Douglas Fir","European Beech","European Larch","Ficus","Field Elm","Flannelbush","Flowering Dogwood","Giant Sequoia","Hedgehog Agave","Japanese Angelica Tree","Lacy Tree Philodendron","Leyland Cypress","Lily of the Valley","Lodgepole Pine","Mediterranean Buckthorn","Mexican Palmetto","Mountain Mahogany","Northern Red Oak","Norway Maple","Norway Spruce","Orange Tree","Orchid","Oval-leaved Privet","Palm Lily","Palo Verde","Paper Birch","Parlour Palm","Prickly Pear Cactus","Red Alder","Red Hickory","Rhododendron Azaleas","Rose","Ruffle Palm","Saguaro Cactus","Sassafras","Scots Pine","Sea Islands Yucca","Shadbush","Snake Plant","Southern Magnolia","Spanish Broom","Strawberry Tree","Sugar Maple","Sunflower","Sweetgum","Umbrella Acacia","Western Juniper","White Ash","White Oak","White Poplar","White Willow","Witch Hazel","","_____________________________","GENERICS","","Generic Dead Tree","Generic Stump","Generic Unknown","","_____________________________","PROXIES","","Algarrobo","American Elderberry","American Pepper","American Silverberry","Athel Tamarisk","Avocado","Black Tupelo","Buttonbush","Canada Buffaloberry","Chinaberry Tree","Chinese Tallow Tree","Common Hackberry","Common Holly","Common Persimmon","Desert Bitterbrush","European Hornbeam","Giant Chinquapin","Honey Locust","Hophornbeam","Huckleberry Shrub","Japanese Hemlock","Japanese Nutmeg","Judas Tree","Lawson Cypress","Loblolly Bay","Mexican Buckeye","Necklacepod","Northern Bilberry","Northern White Cedar","Octopus Tree","Osage Orange","Paper Bark Tree","Pawpaw","Persian Silk Tree","Princess Tree","Smooth Sumac","Sourwood","Southern Wax Myrtle","Tanoak","Tree of Heaven","Turkish Hazel","Western Soapberry","White Mulberry","Yellow Poplar","Yew")#@Hidden
+attr Greenspace_Tree_2_Type				= "None"
+
+
+#####################
+#Hidden_Attributes
+#####################
+#Elevation and Lot Attributes
+@Order(1)@Hidden
+attr Lot_Area=geometry.area()
+@Order(2)@Hidden
+attr Ground_Elevation=0
+@Order(3)@Hidden
+attr FootPrint_Elevation=0
+@Order(4)@Hidden
+attr Lot_Edge_Count=0
+
+#Building Feature dimensions
+@Order(1) @Range(0,10) @Hidden @Description("These set of attributes control the buildings articulation and external potential openings to water.")
+attr Window_Width=0
+@Order(2) @Range(0,10) @Hidden @Description("These set of attributes control the buildings articulation and external potential openings to water.")
+attr Window_Height=0
+@Order(3) @Range(0,10) @Hidden @Description("These set of attributes control the buildings articulation and external potential openings to water.")
+attr Window_Spacing=0
+@Order(4) @Range(0,10) @Hidden @Description("These set of attributes control the buildings articulation and external potential openings to water.")
+attr Window_Frame_Thickness=0
+@Order(5) @Range(0,10) @Hidden @Description("These set of attributes control the buildings articulation and external potential openings to water.")
+attr Door_Width= 0
+@Order(6) @Range(0,20) @Hidden @Description("These set of attributes control the buildings articulation and external potential openings to water.")
+attr Door_Frame_Thickness=rint(rand(3,9))/ToIn1
+@Order(7) @Range(0,10) @Hidden @Description("These set of attributes control the buildings articulation and external potential openings to water.")
+attr Door_Depth=-5/ToIn1
+################
+#Functions- functions and calculations used throughout the rule
+################
+#Path Functions
+		
+_isEven(num)=
+	case num%2==0:
+		true
+	else:
+		false
+
+_Stories_Type=
+		case Floor_Count<=1:
+			"One Story"
+		else:
+			"Two Story"
+			
+#Passed Values defined by logic
+
+# Normalization to 0 to 1 range.
+dataValueAdj(dataValueOriginal,Max_Data_Value, Min_Data_Value) = 
+case dataValueOriginal < Min_Data_Value: Min_Data_Value
+case dataValueOriginal > Max_Data_Value: Max_Data_Value
+else: dataValueOriginal
+
+# normalValue(dataValue,Max_Data_Value,Min_Data_Value) = 
+# NormalMin + (((dataValueAdj(dataValue,Max_Data_Value,Min_Data_Value) - Min_Data_Value ) 
+# * ( NormalMax - NormalMin ))
+# / ( Max_Data_Value - Min_Data_Value))
+
+# Initial Settings and Default values
+_initialFootprint = case find(Land_Use_1,"Family",0)!=-1: 
+						"L-Shaped"
+					else: 
+						45%: "L-Shaped"
+						15%: "U-Shaped"
+						else:"Square"
+
+_initialHeight=((Floor_Count_Abs-1)*Floor_Height)+Ground_Floor_Height
+_initialBaseHeights= Building_Height -Floor_Height*3
+_initialTotalHeight = _initialHeight ++.3048
+	
+# _initialBuildingHeight(LU)= 
+# 					case find(LU_SLR.getValueByDORUC(LU,LU_SLR.Intensity_Class),"Low",0)!=-1:
+# 						float(listRandom("1;1;1;1;1;1;2;2;2;3"))*Floor_Height
+# 					case find(LU_SLR.getValueByDORUC(LU,LU_SLR.Intensity_Class),"Mid",0)!=-1:
+# 						float(listRandom("4;4;4;4;4;5;5;6;7"))*Floor_Height
+# 					case find(LU_SLR.getValueByDORUC(LU,LU_SLR.Intensity_Class),"High",0)!=-1:
+# 						float(listRandom("8;8;8;8;8;8;8;9;9;10;11;12;13;14;15")	)*Floor_Height
+# 					else:
+# 						float(listRandom("1;1;1;1;1;2"))*Floor_Height
+					
+# _initialSetBacks(setbackSide) = 
+# 					case find(HAZUS_Land_Use_1,"RES",0)!=-1  && Lot_Area>2000 && Floor_Count<=3: 
+# 						rint(rand(4,6))
+# 					case find(HAZUS_Land_Use_1,"RES",0)!=-1  && Lot_Area>1000 && Floor_Count<=3: 
+# 						rint(rand(2,4))
+# 					case find(HAZUS_Land_Use_1,"AGR",0)!=-1:
+# 						rint(rand(10000,20000))
+# 					case find(HAZUS_Land_Use_1,"IND6",0)!=-1:
+# 						rint(rand(10000,20000))
+# 					else:
+# 						case (setbackSide=="Front") && Elevate_Structure!="None":
+# 							_Minof(Elevation_Height/Stair_Slope,Max_Stair_Setback)
+# 						case setbackSide!="Front" && Elevate_Structure!="None":		
+# 							1
+# 						else:
+# 							rint(rand(1,2))
+
+				
+_initialSetbackThreshold=
+	min(Front_Rear_Wing_Depth,Right_Left_Wing_Depth)*.25						
+#Building Functions and Features
+_Transparency(Location)= 
+	case Location == "Window": 
+		max(Transparency +.33,.5) 
+	else:
+		Transparency
+	
+_Specularity(Location)= case Location== "Window":1  else: 0
+
+_Building_Color(Location)=
+	case Location=="Window":
+		Window_Color
+	case Location=="Door":
+		Door_Color
+	case Location=="Roof":
+		Roof_Color
+	case Location=="Frame Top" || Location=="Frame Side":
+		Frame_Color
+	else:
+		Wall_Color
+		
+_Land_Use_Floor(floornum)=	
+	case (floornum)>(Use_2_Floors):
+			Land_Use_1
+	else:
+		case (Land_Use_2 =="None"||(floornum)>(Use_2_Floors)):
+			Land_Use_1
+		else:
+			Land_Use_2
+			
+_Usage_Color (floornum,floortotal)=
+	case find(_Land_Use_Floor(floornum),"Single",0)!=-1:
+		SFCol
+	case find(_Land_Use_Floor(floornum),"Multi-",0)!=-1:	
+
+		MFCol
+	case find(_Land_Use_Floor(floornum),"Public",0)!=-1:
+		GovCol
+	case find(_Land_Use_Floor(floornum),"Transportation",0)!=-1:
+		ParkingStoreCol
+	case find(_Land_Use_Floor(floornum),"Retail",0)!=-1:
+		RetCol
+	case find(_Land_Use_Floor(floornum),"Industrial",0)!=-1:
+		IndusCol
+	case find(_Land_Use_Floor(floornum),"Commercial",0)!=-1:
+		ComOCol
+	case find(_Land_Use_Floor(floornum),"Open Space",0)!=-1:
+		OtherCol
+	else:
+		ElseCol				
+		
+_Window_Width_Usage(floornum)=
+	case Window_Width!=0:
+		Window_Width
+	else:
+		rint(rand6to8)/ToFt1
+		
+_Window_Height_Usage(floornum)=
+	case Window_Height!=0:
+		Window_Height
+	else:
+		rint(rand5to7)/ToFt1
+		
+_Window_Spacing_Usage(floornum)=
+	case Window_Spacing!=0:
+		Window_Spacing
+	else:
+		rint(rand1to3)/ToFt1
+_Window_Frame_Thickness_Usage(floornum)=
+	case Window_Frame_Thickness!=0:
+		Window_Frame_Thickness
+	else:
+		rint(rand4to8)/ToIn1
+		
+_Door_Width_Usage(floornum)=
+	case Door_Width!=0:
+		Door_Width
+	else:
+		12/ToFt1		
+_Setback_Determination(attrSetback,floornum,setbackFloornum,setbackType)=
+	case floornum<=setbackFloornum && setbackType!="One Setback":
+		0
+	case setbackType=="One Setback":
+		case floornum==setbackFloornum:
+			attrSetback
+		else:
+			0
+	case setbackType=="Alternating":
+		case _isEven(floornum):
+			attrSetback
+		else:
+			0
+	else:#wedding cake
+		attrSetback		
+_Cumulative_Setback(floornum,setbackType)=
+	case setbackType=="One Setback":
+		Building_Setback
+	case setbackType=="Alternating":
+		((floornum-Building_Setback_Floor)*Building_Setback)/2.0
+	else:
+		(floornum-Building_Setback_Floor)*Building_Setback
+
+#Reporting Functions
+_isWall(Location)= case Location=="Wall"||Location=="Window"||Location=="Door" || Location=="Frame Top":true else: false
+##########################
+#Constants
+
+const NormalMin = 0
+const NormalMax = 1
+const CS_len=3.5
+const CS_wid=3.5
+const CS_hei=2
+const Roof_Overhang=.8
+const oneInch=0.0254
+const roofEdgeHeight=24*oneInch
+
+const Insert_Adjustment=1- Roof_Angle /90
+const FreshWat_SpcWeig=64.4 #lb/ft^3
+const SaltWat_SpcWeig=64.0 #lb/ft^3
+#Random Ranges
+const rand0to1= rand(0,1)
+const rand0to2= rand(0,2)
+const rand0to3= rand(0,3)
+const rand1to2= rand(1,2)
+const rand1to3= rand(1,3)
+const rand2to5= rand(2,5)
+const rand2to8= rand(2,8)
+const rand3to6= rand(3,6)
+const rand4to6= rand(4,6)
+const rand4to7= rand(4,7)
+const rand5to7= rand(5,7)
+const rand6to8= rand(6,8)
+const rand6to10= rand(6,10)
+const rand7to9= rand(7,9)
+const rand8to12= rand(8,12)
+const rand10to12= rand(10,12)
+const rand8to14= rand(8,14)
+const rand10to14= rand(10,14)
+const rand1to5= rand(1,5)
+const rand4to8= rand(4,8)
+#Unit conversions
+const ToFt3=35.3147 #1 meter ^3 = 35.3 cubic feet
+const ToFt2=10.7639 #1 meter ^2 = 10.7 square feet
+const ToFt1=3.2808399 #1 meter = 3.28 ft
+const ToIn1=39.37 #1 meter = 39.37 in
+#Color Lists and colors
+const Window_List="#394a53;#00FFE5#92E8DD;#B0F7F5"
+const Window_Color=listRandom(Window_List)
+const Wall_List="#C5E0DC;#003e3b;#6d0303;#5f2428;#737291c;#ECE5CE;#F1D4AF;#342931;#85504C;#aea7a0;#EEBA7E;#BDCAD0;#808787;#FE8B05;#fffaf3;#fffff3;#fDfDf3;#fdfdf3;#ffffff"
+const Wall_Color=listRandom(Wall_List)
+const Roof_List="#824c3b;#9f9182;#5e9e9a;#cc7761;#3f261f;#5f4240;#D8C7C2;#b1a19d;#C5C0C;#fdfcff;#744741;#d6d6d1;"
+const Roof_Color=listRandom(Roof_List)
+const Door_List="#771635;#4E3612;#78643A;#EDDEA7"
+const Door_Color=listRandom(Door_List)
+const Frame_List="#F2963F;#5f2428;#D9271B;#144184;#212b9c;#6d0303;#D17668;#9CAFB7;#123146;#78261c"
+const Frame_Color=listRandom(Frame_List)
+const Light_Gray="#d3d3d3"
+const Dark_Gray= "#939393"
+const Dark_Blue="#0a39FF"
+const SFCol="#CECE00"
+const MFCol="#FF9900"
+const GovCol="#0A70FD"
+const ComOCol="#E40000"
+const RetCol="#ff8080"
+const IndusCol="#df72ff"
+const OtherCol="#FFFFFF"
+const ParkingStoreCol ="#8b8b8b"
+const ErrorCol="#DD0000"
+const ElseCol="#000000"
+const WoodCol="#82520b"
+const ConcreteCol= "#6f7070"
+const SteelCol= "#c1c1dd"
+const MasonCol="#8c0808"
+const MobileCol="#06c6d1"
+const TreeCol="#B5DC98"
+const NACTOPlanting="#B5DC98"
+const DarkRed = "#a30303"
+
+
+#Attribute Absolute Values
+const first_Floor=1
+const Floor_Count_Abs=abs(Floor_Count)
+# Vegetation and Hardscape costs 
+const TreeCostAverage = 750 
+const GrassSurfaceCostAverage = 10	# In square meters
+const HardscapePaverCost = 25		# In square meters
+#################
+#Rules
+#
+#Lot Start Rule
+@StartRule
+Lot-->
+	case geometry.area()>Lot_Area_Threshold:  #1.5 acres or triggered
+		cleanupGeometry(all, .001)
+		t(0,Grade_Adjustment,0)
+		rotateScope(0,Lot_Rotation,0)
+		SplitX
+	else:
+		cleanupGeometry(all, .001)
+		t(0,Grade_Adjustment,0)
+		rotateScope(0,Lot_Rotation,0)
+		Lot_Setup(0,0)
+	
+
+SplitX -->
+	case Split_Offset == "Align to Grid":
+		split(x, noAdjust) { ~Lot_X_Width: SplitZ(split.index) }*
+	else:
+		split(x) {~Lot_X_Width: SplitZ(split.index) }*
+
+SplitZ(xIndex) -->
+	case Split_Offset == "Align to Grid":
+		split(z,noAdjust) {~Lot_Z_Width : Lot_Setup(xIndex, split.index) }*	    				
+	else:
+		split(z) {~Lot_Z_Width : Lot_Setup(xIndex, split.index) }*	    				
+	
+Lot_Setup(xIndex,zIndex)-->
+	set(Lot_Area,geometry.area)
+	set(Lot_Edge_Count,geometry.nEdges)
+	report("Zoning.Lot Area", Lot_Area)
+	report("Zoning.Lot Count",1)
+	#[case Text_On: Text.Generate else: NIL]
+	RightSetback
+		
+		
+RightSetback-->
+	#setback on relevant side, and move to next setback
+	setback(Right_Yard_Depth) {street.right: Green_Space_Start | remainder :LeftSetback}
+
+LeftSetback-->
+	#setback on relevant side, and move to next setback
+	setback(Left_Yard_Depth) {street.left: Green_Space_Start | remainder :FrontSetback}	
+
+FrontSetback-->
+	#setback on relevant side, and move to next setback
+	setback(Front_Yard_Depth) {street.front: Green_Space_Start | remainder :RearSetback}
+
+RearSetback-->
+	#setback on relevant side, and move to creating the footprint
+	setback(Rear_Yard_Depth) {street.back: Green_Space_Start | remainder : Interior_Subdivision("Pre-Footprint")}	
+
+Interior_Subdivision(Location)-->#"L-Shaped","U-Shaped", "O-Shaped"
+	case Footprint_Type=="L-Shaped":
+		shapeL(Front_Rear_Wing_Depth,Right_Left_Wing_Depth) { shape: FootPrint_GeometryCheck | remainder : Green_Space_Start }
+	case Footprint_Type=="U-Shaped":
+		shapeU(Front_Rear_Wing_Depth,Right_Left_Wing_Depth,Right_Left_Wing_Depth) {shape: FootPrint_GeometryCheck | remainder : Green_Space_Start }
+	case Footprint_Type=="O-Shaped":
+		shapeO(Front_Rear_Wing_Depth,Right_Left_Wing_Depth,Front_Rear_Wing_Depth,Right_Left_Wing_Depth) { shape: FootPrint_GeometryCheck| remainder : Green_Space_Start }
+	case Footprint_Type=="Forced Square":
+		innerRectangle(scope){shape:FootPrint_GeometryCheck |remainder: Green_Space_Start }
+	else:
+		FootPrint_GeometryCheck 
+		
+FootPrint_GeometryCheck -->
+	case geometry.isConcave():
+		convexify(3)Footprint_SizeCheck
+	else:
+		Footprint_SizeCheck
+		
+Footprint_SizeCheck-->
+	case geometry.nFaces > 1:
+		comp(f){all: alignScopeToAxes(y) Footprint_SizeCheck }
+	case scope.sx < 1 || scope.sz < 1:
+		Green_Space_Start
+	else:
+		FootPrintFoundation
+FootPrintFoundation -->
+	#Report footprint area, declare underfloor extrusion
+	report("Zoning.Initial Footprint Area (M^2)",geometry.area())
+	ActualFootPrint
+	label("Foot Print")
+
+		
+ActualFootPrint-->
+		Building_Setback_Rule(first_Floor)
+		
+Building_Setback_Rule(floornum)-->
+	case floornum==first_Floor || _Cumulative_Setback(floornum,Building_Setback_Type)>Setback_Size_Threshold :
+		alignScopeToAxes(y)
+		Massing(floornum)
+			
+	else:
+		case Building_Setback_Side=="Front": #Building_Setback_Side"Front","Back","Right and Left Side","All Sides"
+			setback(_Setback_Determination(Building_Setback,floornum,Building_Setback_Floor,Building_Setback_Type))
+			{object.front:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")
+			|remainder:Massing(floornum)}
+		
+		case Building_Setback_Side=="Back":
+			setback(_Setback_Determination(Building_Setback,floornum,Building_Setback_Floor,Building_Setback_Type))
+			{street.back:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")
+			|remainder:Massing(floornum)}
+		
+		case Building_Setback_Side=="Right and Left Side":
+			setback(_Setback_Determination(Building_Setback,floornum,Building_Setback_Floor,Building_Setback_Type))
+			{street.right:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")|
+			street.left:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")
+			|remainder:Massing(floornum)}
+			
+		case Building_Setback_Side=="All Sides":
+			setback(_Setback_Determination(Building_Setback,floornum,Building_Setback_Floor,Building_Setback_Type))
+			{all:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")
+			|remainder:Massing(floornum)}
+			
+		case Building_Setback_Side=="Right and Left Side": 
+			setback(_Setback_Determination(Building_Setback,floornum,Building_Setback_Floor,Building_Setback_Type))
+			{object.back:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")
+			|remainder:Massing(floornum)}	
+		else:	
+			setback(_Setback_Determination(Building_Setback,floornum,Building_Setback_Floor,Building_Setback_Type))
+			{street.front:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")
+			|remainder:Massing(floornum)}
+		
+
+
+Massing(floornum)-->
+	#align massing up, create with envelop function
+	case floornum==first_Floor:
+		alignScopeToAxes(y)
+		extrude(Ground_Floor_Height)
+		Floors(floornum)
+	case floornum<=Floor_Count_Abs:
+		alignScopeToAxes(y)
+		extrude(Floor_Height)
+		Floors(floornum)
+	else:
+		alignScopeToAxes(y)
+		Floors(floornum)		
+		
+Floors_Split-->
+	split(y){Ground_Floor_Height:Ground_Floor(split.index,split.total-1)
+			|{Floor_Height:Other_Floors(split.index,split.total-1)}*}
+Floors(floornum)-->
+	case floornum==first_Floor:			
+		Ground_Floor(floornum,Floor_Count_Abs)
+	else:
+		Other_Floors(floornum,Floor_Count_Abs)
+		
+Ground_Floor(floornum,totalfloors)-->
+	case floornum<totalfloors:
+		comp(f) {bottom:Floor_Base(floornum,totalfloors)
+		|street.front:Ground_Street_Facing(floornum,totalfloors)
+		|street.back:Ground_Rear_Facing(floornum,totalfloors)
+		|side:Ground_Exterior_Sidewall(floornum,totalfloors)
+		|top: Building_Setback_Rule (floornum+1)}
+	else:
+		comp(f) {top:Roof_Setup(floornum+1,totalfloors+1)
+		|bottom:Floor_Base(floornum,totalfloors)
+		|street.front:Ground_Street_Facing(floornum,totalfloors)
+		|street.back:Ground_Rear_Facing(floornum,totalfloors)
+		|side:Ground_Exterior_Sidewall(floornum,totalfloors)}
+
+
+Other_Floors(floornum,totalfloors)-->
+		case floornum!=totalfloors:
+			comp(f) {bottom:Floor_Base(floornum,totalfloors)
+					|street.front:Street_Facing(floornum,totalfloors)
+					|street.back:Rear_Facing(floornum,totalfloors)
+					|side:Exterior_Sidewall(floornum,totalfloors)
+					|top: Building_Setback_Rule(floornum+1)}
+		else:
+			comp(f){top:Roof_Setup(floornum+1,totalfloors+1)|# Add ceiling on last floor
+					bottom:Floor_Base(floornum,totalfloors)|
+					street.front:Street_Facing(floornum,totalfloors)|
+					street.back:Rear_Facing(floornum,totalfloors)|
+					side:Exterior_Sidewall(floornum,totalfloors)}
+	
+Ground_Street_Facing(floornum,totalfloors)-->
+	case scope.sx >30/ToFt1 && LOD_Setting!="Low":
+		Windows_And_Door_Subdivide(floornum,totalfloors,"Windows+Door Subdivider")
+	case scope.sx>=10/ToFt1 && scope.sx<=30/ToFt1 && LOD_Setting!="Low":
+		Just_Door_Subdivide(floornum,totalfloors,"Door Subdivide")
+	else:#Plain Wall
+		alignScopeToAxes(y)
+		Floor_Material_Setup(floornum,totalfloors,"Wall")
+		
+Windows_And_Door_Subdivide(floornum,totalfloors,Location)-->
+	alignScopeToAxes(y)
+	split(x){~1:Window_Repeater(floornum,totalfloors,"Window Repeater")
+			|(_Door_Width_Usage(floornum)):Door_Split(floornum,totalfloors,"Door Split")
+			|~1:Window_Repeater(floornum,totalfloors,"Window Repeater")}
+
+Just_Door_Subdivide(floornum,totalfloors,Location)-->		
+	alignScopeToAxes(y)
+	split(x){~(_Window_Spacing_Usage(floornum)+1): Floor_Material_Setup(floornum,totalfloors,"Wall")
+			|(_Door_Width_Usage(floornum)):Door_Split(floornum,totalfloors,"Door Split")
+			|~(_Window_Spacing_Usage(floornum)+1): Floor_Material_Setup(floornum,totalfloors,"Wall")}
+			
+Ground_Rear_Facing(floornum,totalfloors)-->
+	case scope.sx >=30/ToFt1 && LOD_Setting!="Low":
+		Windows_And_Door_Subdivide(floornum,totalfloors,"Windows+Door Subdivider")
+	case scope.sx>=10/ToFt1 && LOD_Setting!="Low":
+		Window_Repeater(floornum,totalfloors,"Window Repeater")
+	else:#Plain Wall
+		alignScopeToAxes(y)
+		Floor_Material_Setup(floornum,totalfloors,"Wall")
+
+Ground_Exterior_Sidewall(floornum,totalfloors)-->
+	case scope.sx >10/ToFt1 && LOD_Setting!="Low":
+		Window_Repeater(floornum,totalfloors,"Window Repeater")
+	else:
+		Floor_Material_Setup(floornum,totalfloors,"Wall")
+	
+
+Street_Facing(floornum,totalfloors)-->
+	case scope.sx >10/ToFt1 && LOD_Setting!="Low":
+		Window_Repeater(floornum,totalfloors,"Window Repeater")
+	else:
+		Floor_Material_Setup(floornum,totalfloors,"Wall")
+
+Rear_Facing(floornum,totalfloors)-->
+	case scope.sx >10/ToFt1 && LOD_Setting!="Low":
+		Window_Repeater(floornum,totalfloors,"Window Repeater")
+	else:
+		Floor_Material_Setup(floornum,totalfloors,"Wall")	
+
+Exterior_Sidewall(floornum,totalfloors)-->
+	case scope.sx >10/ToFt1 && LOD_Setting!="Low":
+		Window_Repeater(floornum,totalfloors,"Window Repeater")
+	else:
+		Floor_Material_Setup(floornum,totalfloors,"Wall")
+		
+Window_Repeater(floornum,totalfloors,Location)-->
+	alignScopeToAxes(y)
+	split(x){~_Window_Spacing_Usage(floornum): Floor_Material_Setup(floornum,totalfloors,"Wall")
+			|~_Window_Width_Usage(floornum): Window_Split(floornum,totalfloors,"Window Split")
+			|~_Window_Spacing_Usage(floornum): Floor_Material_Setup(floornum,totalfloors,"Wall")}*
+
+Window_Split(floornum,totalfloors,Location)-->
+	alignScopeToAxes(y)
+	split(y){~1: Floor_Material_Setup(floornum,totalfloors,"Wall")
+			|(_Window_Height_Usage(floornum)): Window_Shape(floornum,totalfloors,Location)
+			|~1: Floor_Material_Setup(floornum,totalfloors,"Wall")}
+
+Window_Shape(floornum,totalfloors,Location)-->
+	setback(_Window_Frame_Thickness_Usage(floornum)) { all : Window_Frame(floornum,totalfloors,"Window Frame") 
+								| remainder : Floor_Material_Setup(floornum,totalfloors,"Window")}
+	
+
+Band_1-->
+	color(Dark_Gray)
+Band_2-->
+	color(Light_Gray)	
+
+Door_Split(floornum,totalfloors,Location)-->
+	split(y) {~1:Door_Encasing(floornum,totalfloors,Location)
+	|'0.2:Floor_Material_Setup(floornum,totalfloors,Location)}
+	
+Door_Encasing(floornum,totalfloors,Location)--> 
+	label("Door")
+	Door_Push_In(floornum,totalfloors,Location,Door_Depth)
+	
+	
+Door_Push_In(floornum,totalfloors,Location,Depth)-->
+	extrude(Depth)
+	comp(f) {top: Floor_Material_Setup(floornum,totalfloors,Location)
+			|left: Floor_Material_Setup(floornum,totalfloors,Location)
+			|right: Floor_Material_Setup(floornum,totalfloors,Location)
+			|bottom:Door_Shape(floornum,totalfloors,Location)}
+					
+Door_Shape(floornum,totalfloors,Location)-->
+	setback(Door_Frame_Thickness){all:Door_Frame(floornum,totalfloors,"Door Frame")|
+							remainder:Door(floornum,totalfloors,"Door")}
+
+Window_Frame(floornum,totalfloors,Location)-->
+	extrude(1.5/ToIn1)
+	comp(f) {top: Floor_Material_Setup(floornum,totalfloors,"Frame Top")|
+			 side: Floor_Material_Setup(floornum,totalfloors,"Frame Side")}
+Door_Frame(floornum,totalfloors,Location)-->
+	extrude(1.5/ToIn1)
+	comp(f) {top: Floor_Material_Setup(floornum,totalfloors,"Frame Top")|
+			 side: Floor_Material_Setup(floornum,totalfloors,"Frame Side")}
+Door(floornum,totalfloors,Location)-->
+	Floor_Material_Setup(floornum,totalfloors,Location)
+
+Floor_Base(floornum,totalfloors)-->
+	#This is the base for all the floors, all floors, even underground floors are called here. 
+	#print(floornum)
+	report("Zoning.Total GFA",geometry.area)
+	report("Zoning.Floor Area Ratio (FAR)",geometry.area/(Lot_Area))
+	reverseNormals
+	alignScopeToAxes(y)
+	X.
+	
+
+
+Roof_Setup(floornum,totalfloors)-->
+	case Roof_Type=="Flat":
+		label("Roof")
+		set(Roof_Type,"Flat")
+		FlatRoof(floornum,totalfloors)
+	
+	case Roof_Type!="Flat":
+		label("Roof")
+		AngledRoof(floornum, totalfloors)
+	else:
+		label("Roof")
+		FlatRoof(floornum,totalfloors)
+FlatRoof(floornum,totalfloors)-->
+	setback(.75) {all : Flat_Roof_Edge(floornum,totalfloors) 
+				 |remainder : Roof_Allocation(floornum,totalfloors)}
+
+AngledRoof(floornum,totalfloors)-->
+	case Roof_Type=="Hip":
+		roofHip( Roof_Angle , Roof_Overhang)
+		Floor_Material_Setup(floornum,totalfloors,"Roof")
+	case Roof_Type=="Gable":
+		roofGable( Roof_Angle , Roof_Overhang)
+		Floor_Material_Setup(floornum,totalfloors,"Roof")
+	else: #Roof Type =="Shed"
+		roofShed( Roof_Angle )
+		Floor_Material_Setup(floornum,totalfloors,"Roof")
+		
+Flat_Roof_Edge(floornum,totalfloors)-->
+	extrude(roofEdgeHeight)
+	Floor_Material_Setup(floornum,totalfloors,"Roof")#Roof Edge
+
+Roof_Top(floornum,totalfloors)-->
+	extrude(oneInch)
+	Floor_Material_Setup(floornum,totalfloors,"Roof")
+
+Roof_Allocation(floornum,totalfloors)-->
+	Roof_Top(floornum,totalfloors)
+	
+	
+Floor_Material_Setup(floornum,totalfloors,Location)-->
+	set(material.opacity,1-_Transparency(Location))
+	set(material.shininess,_Specularity(Location))
+	set(material.specular.r,_Specularity(Location))
+	set(material.specular.g,_Specularity(Location))
+	set(material.specular.b,_Specularity(Location))
+	set(material.reflectivity,_Specularity(Location))
+	Color_Floor_Wall(floornum,totalfloors,Location)
+		
+Color_Floor_Wall(floornum,totalfloors,Location)-->
+	case Scenario_Representation == "Usage":
+		# Usage coloring is handled later due to horizontal floor split logic.
+		[case _isWall(Location):report("Zoning.Total Exterior Wall Area (M^2)", geometry.area()) else: NIL]
+		Usage_Color(floornum,totalfloors)
+	
+	case Scenario_Representation =="Colored":
+		#texture("default:uv")
+		color(_Building_Color(Location))
+		[case _isWall(Location):report("Zoning.Total Exterior Wall Area (M^2)", geometry.area()) else: NIL]
+		X.
+	case Scenario_Representation =="Gradient Color Floor":
+		#texture("default:uv")
+		color(colorRGBToHex(floornum/totalfloors,floornum/totalfloors,1))
+		[case _isWall(Location):report("Zoning.Total Exterior Wall Area (M^2)", geometry.area()) else: NIL]
+		X.
+	else:
+		# Error.
+		print("Error. Display_Type not found: " + Scenario_Representation )
+		color(ElseCol)
+		[case _isWall(Location):report("Zoning.Total Exterior Wall Area (M^2)", geometry.area()) else: NIL]
+		X.	
+		
+Usage_Color(floornum,totalfloors)-->
+	color( _Usage_Color (floornum,totalfloors))
+			
+
+Green_Space_Start -->
+	innerRectangle(scope){shape: Green_Space_Allocation|remainder: Green_Space_Allocation }
+	
+Green_Space_Allocation -->
+	case geometry.area()>=Tree_Area_Requirement: #&& GS_Has_Tree
+		setback(Planting_Setback) {all:Grass|remainder: Tree_Scatter}
+	else:
+		Grass
+
+Tree_Scatter-->
+	scatter(surface,Planting_Count,uniform) { Tree_Setup("Main Space", Greenspace_Tree_1_Percentage , Greenspace_Tree_1_Type , Greenspace_Tree_2_Type ) }
+	Grass
+	
+Grass -->
+	color(NACTOPlanting)
+
+
+	
+Tree_Setup(Location,Percentage1,Tree_Type1,Tree_Type2)-->	                     				
+		s(0,0,0)       // set scope
+		r(scopeCenter, 0,rand(0,360),0)// random rotate
+		alignScopeToAxes(y)
+		center(xz)        					
+		TreeInsert(Location,Percentage1,Tree_Type1,Tree_Type2)
+
+TreeInsert(Location,Percentage1,Tree_Type1,Tree_Type2) -->
+	case p(Percentage1):
+		s(0,0,0)
+		report("Vegetation.Construction, Tree Cost",TreeCostAverage)
+		set(Tree.Name, Tree_Type_Adjusted(Tree_Type1))
+		set(Tree.OverwriteColor,TreeCol)
+		Tree.Generate
+	case Tree_Type2!="None": #So if the percentage if 50%, and Tree1 does not fire, if tree 2 is not set to None, that tree 2 will be selected.
+		s(0,0,0)
+		report("Vegetation.Construction, Tree Cost", TreeCostAverage)
+		set(Tree.Name, Tree_Type_Adjusted(Tree_Type2))
+		set(Tree.OverwriteColor, TreeCol)
+		Tree.Generate
+	else:
+		NIL	
+	
+Tree_Type_Adjusted(Tree_Type) = 
+	case Tree_Type == "Random": randomTreeType
+	else: Tree_Type
+
+randomTreeType = 
+	20%: 	 "Tree of Heaven"
+	20%:	 "White Ash"
+	20%:	 "Common Hackberry"
+	20%:	 "Sweetgum"
+	else:	 "Sassafras"
+
+Red-->
+	color(1,0,0)
+#LotInner Start Rule
+LotInner-->
+	Green_Space_Start	
