@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:9/23/2018
+ * Last Updated:9/24/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -451,6 +451,7 @@ const TrafficControlFolder			= ObjectFolder +"/Dir_Traffic_controls"
 const TrafficSignFolder				= ObjectFolder +"/Dir_Traffic_signs"
 const LampsFolder					= ObjectFolder+"/Dir_Lamps"
 const MiscFolder					= CompleteStreetFolder +"/Misc"
+const CurbFolder					= MiscFolder + "/Round_Curbs"
 #Paint Constants
 const ThickPaintLineWidth			= 0.5
 const PaintLineWidth				= 0.1 #uvSpace 36/256-about 4 in
@@ -512,7 +513,7 @@ const Default_Bench					= (ObjectFolder+ "/Bench.obj")
 const Default_Bike_Rack				= (ObjectFolder+ "/Bike_Rack.obj")
 const Default_Parklet				= (ObjectFolder+ "/Parklet_"+LOD_Object_Choice+"_LOD.obj")
 const Default_BusStop				= (ObjectFolder+ "/Bus_Stop.obj")
-const Default_Median_End			= (ObjectFolder+ "/Median_End.obj")
+const Default_Median_End			= (CurbFolder+ "/Median_End.obj")
 #Boolean Converted Constants
 const Parking_Protection_Bool		= bool(Parking_Protection)#Bool Conversion to support non-boolean database models
 const Buffer_Protection_Bool		= bool(Buffer_Protection)#Bool Conversion to support non-boolean database models
@@ -1735,9 +1736,9 @@ BikeBuffer(Buffer_Width,Dir)-->
 		Striped_Buffer(Buffer_Width)
 		ObjectSetup("Bollard",Buffer_Object_Spacing,"/Bollard.obj",Buffer_Width)
 	case find(str(Buffer_Type),"Spaced Curb Buffer",0)!=-1:
-		color( _ThematicRouter ("(Bikeways"))
+		color( _ThematicRouter ("Bikeways"))
 		split(u,unitSpace,0) {{~Buffer_Object_Spacing:Asphalt("Bikeways")
-								|~Buffer_Object_Spacing:Raised_Curb("Buffer",1)}*
+								|~Buffer_Object_Spacing:Raised_Curb_Forced_Ends("Buffer",1)}*
 								|~Buffer_Object_Spacing:Asphalt("Bikeways")}
 	else:
 		color( _ThematicRouter ("Bikeways"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
@@ -2086,13 +2087,13 @@ Boulevard-->
 	case Boulevard_Configuration=="Open Space": #If open space send to different split set up. 
 	split(v,unitSpace,0){~(case WalkWay_Width==0:1 else:WalkWay_Width):Raised_Curb("Boulevard",0)
 						|Boulevard_Inside_Width:Raised_Curb("Open Space",0)
-						|~(case WalkWay_Width==0:1 else:WalkWay_Width):scaleUV(0,-1,-1)Raised_Curb("Boulevard",2)}	
+						|~(case WalkWay_Width==0:1 else:WalkWay_Width):scaleUV(0,-1,-1) Raised_Curb("Boulevard",2)}	
 	else: # If any type of lane set to Typical split set up. 
 	split(v,unitSpace,0){~(case WalkWay_Width==0:1 else:WalkWay_Width):Raised_Curb("Boulevard",0)
 						|Boulevard_Inside_Width/2-(Boulevard_Center_Width/2):Boulevard_StopBars(0)
 						|Boulevard_Center_Width:Boulevard_Center
 						|Boulevard_Inside_Width/2-(Boulevard_Center_Width/2): Boulevard_StopBars(2)
-						|~(case WalkWay_Width==0:1 else:WalkWay_Width):scaleUV(0,-1,-1)Raised_Curb("Boulevard",2)}
+						|~(case WalkWay_Width==0:1 else:WalkWay_Width):Raised_Curb("Boulevard",2)}
 
 Boulevard_StopBars(dir)-->
 	case Boulevard_Configuration=="Bus Lanes":
@@ -2166,14 +2167,39 @@ Barrier-->
 #Raised Curb and Street_Pavement-
 #This code is a fairly modular is called by several different rules. #Dir is 0 for right, 2, left, 1 middle or not assigned.
 Raised_Curb(Location,Dir)-->
-	ModeReporter((case Location=="Buffer":"Bikeways"else:"Pedestrian"))
 	Cut_And_Fill_Reporting(Location)
 	Street_Lamp_Center(Location,Dir)
-	split(u,unitSpace,0){ Curb_Depth:Curbs_Mass(true)|#End Curb
-						~1:split(v,unitSpace,0){ Curb_Depth:Curbs_Mass(false)
-							|~1:Street_Pavement(0,Location,Dir)
-							| Curb_Depth:Curbs_Mass(false)}
-						| Curb_Depth:Curbs_Mass(true)}#End Curb
+	split(u,unitSpace,0){_neighborBegin*_stopBegin* geometry.dv(0,unitSpace)/2:rotateUV(0,180)Raised_Curb_End(Location,Dir) Asphalt("Auto")|#End Curb
+						~1:split(v,unitSpace,0){ Curb_Depth:Curbs_Mass(false)ModeReporter((case Location=="Buffer":"Bikeways"else:"Pedestrian"))
+							|~1:Street_Pavement(0,Location,Dir) ModeReporter((case Location=="Buffer":"Bikeways"else:"Pedestrian"))
+							| Curb_Depth:Curbs_Mass(false)ModeReporter((case Location=="Buffer":"Bikeways"else:"Pedestrian"))}
+						|_neighborEnd*_stopEnd* geometry.dv(0,unitSpace)/2:Raised_Curb_End(Location,Dir) Asphalt("Auto")}#End Curb
+
+# Raised_Curb_End(Location,Dir)
+Raised_Curb_End(Location,Dir)-->
+	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0,Default_Median_End,0)
+	setupProjection(0, scope.xz, 2,2,2,2,2)
+	comp (f) {top:Raised_Curb_End_Extrusion(Location,Dir)}
+	
+Raised_Curb_End_Extrusion(Location,Dir)-->
+	extrude(Sidewalk_Height)
+	color( _ThematicRouter ((case Location=="Buffer":"Bikeways"else:"Pedestrian")))
+	texture(Sidewalk_Texture)
+	projectUV(0)
+	deleteUV(_Texture_Switch)
+	scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
+	rotateUV(0, Sidewalk_Texture_Rotation)
+
+Raised_Curb_Forced_Ends(Location,Dir)-->
+	Cut_And_Fill_Reporting(Location)
+	Street_Lamp_Center(Location,Dir)
+	split(u,unitSpace,0){geometry.dv(0,unitSpace)/2:rotateUV(0,180)Raised_Curb_End(Location,Dir) Asphalt((case Location=="Buffer":"Bikeways"else:"Pedestrian"))|#End Curb
+						~1:split(v,unitSpace,0){ Curb_Depth:Curbs_Mass(false)ModeReporter((case Location=="Buffer":"Bikeways"else:"Pedestrian"))
+							|~1:Street_Pavement(0,Location,Dir) ModeReporter((case Location=="Buffer":"Bikeways"else:"Pedestrian"))
+							| Curb_Depth:Curbs_Mass(false)ModeReporter((case Location=="Buffer":"Bikeways"else:"Pedestrian"))}
+						|geometry.dv(0,unitSpace)/2:Raised_Curb_End(Location,Dir) Asphalt((case Location=="Buffer":"Bikeways"else:"Pedestrian"))}#End Curb
+
 						
 Raised_Offset_Curb(Location,Dir,Mode,Setback)-->
 	ModeReporter(Mode)
@@ -2234,6 +2260,7 @@ Median_Top_Setup(Dir)-->
 		Median_Top(Dir)		
 
 Boulevard_Top(Dir)-->
+	scaleUV(0,case Dir==2:-1 else:1,case Dir==2:-1 else:1)
 	split(u, unitSpace,0){Median_Planting_Length+Median_Tree_Spacing:Main_Section_Construction(Dir)
 						 |~_Bus_Furniture_Base("Boulevard","Far-side",Dir):Bus_Stop_Base("Boulevard",case Dir==0:180 else:0)
 						 |~geometry.du(0,unitSpace)/2:Main_Section_Construction(Dir)
@@ -2427,10 +2454,12 @@ Median_Bench_Insert (Dir)-->
 
 Street_Lamp_Center(Location,Dir)-->
 	case Location=="Boulevard":
+		scaleUV(0,case Dir==2:-1 else:1,case Dir==2:-1 else:1)
 		split(u,unitSpace,0) {~ Median_Street_Lamp_Spacing :NIL
 							 |{1:Street_Lamp_Sider(Dir)
 							 |~ Median_Street_Lamp_Spacing :NIL}*}
  	case Location=="Median":
+ 		scaleUV(0,case Dir==2:-1 else:1,case Dir==2:-1 else:1)
  		split(u,unitSpace,0) {~ Median_Street_Lamp_Spacing:NIL
 							 |{1:Street_Lamp_Sider(0) #Median Dir should be set to 0 to grab right edge
 							 |~ Median_Street_Lamp_Spacing :NIL}*}
@@ -3454,7 +3483,7 @@ Pervious_Reporting-->
 		X.
 Cut_And_Fill_Reporting(Text_Fill)-->
 	report("Cut/Fill.Total "+Text_Fill+" Cut/Fill Volume (m^3)", geometry.area()*Sidewalk_Height)
-	X.
+	NIL
 
 Asphalt(Usage) -->
 		tileUV(0,14,14)
