@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:9/10/2018
+ * Last Updated:9/23/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -59,7 +59,7 @@
 #1 feet		==.3048  Meters
 #1/2 feet	==.1524  Meters
 #1 inch		==.0254  Meters
-version "2017.1"
+version "2018.1"
 
 
 
@@ -574,6 +574,7 @@ const Default_Mix_Bike = case Bike_Lane_Type=="Sharrow" && _Maxof(Left_Bike_Lane
 #Tree.Generated Rules		#
 #####################
 import Tree : "/ESRI.lib/rules/Plants/Plant_Loader.cga" # Taken from ESRI.lib and uses its assets. Keep this in mind when using rule. 
+# import Fences: "/ESRI.lib/rules/Fences/Fence_On_Graph.cga"
 #####################
 #Text.Generated Rules		# - Uncomment out anything with Street_Text.X for functionality. 
 #####################
@@ -2014,10 +2015,10 @@ CenterSpace -->
 	case Center_Type =="Boulevard":
 		Boulevard
 	case Center_Type =="Barrier":
-		split(u,unitSpace,0) {{1:Barrier }*|1:Asphalt("Auto")}
+		split(u,unitSpace,0) {{2:Barrier }*|1:Asphalt("Auto")}
 		Asphalt("Auto")
 	case Center_Type =="Barrier & Shoulder":
-		split(u,unitSpace,0) {{1:Barrier }*|1:NIL}
+		split(u,unitSpace,0) {{2:split(v,unitSpace,0){~1:NIL |.98:Barrier |~1:NIL}}*}
 		split(v,unitSpace,0) {Rumble_Strip_Wid:Rumble_Strip
 							 |~1:Asphalt("Auto")
 							 |Rumble_Strip_Wid:Rumble_Strip}
@@ -2158,10 +2159,9 @@ Bike_Box_Left_Turn_Gap(street_side)--> #If Bike boxes are on for the correct sid
 	
 Barrier-->
 	alignScopeToGeometry(yUp, largest, 0)
-	i(ObjectFolder+"/Jersey_Barrier.obj")
-	r(0,90,0)
-	s(1,1,1.2)
-	center(x)
+	rotateUV(0,90)
+	normalizeUV(0,u,collectiveAllFaces)
+	insertAlongUV(0,ObjectFolder+"/Jersey_Barrier.obj",1.2)
 	deleteUV(_Texture_Switch)
 #Raised Curb and Street_Pavement-
 #This code is a fairly modular is called by several different rules. #Dir is 0 for right, 2, left, 1 middle or not assigned.
