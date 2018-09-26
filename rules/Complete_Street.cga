@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:9/24/2018
+ * Last Updated:9/26/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -2169,10 +2169,12 @@ Barrier-->
 Raised_Curb(Location,Dir)-->
 	Cut_And_Fill_Reporting(Location)
 	Street_Lamp_Center(Location,Dir)
-	split(u,unitSpace,0){_neighborBegin*_stopBegin* geometry.dv(0,unitSpace)/2:rotateUV(0,180)Raised_Curb_End(Location,Dir) Asphalt("Auto")|#End Curb
-						~1:split(v,unitSpace,0){ Curb_Depth:Curbs_Mass(false)ModeReporter((case Location=="Buffer":"Bikeways"else:"Pedestrian"))
+	split(u,unitSpace,0){_neighborBegin*_stopBegin* geometry.dv(0,unitSpace)/2:rotateUV(0,180)Raised_Curb_End(Location,Dir) Asphalt("Auto")#End Curb
+						|Curb_Depth:Curbs_Mass(true)
+						|~1:split(v,unitSpace,0){ Curb_Depth:Curbs_Mass(false)ModeReporter((case Location=="Buffer":"Bikeways"else:"Pedestrian"))
 							|~1:Street_Pavement(0,Location,Dir) ModeReporter((case Location=="Buffer":"Bikeways"else:"Pedestrian"))
 							| Curb_Depth:Curbs_Mass(false)ModeReporter((case Location=="Buffer":"Bikeways"else:"Pedestrian"))}
+						|Curb_Depth:Curbs_Mass(true)
 						|_neighborEnd*_stopEnd* geometry.dv(0,unitSpace)/2:Raised_Curb_End(Location,Dir) Asphalt("Auto")}#End Curb
 
 # Raised_Curb_End(Location,Dir)
