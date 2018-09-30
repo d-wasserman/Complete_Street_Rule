@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:9/26/2018
+ * Last Updated:9/29/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -504,6 +504,7 @@ const Rail_Depth 					= .05
 const Random_Grass					=(fileRandom(GrassFolder + "/*.jpg"))
 #Parking Constants
 const Angled_Gap					= 5
+const _Place_Colored_Curb			= case(find(Buffer_Type,"Curb",0)!=-1 || !Parking_Protection_Bool): true else: false
 #Object Model Constants
 const Default_Lamp					= (LampsFolder +"/lamp.04.single.lod0.obj")
 const Default_Parking_Meter			= (ObjectFolder+ "/parkingMeter.obj")
@@ -1326,8 +1327,7 @@ const NormalMax = 1
 @StartRule
 # split away the crosswalks at the beginning (if any) using the special UVSET 1
 Street -->	#DeleteUV if texturing is off
-	case Specularity==1:
-		set(material.opacity,1-Transparency)
+	case Specularity==1 && Transparency==0:
 		Short_Long_Street
 	else:
 		set(material.opacity,1-Transparency)
@@ -2712,8 +2712,7 @@ Tree_Scatter-->
 #
 
 Sidewalk-->
-	case Specularity==1:
-		set(material.opacity,1-Transparency)
+	case Specularity==1 && Transparency==0:
 		Sidewalk_Generation
 	else:
 		set(material.opacity,1-Transparency)
