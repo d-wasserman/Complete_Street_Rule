@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:9/29/2018
+ * Last Updated:10/3/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -1868,33 +1868,44 @@ ParkingSpace(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,Parkin
 
 Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)-->
 	case find(ParkingType,"Freight",0)!=-1:
-		setback(PaintLineWidth) {
-			all:AsphaltPainted("yellow","Auto")|
-			remainder: Project_Zebra_Stripe ("yellow","Conflict Zones")}
+				split(v,unitSpace,0){
+			PaintLineWidth:AsphaltPainted("yellow","Conflict Zone")|
+			~1:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("yellow","Conflict Zone")|
+				~1: Project_Zebra_Stripe("yellow","Conflict Zones")|
+				PaintLineWidth:AsphaltPainted("yellow","Conflict Zone")}|
+			PaintLineWidth:AsphaltPainted("yellow","Conflict Zone")}
 	case find(ParkingType,"Passenger",0)!=-1:
-		setback(PaintLineWidth) {
-			all:AsphaltPainted("white","Auto")|
-			remainder:ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth)# Fix Parking Angle on oneway Streets
-			Project_Zebra_Stripe ("white","Conflict Zones")}
+		split(v,unitSpace,0){
+			PaintLineWidth:AsphaltPainted("white","Conflict Zone")|
+			~1:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("white","Conflict Zone")|
+				~1:ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth) Project_Zebra_Stripe("white","Conflict Zones")|
+				PaintLineWidth:AsphaltPainted("white","Conflict Zone")}|
+			PaintLineWidth:AsphaltPainted("white","Conflict Zone")}
 	case find(ParkingType,"Bus Stop",0)!=-1:
-		Bus_Stop_Allocation("black",ParkingWidth)
+		Bus_Stop_Allocation(Side,"black",ParkingWidth)
 	else:
 		Asphalt("Auto")
 		
-Bus_Stop_Allocation(color,StampWidth)-->
-	setback(PaintLineWidth) {
-			all:AsphaltPainted("white","Conflict Zone")|
-			remainder: split(u,unitSpace,0) {~6:Asphalt("Transit")|StampWidth:Bus_Stop_Stamp("black")|~6:Asphalt("Transit")}}	
+Bus_Stop_Allocation(Side,Color,StampWidth)-->
+	split(v,unitSpace,0){
+			PaintLineWidth:AsphaltPainted("white","Conflict Zone")|
+			~1:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("white","Conflict Zone")|
+				~6:Asphalt("Transit")|
+				StampWidth:Bus_Stop_Stamp(Side,Color)|
+				~6:Asphalt("Transit")|
+				PaintLineWidth:AsphaltPainted("white","Conflict Zone")}|
+			PaintLineWidth:AsphaltPainted("white","Conflict Zone")}
 
-Bus_Stop_Stamp(Color)-->
+Bus_Stop_Stamp(Side,Color)-->
 	setupProjection(0,scope.zx,'1,'1)
 	texture(LanesFolder +"/BusStopStamp_"+Color+".jpg")
 	projectUV(0)
+	scaleUV(0,case Side=="Right":1 else: -1,case Side=="Right":1 else: -1)
 	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Transit"))
 	
 	
-Project_Zebra_Stripe (Color,Mode_Class)-->
+Project_Zebra_Stripe(Color,Mode_Class)-->
 	setupProjection(0,scope.xz,'1,'1)
 	texture(LanesFolder +"/crosswalk_zebra_"+Color+".jpg")
 	projectUV(0)
