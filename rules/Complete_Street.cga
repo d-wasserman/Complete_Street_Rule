@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:10/3/2018
+ * Last Updated:10/4/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -1589,17 +1589,17 @@ Bus_Bike_Lane_Texture_Rule(dir)-->
 	
 Light_Rail_Lane_Texture(dir)-->	
 	color( _ThematicRouter ("Transit"))
-	split(v,unitSpace,0){~1:Sidewalk_Pavement("Light Rail Lane")ModeReporter("Transit")|
+	split(v,unitSpace,0){~1:Sidewalk_Pavement("Light Rail Lane")NoGeometryModeReporter("Transit")|
 						 Rail_Depth*3:Rail_Inset|
-						 Track_Gauge:Sidewalk_Pavement("Light Rail Lane")ModeReporter("Transit")|
+						 Track_Gauge:Sidewalk_Pavement("Light Rail Lane")NoGeometryModeReporter("Transit")|
 						 Rail_Depth*3:Rail_Inset|
-						 ~1:Sidewalk_Pavement("Light Rail Lane")ModeReporter("Transit")}
+						 ~1:Sidewalk_Pavement("Light Rail Lane")NoGeometryModeReporter("Transit")}
 	
 						 
 
 Rail_Inset-->
 	split(v,unitSpace,0) {Rail_Depth:Metal_Texture|
-						  Rail_Depth: extrude(-Rail_Depth) comp(f){side:Metal_Texture|top:Metal_Texture ModeReporter("Transit")}|
+						  Rail_Depth: extrude(-Rail_Depth) comp(f){side:Metal_Texture|top:Metal_Texture NoGeometryModeReporter("Transit")}|
 						  Rail_Depth:Metal_Texture}
 
 Metal_Texture-->
@@ -3037,6 +3037,13 @@ ModeReporter(Usage)-->
 		report("Mode Area (m^2)."+str(Usage),geometry.area)
 	else:
 		X.
+NoGeometryModeReporter(Usage)-->
+	case reportingOn:
+		report("Mode Area (m^2)."+str(Usage),geometry.area)
+		NIL
+	else:
+		NIL
+
 # ------------------Paint:-------------------------
 #######################################################################
 #Vehicles
