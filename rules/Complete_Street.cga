@@ -70,7 +70,7 @@ version "2018.1"
 @Group("DISPLAY OPTIONS",0) @Range("true","false")@Order(1)@Description("When true, textures are on display, when false textures are removed. If true it deletes an unused UVset (see comments for details).")
 attr Display_Textures = "true"
 @Order(2) @Description("Visually colors the entire street model based on the attributes of a street. Usage thematic looks best when textures are turned off.")
-@Range("Thematics Off", "Solid Color", "Peak Runoff/Permeability","Bike Preference","Pedestrian Preference","Auto Preference","Transit Preference","All Mode Preference","Usage","Transit Highlight","Bicycle Highlight","Auto Highlight","Pedestrian Highlight","Planting Highlight","Flood Scenario")
+@Range("Thematics Off", "Solid Color", "Peak Runoff/Permeability","Bike Preference","Pedestrian Preference","Auto Preference","Transit Preference","All Mode Preference","Usage","Transit Highlight","Bicycle Highlight","Auto Highlight","Pedestrian Highlight","Planting Highlight","Shared Mobility Highlight","Flood Scenario")
 attr Display_Thematics = "Thematics Off" 
 @Order(3) @Color @Description("When the Solid Color thematic is used for highlighting certain streets or mode classes, this chooses the color that is utilized by the thematic.") #@Hidden
 attr Solid_Color = "#FFFFFF"
@@ -575,6 +575,7 @@ const NACTOBike="#6AAA70"
 const NACTOPlanting="#B5DC98"
 const NACTOConflictZone="#F9ECB7" #Crosswalk in book
 const NACTOBikeDark="#59995F"
+const FehrAndPeersUberSharedMobility="#CAA8CD"
 #Lane Constants:
 const Default_Mix_Bus = case Transit_Lane=="Bus Lane":.0001 else: .075
 const Default_Mix_Bike = case Bike_Lane_Type=="Sharrow" && _Maxof(Left_Bike_Lane_Width,Right_Bike_Lane_Width)==0:(.20*_BikeRank+.05) else: 0
@@ -1054,6 +1055,8 @@ _ThematicRouter (Usage)	=
 		Thematics #Attribute that diverts to _Thematic
 		
 _ModeClassifier(Usage)	=
+	case Usage=="Shared Mobility":
+	_SharedMobilityThematics(FehrAndPeersUberSharedMobility)
 	case Usage=="Pedestrian":
 	_PedestrianThematic(NACTOPedestrian)
 	case Usage=="Conflict Zones":
@@ -1071,7 +1074,15 @@ _ModeClassifier(Usage)	=
 	else:
 		"#000000"
 
-	
+_SharedMobilityThematics(color) = 
+	case Display_Thematics=="Usage":
+		color
+	case Display_Thematics=="Shared Mobility Highlight":
+		Solid_Color
+	case Display_Thematics=="All Mode Preference":
+		getHexColorString(1-(_BikeRank+_PedRank+_TransitRank)/3,(_BikeRank+_PedRank+_TransitRank)/3,0)
+	else:
+		Secondary_Solid_Color	
 _PedestrianThematic(color)=
 	case Display_Thematics=="Usage":
 		color
@@ -1577,16 +1588,18 @@ Bus_Bike_Lane_Texture_Rule(dir)-->
 	BusOnLane(dir)
 	
 Light_Rail_Lane_Texture(dir)-->	
-	split(v,unitSpace,0){~1:Sidewalk_Pavement("Light Rail Lane")|
+	color( _ThematicRouter ("Transit"))
+	split(v,unitSpace,0){~1:Sidewalk_Pavement("Light Rail Lane")ModeReporter("Transit")|
 						 Rail_Depth*3:Rail_Inset|
-						 Track_Gauge:Sidewalk_Pavement("Light Rail Lane")|
+						 Track_Gauge:Sidewalk_Pavement("Light Rail Lane")ModeReporter("Transit")|
 						 Rail_Depth*3:Rail_Inset|
-						 ~1:Sidewalk_Pavement("Light Rail Lane")}
+						 ~1:Sidewalk_Pavement("Light Rail Lane")ModeReporter("Transit")}
+	
 						 
 
 Rail_Inset-->
 	split(v,unitSpace,0) {Rail_Depth:Metal_Texture|
-						  Rail_Depth: extrude(-Rail_Depth) comp(f){side:Metal_Texture|top:Metal_Texture}|
+						  Rail_Depth: extrude(-Rail_Depth) comp(f){side:Metal_Texture|top:Metal_Texture ModeReporter("Transit")}|
 						  Rail_Depth:Metal_Texture}
 
 Metal_Texture-->
@@ -1594,28 +1607,29 @@ Metal_Texture-->
 	setupProjection(0,scope.xz,5,5)
 	texture(MiscFolder +"/Metal_Texture.jpg")
 	projectUV(0)
+	deleteUV(_Texture_Switch)
 	
 Bus_Lane_Stamp(dir)-->
-			scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
+	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
  			rotateUV(0,90)
 			tileUV(0,~Transit_Lane_Width,~ Transit_Lane_Width ) 
 			texture(LanesFolder+"/BusLaneStamp"+(case Bus_Lane_Color=="black":"_black" else:"")+".jpg")#If Black change the stamp chosen, might make more elegant later. 
-			deleteUV(_Texture_Switch)
-			color( _ThematicRouter ("Transit"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-			ModeReporter ("Transit")
+	deleteUV(_Texture_Switch)
+	color( _ThematicRouter ("Transit"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+	ModeReporter ("Transit")
 	
 HOV_Lane_Texture_Rule(dir)-->
-	split(v,unitSpace,0){PaintLineWidth*2*_PaintLineControl("Right", Transit_Paint_Line_Sides ):AsphaltPainted("yellow","Transit")
+	split(v,unitSpace,0){PaintLineWidth*2*_PaintLineControl("Right", Transit_Paint_Line_Sides ):AsphaltPainted("yellow","Shared Mobility")
 							#Level 1-First split indentation
-							|~1:split(u,unitSpace,0){2:Asphalt("Transit")
+							|~1:split(u,unitSpace,0){2:Asphalt("Shared Mobility")
 								#Level 2- sub-split indentation
 								| Transit_Lane_Width:HOVlaneStamp(dir)
-								|~ Transit_Symbol_Spacing :Asphalt("Transit")
+								|~ Transit_Symbol_Spacing :Asphalt("Shared Mobility")
 								|{ Transit_Lane_Width :HOVlaneStamp(dir)
-								|~ Transit_Symbol_Spacing :Asphalt("Transit")}*
+								|~ Transit_Symbol_Spacing :Asphalt("Shared Mobility")}*
 								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width :HOVlaneStamp(dir)
-								|2:Asphalt("Transit")}
-							|PaintLineWidth*2*_PaintLineControl("Left", Transit_Paint_Line_Sides ):AsphaltPainted("yellow","Transit")}
+								|2:Asphalt("Shared Mobility")}
+							|PaintLineWidth*2*_PaintLineControl("Left", Transit_Paint_Line_Sides ):AsphaltPainted("yellow","Shared Mobility")}
 	MixedTrafficOnLane (dir,-999,-999)
 
 HOVlaneStamp(dir)-->
@@ -1624,8 +1638,8 @@ HOVlaneStamp(dir)-->
 	tileUV(0,~ Transit_Lane_Width ,~Transit_Lane_Width )#Lane width is used for texture size because it can repeat if need for large streets and because it allows the text to stay in scale with that of a Bus or car. 
 	texture(LanesFolder+"/HOV_Diamond"+".jpg")#If Black change the stamp chosen, might make more elegant later. 
 	deleteUV(_Texture_Switch)
-	color( _ThematicRouter ("Transit"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-	ModeReporter ("Transit")
+	color( _ThematicRouter ("Shared Mobility"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+	ModeReporter("Shared Mobility")
 ##############################################################
 #Non-Carlane Split Space- This is the space where 
 #parking, bike, and buffer lanes are constructed. 
@@ -1869,18 +1883,19 @@ ParkingSpace(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,Parkin
 Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)-->
 	case find(ParkingType,"Freight",0)!=-1:
 				split(v,unitSpace,0){
-			PaintLineWidth:AsphaltPainted("yellow","Conflict Zone")|
-			~1:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("yellow","Conflict Zone")|
-				~1: Project_Zebra_Stripe("yellow","Conflict Zones")|
-				PaintLineWidth:AsphaltPainted("yellow","Conflict Zone")}|
-			PaintLineWidth:AsphaltPainted("yellow","Conflict Zone")}
+			PaintLineWidth:AsphaltPainted("yellow","Shared Mobility")|
+			~1:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("yellow","Shared Mobility")|
+				~1: Project_Zebra_Stripe("yellow","Shared Mobility")|
+				PaintLineWidth:AsphaltPainted("yellow","Shared Mobility")}|
+			PaintLineWidth:AsphaltPainted("yellow","Shared Mobility")}
 	case find(ParkingType,"Passenger",0)!=-1:
 		split(v,unitSpace,0){
-			PaintLineWidth:AsphaltPainted("white","Conflict Zone")|
-			~1:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("white","Conflict Zone")|
-				~1:ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth) Project_Zebra_Stripe("white","Conflict Zones")|
-				PaintLineWidth:AsphaltPainted("white","Conflict Zone")}|
-			PaintLineWidth:AsphaltPainted("white","Conflict Zone")}
+			PaintLineWidth:AsphaltPainted("white","Shared Mobility")|
+			~1:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("white","Shared Mobility")|
+				~1:ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth) Project_Zebra_Stripe("white","Shared Mobility")|
+				PaintLineWidth:AsphaltPainted("white","Shared Mobility")}|
+			PaintLineWidth:AsphaltPainted("white","Shared Mobility")}
+			
 	case find(ParkingType,"Bus Stop",0)!=-1:
 		Bus_Stop_Allocation(Side,"black",ParkingWidth)
 	else:
@@ -1888,13 +1903,13 @@ Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)-->
 		
 Bus_Stop_Allocation(Side,Color,StampWidth)-->
 	split(v,unitSpace,0){
-			PaintLineWidth:AsphaltPainted("white","Conflict Zone")|
-			~1:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("white","Conflict Zone")|
+			PaintLineWidth:AsphaltPainted("white","Transit")|
+			~1:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("white","Transit")|
 				~6:Asphalt("Transit")|
 				StampWidth:Bus_Stop_Stamp(Side,Color)|
 				~6:Asphalt("Transit")|
-				PaintLineWidth:AsphaltPainted("white","Conflict Zone")}|
-			PaintLineWidth:AsphaltPainted("white","Conflict Zone")}
+				PaintLineWidth:AsphaltPainted("white","Transit")}|
+			PaintLineWidth:AsphaltPainted("white","Transit")}
 
 Bus_Stop_Stamp(Side,Color)-->
 	setupProjection(0,scope.zx,'1,'1)
@@ -1911,6 +1926,7 @@ Project_Zebra_Stripe(Color,Mode_Class)-->
 	projectUV(0)
 	deleteUV(_Texture_Switch)
 	color( _ThematicRouter (Mode_Class))
+	ModeReporter("Shared Mobility")
 
 Parklet_Insert(ParkingLength,Rotation)-->
 	alignScopeToGeometry(yUp, largest, 1)
@@ -2646,18 +2662,19 @@ CrosswalkWalkway(reporting)-->
 #
 #Many are only sent to Asphalt. This includes joints, crossings, and junctions. 
 # drive-through street segments
+@StartRule
 Joint-->
 	set(material.opacity,1-Transparency)
 	BridgeMain
 	report("Connection Shape Area.Joint Area",geometry.area())#Only reports given to Joints
 	Asphalt("Auto")
-
+@StartRule
 Junction --> 
 	set(material.opacity,1-Transparency)
 	BridgeMain
 	report("Connection Shape Area.Intersection Area",geometry.area())
 	Asphalt("Auto")
-
+@StartRule
 Freeway -->
 	set(material.opacity,1-Transparency)
 	report("Connection Shape Area.Freeway Area",geometry.area())#Only reports given to freeways. 
@@ -2668,14 +2685,14 @@ Freeway -->
 						|	Lane_Width :Asphalt("Auto")}
 	BridgeMain
 # crossing is just Asphalt for now
-
+@StartRule
 Crossing -->
 	set(material.opacity,1-Transparency)
 	BridgeMain
 	report("Connection Shape Area.Crossing Area", geometry.area())#Only reports given to crossings
 	Asphalt("Auto")
 # freeway entries have an additional striped line (splits the shape into lanes but also splits away a shape just for the striped line using special UVSET 1
-
+@StartRule
 FreewayEntry -->
 	set(material.opacity,1-Transparency)
 	report("Connection Shape Area.Freeway Entry Area",geometry.area())#Only reports given to freeways. 
@@ -2689,15 +2706,15 @@ FreewayEntry -->
 ###################################################
 # Roundabout
 #
-
+@StartRule
 Roundabout   --> 
 	case valency>1: set(material.opacity,1-Transparency) Asphalt("Auto") BridgeMain#split(v,unitSpace,0){ 1: MainLaneMarkings(0,split.index,"_stripes_white") }* 
 	else		  : set(material.opacity,1-Transparency) Asphalt("Auto") BridgeMain							# cul-de-sac is Asphalt only
-
+@StartRule
 RoundaboutIsland --> 
 	case Sidewalk_Ground_Cover !="None": set(material.opacity,1-Transparency) IslandWithGreen BridgeMain
 	else		  : set(material.opacity,1-Transparency) Asphalt("Auto")	BridgeMain# cul-de-sac is Asphalt only
-
+@StartRule
 IslandWithGreen -->
 	offset(- Sidewalk_Height )
 	comp(f){ inside: Tree_Scatter
@@ -2717,7 +2734,7 @@ Tree_Scatter-->
 ###################################################
 # Sidewalk
 #
-
+@StartRule
 Sidewalk-->
 	case Specularity==1 && Transparency==0:
 		Sidewalk_Generation
