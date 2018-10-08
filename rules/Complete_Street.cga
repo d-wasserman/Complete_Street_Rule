@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:10/4/2018
+ * Last Updated:10/8/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -231,7 +231,7 @@ attr Bus_Lane_Color				="red"
 @Order(7)@Range("Both","Right", "Left", "None")@Description("Controls the white lines on the sides of preferential lanes.")#@Hidden
 attr Transit_Paint_Line_Sides		= "Both"
 
-@Group("MULTIMODAL LANES LAYOUT", "Bike Lanes",5)@Order(2)@Range(0,6) @Description("Desirable bike lane width adjacent to a curbface is 6 feet (1.8288m), but rideable surface adjacent  to a street edge is 4 feet (1.2192m) with minimum of 3 feet (0.9144m). In areas where illegal parking is an issue, at least 5 feet (1.524m) is suggested.")
+@Group("MULTIMODAL LANES LAYOUT", "Bike Lanes",5)@Order(1)@Range(0,6) @Description("Desirable bike lane width adjacent to a curbface is 6 feet (1.8288m), but rideable surface adjacent  to a street edge is 4 feet (1.2192m) with minimum of 3 feet (0.9144m). In areas where illegal parking is an issue, at least 5 feet (1.524m) is suggested.")
 attr Right_Bike_Lane_Width 		=0
 @Order(2)@Range(0,6)@Description("Desirable bike lane width adjacent to a curbface is 6 feet (1.8288m), but rideable surface adjacent  to a street edge is 4 feet (1.2192m) with minimum of 3 feet (0.9144m). In areas where illegal parking is an issue, at least 5 feet (1.524m) is suggested.")
 attr Left_Bike_Lane_Width		=0
@@ -708,7 +708,7 @@ case Front_Parking_Spacing!=0:
 	Front_Parking_Spacing
 else:
 	case find(Parking_Type,"Parallel",0)!=-1:
-		3
+		6
 	case Parking_Type=="Angled Nose In":
 		6
 	case Parking_Type=="Angled Back In":
@@ -1856,11 +1856,11 @@ ParkingLane(Side,ParkingType,ParkingLength,ParkingWidth,CurbsideLength)-->
  			else:	
  				case Side=="Right":-1 else:1,1)
  		split(u,unitSpace,0) {~_Front_Parking_Spacing(ParkingType):Asphalt("Auto")
- 								|~CurbsideLength*_Allocate_Farside_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)
+ 								|~CurbsideLength*_Allocate_Farside_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):Curbside_Allocator(Side,ParkingType,CurbsideLength, ParkingWidth)
  								|{ParkingLength:ParkingSpace(Side,ParkingType,split.index,split.total,ParkingLength,ParkingWidth)}*
- 								|~CurbsideLength*_Allocate_Midpoint_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)
+ 								|~CurbsideLength*_Allocate_Midpoint_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):Curbside_Allocator(Side,ParkingType,CurbsideLength, ParkingWidth)
  								|{ParkingLength:ParkingSpace(Side,ParkingType,split.index,split.total,ParkingLength,ParkingWidth)}*
- 								|~CurbsideLength*_Allocate_Nearside_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)
+ 								|~CurbsideLength*_Allocate_Nearside_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):Curbside_Allocator(Side,ParkingType,CurbsideLength, ParkingWidth)
  								|~_Rear_Parking_Spacing(ParkingType):Asphalt("Auto")}
  	else:
  		color( _ThematicRouter ("Storage"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
@@ -1944,11 +1944,12 @@ AngledNoseIn(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,Parkin
  						(case Parking_Protection_Bool :1 else:-1)
  					 else:
  						(case Parking_Protection_Bool :-1 else:1)))
+ 						
  	tileUV(0,~ParkingLength,~ParkingWidth)
 	texture(LanesFolder+"/AngledParking.jpg")
-	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Storage"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-	ParkingReport(Side,case SpaceNumber==1: false else:true)#Don't include last spot
+	deleteUV(_Texture_Switch)
+	ParkingReport(Side,case SpaceNumber==1: false else:true,false)#Don't include last spot
 		
 AngledNoseOutParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
 	AngledParkingCar((case Side=="Right":0 else:2),ParkingType,ParkingLength, ParkingWidth,SpaceNumber)
@@ -1960,32 +1961,56 @@ AngledNoseOutParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLengt
 		texture(LanesFolder+"/AngledParking.jpg")
 	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Storage"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-	ParkingReport(Side,case SpaceNumber==1: false else:true) #Don't include last spot
+	ParkingReport(Side,case SpaceNumber==1: false else:true,false) #Don't include last spot
 	
 ParallelParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
-	case SpaceNumber==TotalSpacesonSide-2:#1 from index total, 1 from additional split
+	case SpaceNumber==TotalSpacesonSide-2:#1 from index total, 1 from additional split- Start
+ 			
  			ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth)# Fix Parking Angle on oneway Streets
-			ParallelParkingTexture(Side,ParkingLength,ParkingWidth,"/ParallelParkFront.jpg",true)
-			
-			
- 		case SpaceNumber==1:
- 			ParallelParkingTexture(Side,ParkingLength,ParkingWidth,"/ParallelParkRear.jpg",false)
-			
- 		else:
+			ParallelParkingTexture(Side,ParkingLength,ParkingWidth,true)
+			ParkingCap(Side,case Side =="Right":0 else:180,"/Parking_Cap_End.obj")			
+ 		case SpaceNumber==1:# End
+ 			ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth)
+ 			ParallelParkingTexture(Side,ParkingLength,ParkingWidth,true)
+			ParkingCap(Side,case Side =="Right":0 else:180,"/Parking_Cap_Mid.obj")
+			ParkingEndCap(Side,case Side =="Right":270 else:90,"/Parking_Cap_End.obj")
+ 		else: # Middle
  			ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth)# Fix Parking Angle on oneway Streets-TODO
- 			ParallelParkingTexture(Side,ParkingLength,ParkingWidth,"/ParallelParkMid.jpg",true)
+ 			ParallelParkingTexture(Side,ParkingLength,ParkingWidth,true)
+ 			ParkingCap(Side,case Side=="Right":0 else: 180,"/Parking_Cap_Mid.obj")
+ 			
+ParkingCap (Side,Rotation,Obj_Path)-->
+	scaleUV(0,-1,
+ 		(case Side=="Right":
+ 						(case Parking_Protection_Bool :1 else:-1)
+ 					 else:
+ 						(case Parking_Protection_Bool :-1 else:1)))
+	split(v,unitSpace,0){0.6:split(u,unitSpace,0){0.6: ParkingInsertCap(Rotation,Obj_Path) 
+						|~1:NIL|0.6:NIL}|~1:NIL}
 
+ParkingEndCap(Side,Rotation,Obj_Path)-->
+	scaleUV(0,-1,
+ 		(case Side=="Right":
+ 						(case Parking_Protection_Bool :1 else:-1)
+ 					 else:
+ 						(case Parking_Protection_Bool :-1 else:1)))
+	split(v,unitSpace,0){0.6:split(u,unitSpace,0){0.6: NIL
+						|~1:NIL|0.6:ParkingInsertCap(Rotation,Obj_Path) }|~1:NIL}
 
-ParallelParkingTexture(Side,ParkingLength,ParkingWidth,TexturePath,ReportBool)-->
+ParkingInsertCap (Rotation,Obj_Path)-->
+	rotateScope(0,Rotation,0)
+	i(ObjectFolder+Obj_Path)
+	extrude(sharrowHeight)	
+	AsphaltPainted("white","Storage")
+
+ParallelParkingTexture(Side,ParkingLength,ParkingWidth,ReportBool)-->
  	scaleUV(0,1,(case Side=="Right":
  		(case Parking_Protection_Bool :1 else:-1)
  		else:
  		(case Parking_Protection_Bool :-1 else:1)))
- 	tileUV(0,~ParkingLength,~ParkingWidth)
-	texture(LanesFolder+TexturePath)
-	deleteUV(_Texture_Switch)
-	color( _ThematicRouter ("Storage"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-	ParkingReport(Side,ReportBool)		
+ 	Asphalt("Storage")
+ 	ParkingReport(Side,ReportBool,true)	
+	
 ParallelParkingCar(dir,ParkingLength, ParkingWidth) -->
 	case p(Parked_Car_Percentage):
 		ParallelParkingCarStep2(dir,ParkingLength, ParkingWidth)	  			
@@ -1996,7 +2021,7 @@ ParallelParkingCarStep2(dir,ParkingLength, ParkingWidth) -->
 	rotateScope(0,DirectionalRotation,0) 
 	s(0,0,0)
 	i(vehicleAsset("car"))
-	t(0,0,(ParkingLength/2)+1) 
+	t(0,0,(ParkingLength/2))#+1) 
 	center(x)
 	deleteUV(_Texture_Switch)
 	
@@ -2016,14 +2041,21 @@ AngledParkingCarStep2(DirsenseFlip,NoseSenseFlip,Rotation_Angle,ParkingLength, P
 	i(vehicleAsset("car"))
 	deleteUV(_Texture_Switch)
 	
-ParkingReport(Side,Rear_Edge_Case)-->#This edge case parameter only makes sure the correct number of parking spaces is reported. 
-	case Rear_Edge_Case:
-		report("Parking."+Side+" Parking Space Area (m^2)",geometry.area)
-		report("Parking.Total Parking Space Area (m^2)",geometry.area)
-		ModeReporter ("Auto")
+ParkingReport(Side,Rear_Edge_Case,Delete_Geo)-->#This edge case parameter only makes sure the correct number of parking spaces is reported. 
+	case Delete_Geo:
+		case Rear_Edge_Case:
+			report("Parking."+Side+" Parking Space Area (m^2)",geometry.area)
+			report("Parking.Total Parking Space Area (m^2)",geometry.area)
+			NIL
+		else:
+			NIL
 	else:
-		ModeReporter ("Auto")
-	###################################################
+		case Rear_Edge_Case:
+			report("Parking."+Side+" Parking Space Area (m^2)",geometry.area)
+			report("Parking.Total Parking Space Area (m^2)",geometry.area)
+		else:
+			X.
+###################################################
 # Centerline and Center Section Code
 #
 CenterSpaceReporting-->
