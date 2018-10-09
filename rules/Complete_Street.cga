@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:10/8/2018
+ * Last Updated:10/9/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -1965,7 +1965,6 @@ AngledNoseOutParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLengt
 	
 ParallelParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
 	case SpaceNumber==TotalSpacesonSide-2:#1 from index total, 1 from additional split- Start
- 			
  			ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth)# Fix Parking Angle on oneway Streets
 			ParallelParkingTexture(Side,ParkingLength,ParkingWidth,true)
 			ParkingCap(Side,case Side =="Right":0 else:180,"/Parking_Cap_End.obj")			
@@ -1998,6 +1997,7 @@ ParkingEndCap(Side,Rotation,Obj_Path)-->
 						|~1:NIL|0.6:ParkingInsertCap(Rotation,Obj_Path) }|~1:NIL}
 
 ParkingInsertCap (Rotation,Obj_Path)-->
+	alignScopeToGeometry(yUp,largest,0)
 	rotateScope(0,Rotation,0)
 	i(ObjectFolder+Obj_Path)
 	extrude(sharrowHeight)	
