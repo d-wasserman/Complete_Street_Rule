@@ -1911,6 +1911,7 @@ Carshare_Parking_Allocation(Side,Color,ParkingWidth,ParkingLength)-->
 			PaintLineWidth:AsphaltPainted("green","Shared Mobility")}
 			
 Carshare_Parking_Stamp(Side)-->
+	alignScopeToGeometry(yUp, largest, 0)
 	setupProjection(0,scope.zx,'1,'1)
 	texture(LanesFolder +"/CarshareOnly.jpg")
 	projectUV(0)
@@ -1929,6 +1930,7 @@ Bus_Stop_Allocation(Side,Color,StampWidth)-->
 			PaintLineWidth:AsphaltPainted("white","Transit")}
 
 Bus_Stop_Stamp(Side,Color)-->
+	alignScopeToGeometry(yUp, largest, 0)
 	setupProjection(0,scope.zx,'1,'1)
 	texture(LanesFolder +"/BusStopStamp_"+Color+".jpg")
 	projectUV(0)
