@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:10/9/2018
+ * Last Updated:10/10/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -2911,6 +2911,7 @@ Traffic_Light_Asset(index)-->
 	deleteUV(_Texture_Switch)
 
 Sidewalk_Lamp(offset) -->
+	alignScopeToGeometry(yUp,largest,0)
 	alignScopeToAxes(y)		// place the Lamps vertically
 	center(xz)
 	s(0,5,0)				// set height to 5 meters
