@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:10/10/2018
+ * Last Updated:10/11/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -1010,19 +1010,7 @@ _ParParkedFacing(Side) = case Side=="Right":# This makes the park car facing ada
 							0
 							else:
 							2
-_Parklet_OneWay_Shift(Rotation)= # This function serves to make sure the parklet is not colliding with cars on oneway streets-it modifies the adjustment based on parking length
-		case Lane_Distribution==1:
-			case Rotation==180:
-				-1
-			else:
-				1
-		case Lane_Distribution==0:
-			case Rotation==180:
-				1
-			else:
-				-1		
-		else:
-			1
+
 #Misc Functions	
 #_isEven(number) = (rint(abs(number))%2) == 0   #Make number positive, round to nearest integer just in case of 6 being 5.99999999999999, or 6.000000000000001.
 #_isOdd(number) = !_isEven(number)	
@@ -1950,8 +1938,8 @@ Project_Zebra_Stripe(Color,Mode_Class)-->
 Parklet_Insert(ParkingLength,Rotation)-->
 	alignScopeToGeometry(yUp, largest, 1)
 	rotateScope(0,Rotation,0)
- 	s(scope.sx-Parklet_Shift,0,scope.sz)
- 	t(Parklet_Shift,0,_Parklet_OneWay_Shift(Rotation)*(ParkingLength/8))
+ 	s(scope.sx,0,scope.sz)
+ 	t(Parklet_Shift,0,0)
  	report("Objects.Parklet Count",1)
  	i(Parklet_Object)
  	deleteUV(_Texture_Switch)
