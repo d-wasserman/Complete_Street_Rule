@@ -192,7 +192,7 @@ attr Median_Tree_2_Type				= "None"
 @Order(9) @Range(0,80) @Description("This attributes controls the height of Median Trees Type 1.") #@Hidden
 @Handle(shape=Median_Tree_Insert_Setup_1^3,axis=y,type=linear,reference=center,color="#11FF11",skin=sphere)
 attr Median_Tree_1_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk_Tree_1_Type))
-@Order(10) @Range(0,80) @Description("This attributes controls the height of Median Trees Type 2.") #@Hidden
+@Order(10) @Range(0,80) @Description("This attributes controls the height of Median Trees Type 2.")@Hidden
 @Handle(shape=Median_Tree_Insert_Setup_2^3,axis=y,type=linear,reference=center,color="#11FF11",skin=sphere)
 attr Median_Tree_2_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk_Tree_2_Type))
 
@@ -312,8 +312,10 @@ attr Sidewalk_Tree_2_Type				= "None"
 attr Sidewalk_Tree_1_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk_Tree_1_Type))
 @Order(14) @Range(0,80) @Description("This attributes controls the height of Sidewalk Trees Type 2.") #@Hidden
 @Handle(shape=Sidewalk_Tree_Insert_Setup_2^3,axis=y,type=linear,reference=center,color="#11FF11",skin=sphere)
-attr Sidewalk_Tree_2_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk_Tree_2_Type))
+attr Sidewalk_Tree_2_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk_Tree_2_Type))@Hidden
 Tree_Radius(Type, Height) = Tree._radius(Tree._indexFromCommonName(Type),Height)
+@Order(15) @Range("None","Curb") @Description("This parameter determines what type of border planting boxes have in inserted locations.")
+attr Sidewalk_Planting_Border = case Not_High_LOD : "None" else :"Curb"
 
 @Group("SIDEWALK LAYOUT","Sidewalk Components",10)@Order(1)
 @Order(1)@Range("None","Both","Right","Left")@Description("Determines whether an object is placed and what side of the street or walkways relevant objects are placed.")
@@ -375,14 +377,14 @@ attr Parking_Meter_Object					=Default_Parking_Meter
 attr Traffic_Light_Object					=Default_Traffic_Light
 @Order(4)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")#@Hidden
 attr Wayfinder_Object						=Default_WayFinder
-@Order(4)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")#@Hidden
-attr Bench_Object							=Default_Bench
 @Order(5)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")#@Hidden
+attr Bench_Object							=Default_Bench
+@Order(6)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")#@Hidden
 attr Bike_Rack_Object						=Default_Bike_Rack
-@Order(6)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")#@Hidden
-attr Parklet_Object							=Default_Parklet
-@Order(6)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")#@Hidden
+@Order(7)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")#@Hidden
 attr Bus_Stop_Object						=Default_BusStop
+@Order(8)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
+attr Parklet_Object							=Default_Parklet					
 ######################################################
 #Bridge Attributes									 #
 ######################################################
@@ -642,6 +644,10 @@ _PlantingWidth=
 		_Minof(_Maxof((sidewalkWidthRight*0.33),0.66),1.8)
 	else:
 		_Minof(_Maxof((sidewalkWidthLeft*0.33),0.66),1.8)
+
+_ContiguousPlantingSwitch(Spacing_Width)=
+	case Spacing_Width == 0: 0 else: 1
+	
 
 _ParkingWidth(ParkingType)				=
 	case ParkingType=="None":
@@ -1010,7 +1016,6 @@ _ParParkedFacing(Side) = case Side=="Right":# This makes the park car facing ada
 							0
 							else:
 							2
-
 #Misc Functions	
 #_isEven(number) = (rint(abs(number))%2) == 0   #Make number positive, round to nearest integer just in case of 6 being 5.99999999999999, or 6.000000000000001.
 #_isOdd(number) = !_isEven(number)	
@@ -2799,6 +2804,11 @@ Sidewalk_Generation-->
 Curbs_Mass(RotateUV)-->
 	extrude(world.y, Sidewalk_Height )
 	comp(f) {top:Curbs(RotateUV)|side:Curbs(false)}
+	
+Curbs_Mass(RotateUV,Height)--> #Overload Curbs_Mass
+	extrude(world.y, Height)
+	comp(f) {top:Curbs(RotateUV)|side:Curbs(false)}
+
 
 Curbs(RotateUV) --> 
   	case RotateUV:#Used to handle an exception where scope changes on horizontal curbs (parallel to crosswalk)
@@ -3030,6 +3040,7 @@ Plant_Base-->
 case Sidewalk_Ground_Cover =="None":
 	Sidewalk_Pavement ("Plant_Space")
 else:
+	Planting_Curb(Sidewalk_Planting_Spacing)
 	Sidewalk_Planting
 	Tree_Setup("Sidewalk", Sidewalk_Tree_1_Percentage , Sidewalk_Tree_1_Type, Sidewalk_Tree_2_Type, Sidewalk_Tree_1_Height, Sidewalk_Tree_2_Height )
 	
@@ -3046,7 +3057,14 @@ Sidewalk_Planting--># THis is set up this way to support a vegetated buffer with
 		tileUV(0,2,2)texture(GrassFolder+"/"+ Sidewalk_Ground_Cover + ".jpg")
 		deleteUV(_Texture_Switch)
 		Pervious_Reporting
-
+		
+Planting_Curb(Planting_Spacing)-->
+	case Sidewalk_Planting_Border == "Curb":
+		split(u,unitSpace,0){Curb_Depth*_ContiguousPlantingSwitch(Planting_Spacing):Curbs_Mass(true,Sidewalk_Height/2)|
+			~1:split(v,unitSpace,0){Curb_Depth:Curbs_Mass(false,Sidewalk_Height/2)|~1:NIL|Curb_Depth:Curbs_Mass(false,Sidewalk_Height/2)}|
+		Curb_Depth*_ContiguousPlantingSwitch(Planting_Spacing):Curbs_Mass(true,Sidewalk_Height/2)}
+	else:
+		NIL
 Sign_Objects_Insert(Object_Identity,File_Extension,RotationAng,Translation,SX,SY,SZ)-->#Sidewalk Object Constructor Rule
 		alignScopeToAxes(y)
 		alignScopeToGeometry(yUp, largest, 1)
