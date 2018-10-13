@@ -1020,25 +1020,25 @@ _Parking_Cap_Angle(Side,Position) =
 	case Position == "End":
 		case _ParParkedFacing(Side) == 0:
 			case Side =="Right":
-				270
+				270+ (case rightHandTraffic: 0  else: 90)
 			else: 
-				180
+				180+ (case rightHandTraffic: 0  else: 270)
 		else: 
 			case Side =="Right":
-				0
+				0+ (case rightHandTraffic: 0  else: 270)
 			else: 
-				90
+				90+ (case rightHandTraffic: 0  else: 90)
 	case Position == "Begin":
 		case _ParParkedFacing(Side) == 0:
 			case Side =="Right":
-				0
+				0+ (case rightHandTraffic: 0  else: 270)
 			else:
-				90
+				90+ (case rightHandTraffic: 0  else: 90)
 		else:
 			case Side =="Right":
-				270
+				270+ (case rightHandTraffic: 0  else: 90)
 			else:
-				180
+				180+ (case rightHandTraffic: 0  else: 270)
 	else:
 		case Side=="Right":
 			0
