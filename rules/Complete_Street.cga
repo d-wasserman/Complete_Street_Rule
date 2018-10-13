@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:10/11/2018
+ * Last Updated:10/13/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -1016,6 +1016,34 @@ _ParParkedFacing(Side) = case Side=="Right":# This makes the park car facing ada
 							0
 							else:
 							2
+_Parking_Cap_Angle(Side,Position) =
+	case Position == "End":
+		case _ParParkedFacing(Side) == 0:
+			case Side =="Right":
+				270
+			else: 
+				180
+		else: 
+			case Side =="Right":
+				0
+			else: 
+				90
+	case Position == "Begin":
+		case _ParParkedFacing(Side) == 0:
+			case Side =="Right":
+				0
+			else:
+				90
+		else:
+			case Side =="Right":
+				270
+			else:
+				180
+	else:
+		case Side=="Right":
+			0
+		else: 
+			180
 #Misc Functions	
 #_isEven(number) = (rint(abs(number))%2) == 0   #Make number positive, round to nearest integer just in case of 6 being 5.99999999999999, or 6.000000000000001.
 #_isOdd(number) = !_isEven(number)	
@@ -1979,17 +2007,18 @@ ParallelParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,Par
 	case SpaceNumber==TotalSpacesonSide-2:#1 from index total, 1 from additional split- Start
  			ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth)# Fix Parking Angle on oneway Streets
 			ParallelParkingTexture(Side,ParkingLength,ParkingWidth,true)
-			ParkingCap(Side,case Side =="Right":0 else:180,"/Parking_Cap_End.obj")			
+			ParkingCap(Side,_Parking_Cap_Angle(Side,"Begin"),"/Parking_Cap_End.obj")			
+ 			
  		case SpaceNumber==1:# End
  			ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth)
  			ParallelParkingTexture(Side,ParkingLength,ParkingWidth,true)
-			ParkingCap(Side,case Side =="Right":0 else:180,"/Parking_Cap_Mid.obj")
-			ParkingEndCap(Side,case Side =="Right":270 else:90,"/Parking_Cap_End.obj")
+			ParkingCap(Side,_Parking_Cap_Angle(Side,"Middle"),"/Parking_Cap_Mid.obj")
+			ParkingEndCap(Side,_Parking_Cap_Angle(Side,"End"),"/Parking_Cap_End.obj")
+ 			
  		else: # Middle
  			ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth)# Fix Parking Angle on oneway Streets-TODO
  			ParallelParkingTexture(Side,ParkingLength,ParkingWidth,true)
- 			ParkingCap(Side,case Side=="Right":0 else: 180,"/Parking_Cap_Mid.obj")
- 			
+ 			ParkingCap(Side,_Parking_Cap_Angle(Side,"Middle"),"/Parking_Cap_Mid.obj")			
 ParkingCap (Side,Rotation,Obj_Path)-->
 	scaleUV(0,-1,
  		(case Side=="Right":
