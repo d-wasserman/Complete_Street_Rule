@@ -459,7 +459,7 @@ const TrafficControlFolder			= ObjectFolder +"/Dir_Traffic_controls"
 const TrafficSignFolder				= ObjectFolder +"/Dir_Traffic_signs"
 const LampsFolder					= ObjectFolder+"/Dir_Lamps"
 const MiscFolder					= CompleteStreetFolder +"/Misc"
-const CurbFolder					= MiscFolder + "/Round_Curbs"
+const StencilFolder					=  ObjectFolder+ "/Stencil"
 #Paint Constants
 const ThickPaintLineWidth			= 0.5
 const PaintLineWidth				= 0.1 #uvSpace 36/256-about 4 in
@@ -522,7 +522,8 @@ const Default_Bench					= (ObjectFolder+ "/Bench.obj")
 const Default_Bike_Rack				= (ObjectFolder+ "/Bike_Rack.obj")
 const Default_Parklet				= (ObjectFolder+ "/Parklet_"+LOD_Object_Choice+"_LOD.obj")
 const Default_BusStop				= (ObjectFolder+ "/Bus_Stop.obj")
-const Default_Median_End			= (CurbFolder+ "/Median_End.obj")
+const Default_Median_End			= (StencilFolder+ "/Median_End.obj")
+const Default_Median_Transition		= (StencilFolder+"/Median_Transition.obj")
 #Boolean Converted Constants
 const Parking_Protection_Bool		= bool(Parking_Protection)#Bool Conversion to support non-boolean database models
 const Buffer_Protection_Bool		= bool(Buffer_Protection)#Bool Conversion to support non-boolean database models
@@ -2040,7 +2041,7 @@ ParkingEndCap(Side,Rotation,Obj_Path)-->
 ParkingInsertCap (Rotation,Obj_Path)-->
 	alignScopeToGeometry(yUp,largest,0)
 	rotateScope(0,Rotation,0)
-	i(ObjectFolder+Obj_Path)
+	i(StencilFolder+Obj_Path)
 	extrude(sharrowHeight)	
 	AsphaltPainted("white","Storage")
 
@@ -2138,33 +2139,40 @@ Striped_Centerline-->
 MedianWTurnLane-->
 	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
 						|_neighborBegin*_stopBegin*ThickPaintLineWidth:AsphaltPainted("white","Auto")
-						|(_tooShort(geometry.du(0,unitSpace),16+Median_Turn_Transition_Depth+ThickPaintLineWidth))*_neighborBegin*_stopBegin*(16+Median_Turn_Transition_Depth):MedianTurnPocket(0)
+						|(_tooShort(geometry.du(0,unitSpace),16+Median_Turn_Transition_Depth+ThickPaintLineWidth))*_neighborBegin*_stopBegin*(16+Median_Turn_Transition_Depth):MedianTurnPocket("Median",0)
 						|~1:Raised_Offset_Curb("Median",1,"Auto",Center_Width/4)
-						|(_tooShort(geometry.du(0,unitSpace),16+Median_Turn_Transition_Depth+ThickPaintLineWidth))*_neighborEnd*_stopEnd*(16+Median_Turn_Transition_Depth):MedianTurnPocket(2)
+						|(_tooShort(geometry.du(0,unitSpace),16+Median_Turn_Transition_Depth+ThickPaintLineWidth))*_neighborEnd*_stopEnd*(16+Median_Turn_Transition_Depth):MedianTurnPocket("Median",2)
 						|_neighborEnd*_stopEnd*ThickPaintLineWidth:AsphaltPainted("white","Auto")
 						|(_Bike_Box_Gap("End")): Bike_Box_Left_Turn_Gap("End")}
 
-MedianTurnPocket(dir)-->
+MedianTurnPocket(Location,dir)-->
 	case dir==0:
 		scaleUV(0,-1,1)
-		split(u,unitSpace,0){Median_Turn_Transition_Depth:TransitionSpace(dir)
+		split(u,unitSpace,0){Median_Turn_Transition_Depth:TransitionSpace(Location,dir)
 		|~1:TurnLanePocket(dir)}
 	else:
 		scaleUV(0,1,-1)
-		split(u,unitSpace,0){Median_Turn_Transition_Depth:TransitionSpace(dir)
+		split(u,unitSpace,0){Median_Turn_Transition_Depth:TransitionSpace(Location,dir)
 		|~1:TurnLanePocket(dir)}
 		
-TransitionSpace(dir)-->
+TransitionSpace(Location,dir)-->
 	split(v,unitSpace,0){Turn_Pocket_Curb_Width:Raised_Offset_Curb("Turn Lane Curb",1,"Auto",Turn_Pocket_Curb_Width)
-						|~1: AngledSplitTransition(dir)}			
-AngledSplitTransition(dir)-->
-	
-	split(u,unitSpace,0) { Split_Divider_Width:
-		split(v,unitSpace,0){'(1-(split.index/split.total)):Raised_Offset_Curb("Turn Lane Curb",1,"Auto",Center_Width)
-						|~1:Asphalt("Auto")}}*
+						|~1: AngledSplitTransition(Location,dir)}			
 
+AngledSplitTransition(Location,dir)-->
+	TransitionInsert(Location,dir)
+	Asphalt("Auto")
+
+TransitionInsert(Location,dir)-->
+	normalizeUV(0, uv, collectiveAllFaces)	
+	setupProjection(0, scope.xz, 2,2,2,2,2)
+	insertAlongUV(0,Default_Median_Transition,0)
+	comp (f) {top:Raised_Curb_End_Extrusion(Location,dir)}
+	
 TurnLanePocket(dir)-->
-	split(v,unitSpace,0){Turn_Pocket_Curb_Width:Raised_Offset_Curb("Turn Lane Curb",1,"Auto",Turn_Pocket_Curb_Width)
+	split(v,unitSpace,0){
+		Turn_Pocket_Curb_Width:split(u,unitSpace,0) {~1:Raised_Offset_Curb("Turn Lane Curb",1,"Auto",Turn_Pocket_Curb_Width)
+									|Turn_Pocket_Curb_Width:Asphalt("Auto") Raised_Curb_End("Turn Lane Curb",dir)}
 						|{~Lane_Width: ApproachMarkings(dir,1,1,"_stop_arrows_all_" + str(1))}*}
 Center_Turn_Lane-->
 	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
@@ -2278,6 +2286,7 @@ Raised_Curb_End(Location,Dir)-->
 	normalizeUV(0, uv, collectiveAllFaces)	
 	insertAlongUV(0,Default_Median_End,0)
 	setupProjection(0, scope.xz, 2,2,2,2,2)
+	Cut_And_Fill_Reporting(Location)
 	comp (f) {top:Raised_Curb_End_Extrusion(Location,Dir)}
 	
 Raised_Curb_End_Extrusion(Location,Dir)-->
