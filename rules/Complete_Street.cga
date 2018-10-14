@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:10/13/2018
+ * Last Updated:10/14/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/Holisticnature/Complete_Street_Rule
@@ -2167,12 +2167,12 @@ TransitionInsert(Location,dir)-->
 	normalizeUV(0, uv, collectiveAllFaces)	
 	setupProjection(0, scope.xz, 2,2,2,2,2)
 	insertAlongUV(0,Default_Median_Transition,0)
-	comp (f) {top:Raised_Curb_End_Extrusion(Location,dir)}
+	comp (f) {top:Raised_Curb_End_Extrusion("Auto",dir)}
 	
 TurnLanePocket(dir)-->
 	split(v,unitSpace,0){
 		Turn_Pocket_Curb_Width:split(u,unitSpace,0) {~1:Raised_Offset_Curb("Turn Lane Curb",1,"Auto",Turn_Pocket_Curb_Width)
-									|Turn_Pocket_Curb_Width:Asphalt("Auto") Raised_Curb_End("Turn Lane Curb",dir)}
+									|Turn_Pocket_Curb_Width:Asphalt("Auto") Raised_Curb_End("Median With Turn Lane",dir)}
 						|{~Lane_Width: ApproachMarkings(dir,1,1,"_stop_arrows_all_" + str(1))}*}
 Center_Turn_Lane-->
 	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
@@ -2281,17 +2281,16 @@ Raised_Curb(Location,Dir)-->
 						|Curb_Depth:Curbs_Mass(true)
 						|_neighborEnd*_stopEnd* geometry.dv(0,unitSpace)/2:Raised_Curb_End(Location,Dir) Asphalt("Auto")}#End Curb
 
-# Raised_Curb_End(Location,Dir)
 Raised_Curb_End(Location,Dir)-->
 	normalizeUV(0, uv, collectiveAllFaces)	
 	insertAlongUV(0,Default_Median_End,0)
 	setupProjection(0, scope.xz, 2,2,2,2,2)
 	Cut_And_Fill_Reporting(Location)
-	comp (f) {top:Raised_Curb_End_Extrusion(Location,Dir)}
+	comp (f) {top:Raised_Curb_End_Extrusion(case Location == "Buffer":"Bikeways"  else:"Pedestrian",Dir)}
 	
-Raised_Curb_End_Extrusion(Location,Dir)-->
+Raised_Curb_End_Extrusion(Mode,Dir)-->
 	extrude(Sidewalk_Height)
-	color( _ThematicRouter ((case Location=="Buffer":"Bikeways"else:"Pedestrian")))
+	color( _ThematicRouter(Mode))
 	texture(Sidewalk_Texture)
 	projectUV(0)
 	deleteUV(_Texture_Switch)
