@@ -762,7 +762,7 @@ const DirectionalFlip	 	= case rightHandTraffic:1 else:-1 				# This is used to 
 const DirectionalRotation	= case rightHandTraffic:0 else:180
 
 #Other
-const _oneWayForward 		   = (rightHandTraffic && Lane_Distribution>=1) || (leftHandTraffic && Lane_Distribution<=0)	# in direction of graph segment?
+const _oneWayForward 		   = (rightHandTraffic && Lane_Distribution>=1) || (leftHandTraffic && Lane_Distribution>=1)	# in direction of graph segment?
 const _oneWayReverse 		   = oneWay && !_oneWayForward
 const _stopBegin 			   = case Stop_Begin =="none" || _oneWayForward: 0 else: 1
 const _stopEnd 				   = case Stop_End =="none"   || _oneWayReverse: 0 else: 1
