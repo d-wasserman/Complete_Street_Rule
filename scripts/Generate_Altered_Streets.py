@@ -41,8 +41,10 @@ def generate_attribute_product(attr_dict):
     product_obj = product(*value_input)
     return ordered_keys, product_obj
 
-def batch_attribute_alteration(alteration_dict = {},translation=0):
-    """ This function will take a dictionary of attributes and use python combinatoric functions to create a copy of a selection in a new layer for every combination possible of those attributes. """
+def batch_attribute_alteration(alteration_dict = {},translation=[0,0,0]):
+    """ This function will take a dictionary of attributes and use python combinatoric functions to create a copy of a selection in a new layer for every combination possible of those attributes.
+    @param: alteration_dict - dictionary with attributes to add in based on every combination
+    @param: translation - list of translation coordinates to move the new layer"""
     layers = ce.getObjectsFrom(ce.selection())
     print(
         "There are " + str(len(layers)) + " objects in the current selection.")
@@ -51,15 +53,24 @@ def batch_attribute_alteration(alteration_dict = {},translation=0):
     
     print("Iterating through all attribute combinations.")
     keys, product_obj = generate_attribute_product(alteration_dict)
+    base_translation = [i for i in translation]
     for index,row in enumerate(product_obj):
         try:
-            
-            for index, key in enumerate(keys):
-                ce.setAttribute(ce.selection(),key,row[index])
-                ce.setAttributeSource(ce.selection(),key, 'OBJECT')
+            for key in keys: # Some objects require a preset setting
+                ce.setAttributeSource(ce.selection(),key, "OBJECT")
+            if len(ce.getObjectsFrom(ce.selection(),ce.isGraphSegment))>0:
+                new_layer = ce.addGraphLayer("Alteration_{0}".format(index+1))
+            else:
+                new_layer = ce.addShapeLayer("Alteration_{0}".format(index+1))
+            result = ce.copy(ce.selection(),False,new_layer)
+            ce.setSelection(result)
+            ce.move(ce.selection(),translation)
+            for i, key in enumerate(keys):
+                ce.setAttribute(ce.selection(),key,row[i])
                 ce.generateModels(ce.selection())
                 ce.waitForUIIdle()
-                time.sleep(1)
+            #translation = [i + y for i,y in zip(translation,base_translation)]
+              
                     
             print(keys)
             print(row)
@@ -77,5 +88,5 @@ if __name__ == '__main__':
     print("Batch Generation script started.")
     # Declare variables
     generation_dict = {"Lane_Distribution":[0,1,.5],"Traffic_Direction":["right-hand","left-hand"]}
-    batch_attribute_alteration(generation_dict)
+    batch_attribute_alteration(generation_dict,[0,10,0])
     print("Script completed.")
