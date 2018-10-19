@@ -1,0 +1,39 @@
+/*
+ * File:    Stamp_Drawing_Rule.cga
+ * Created: 10/30/2015 Oct 2015
+ * Last Updated:10/14/2018
+ * Author:  David J. Wasserman
+ * License: Apache License.
+ * Source: https://github.com/d-wasserman/Complete_Street_Rule
+# Copyright 2018 David J. Wasserman
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------
+ */
+ @Hidden
+ import cs: "rules/Complete_Street.cga"
+ 
+ @Group("Control Setting",1)
+ @Order(1)@Range("Rounded Curb", "Ashpalt")@Description("Describes what is allocated to this one shape.")
+ attr Main_Allocation = "Rounded Curb"
+
+ @StartRule 
+ Main_Allocation_Start-->
+ 	case Main_Allocation=="Rounded Curb":
+ 		cs.Raised_Curb_End_Extrusion("Pedestrian",0)
+ 	else:
+ 		cs.Asphalt("Auto")
+ 
+
+ 	
+ 
