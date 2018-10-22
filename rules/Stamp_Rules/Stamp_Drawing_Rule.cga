@@ -59,6 +59,7 @@ Main_Allocation_Start-->
  	set(cs.Display_Textures, Display_Textures)
  	set(cs.Display_Thematics,Display_Thematics)
  	set(cs.Solid_Color,Solid_Color)
+ 	color(cs._ThematicRouter ("Conflict Zones"))
  	Main_Allocation_Rule
  	
 Main_Allocation_Rule --> 
@@ -84,13 +85,14 @@ Rounded_Curb(Mode)-->
 Painted_Asphalt-->
 	extrude(world.up,Element_Height)
 	Painted_Asphalt_Stamp
+	
 Painted_Asphalt_Stamp-->
 	setupProjection(0,scope.zx,6,6,0,0,1)
 	texture(cs.LanesFolder+"/asphalt_painted_" + _find_color(Main_Allocation) + "_7x7m.jpg")
 	deleteUV(cs._Texture_Switch)
 	projectUV(0)
-	color(cs._ThematicRouter ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-	cs.ModeReporter("Auto")
+	color(cs._ThematicRouter ("Conflict Zones"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+	cs.ModeReporter("Conflict Zones")
  	
 Asphalt(Mode)-->
 	extrude(world.up,Element_Height)
