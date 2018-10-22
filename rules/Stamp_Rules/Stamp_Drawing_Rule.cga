@@ -24,16 +24,86 @@
  import cs: "rules/Complete_Street.cga"
  
  @Group("Control Setting",1)
- @Order(1)@Range("Rounded Curb", "Ashpalt")@Description("Describes what is allocated to this one shape.")
+ @Order(1)@Range("Rounded Curb", "Formal Curb","Curb", "Asphalt","Green Paint","White Paint","Yellow Paint", "Red Paint")@Description("Describes what is allocated to this one shape.")
+ @Enum("Rounded Curb", "Formal Curb","Curb", "Asphalt","Green Paint","White Paint","Yellow Paint", "Red Paint")
+ @Handle(shape=Main_Allocation_Rule,type=selector,reference=center,slip=inside,occlusion=false,color="#FF6644")
  attr Main_Allocation = "Rounded Curb"
-
- @StartRule 
- Main_Allocation_Start-->
- 	case Main_Allocation=="Rounded Curb":
- 		cs.Raised_Curb_End_Extrusion("Pedestrian",0)
- 	else:
- 		cs.Asphalt("Auto")
+ @Order(2)@Range(0,10) @Description("Height of stamp element.")
+ @Handle(shape=Main_Allocation_Rule, axis=y,reference=center,align=right,translate={.1,0,0}, slip=screen,color="#6666FF")
+ attr Element_Height = case find(Main_Allocation,"Curb",0)!=-1:cs.Sidewalk_Height else: cs.sharrowHeight
  
+ 
+ 
+ @Group("DISPLAY OPTIONS",2) @Range("true","false")@Order(1)@Description("When true, textures are on display, when false textures are removed. If true it deletes an unused UVset (see comments for details).")
+attr Display_Textures = "true"
+@Order(2) @Description("Visually colors the entire street model based on the attributes of a street. Usage thematic looks best when textures are turned off.")
+@Range("Thematics Off", "Solid Color", "Peak Runoff/Permeability","Bike Preference","Pedestrian Preference","Auto Preference","Transit Preference","All Mode Preference","Usage","Transit Highlight","Bicycle Highlight","Auto Highlight","Pedestrian Highlight","Planting Highlight","Shared Mobility Highlight","Flood Scenario")
+attr Display_Thematics = "Thematics Off" 
+@Order(3) @Color @Description("When the Solid Color thematic is used for highlighting certain streets or mode classes, this chooses the color that is utilized by the thematic.") #@Hidden
+attr Solid_Color = "#FFFFFF"
 
+_find_color(alloc)=
+	case find(alloc,"White",0)!=-1:
+		"white"
+	case find(alloc,"Red",0)!=-1:
+		"red"
+	case find(alloc,"Green",0)!=-1:
+		"green"
+	case find(alloc,"Yellow",0)!=-1:
+		"yellow"
+	else:
+		"white"
+
+@StartRule 
+Main_Allocation_Start-->
+ 	set(cs.Display_Textures, Display_Textures)
+ 	set(cs.Display_Thematics,Display_Thematics)
+ 	set(cs.Solid_Color,Solid_Color)
+ 	Main_Allocation_Rule
  	
+Main_Allocation_Rule --> 
+	case Main_Allocation=="Curb":
+ 		Curb("Pedestrian")
+ 	case Main_Allocation=="Formal Curb":
+ 		setback(cs.Curb_Depth) {all:cs.Curbs_Mass(true,Element_Height)|remainder:Curb("Pedestrian")}
+ 	case Main_Allocation == "Rounded Curb":
+ 		Rounded_Curb("Pedestrian")
+ 	case find(Main_Allocation,"Paint",0)!=-1:
+ 		Painted_Asphalt
+ 	else:
+ 		Asphalt("Auto")
+
+Curb(Mode)-->
+	extrude(Element_Height)
+	comp (f) {all:cs.General_Sidewalk_Texture("Curb")} 
+ 
+Rounded_Curb(Mode)-->
+ 	envelope(world.up,Element_Height,Element_Height/2,45,Element_Height/2,45,Element_Height/2,45,Element_Height/2,45)
+ 	comp(f) {all:cs.General_Sidewalk_Texture("Curb")}
+
+Painted_Asphalt-->
+	extrude(world.up,Element_Height)
+	Painted_Asphalt_Stamp
+Painted_Asphalt_Stamp-->
+	setupProjection(0,scope.zx,6,6,0,0,1)
+	texture(cs.LanesFolder+"/asphalt_painted_" + _find_color(Main_Allocation) + "_7x7m.jpg")
+	deleteUV(cs._Texture_Switch)
+	projectUV(0)
+	color(cs._ThematicRouter ("Auto"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+	cs.ModeReporter("Auto")
+ 	
+Asphalt(Mode)-->
+	extrude(world.up,Element_Height)
+	comp(f){all:Asphalt_Stamp("Auto")}
+	
+	
+Asphalt_Stamp(Mode)-->
+	setupProjection(0,scope.zx,14,14,0,0,1)
+	texture( cs.LanesFolder+"/asphalt_14x14m.jpg")
+	projectUV(0)
+	deleteUV(cs._Texture_Switch)
+	color(cs._ThematicRouter (Mode))#If Display Thematics==Usage, goes to usage, if not, Thematic-strings might have other purpose later. 
+	cs.ModeReporter(Mode)
+	
+
  
