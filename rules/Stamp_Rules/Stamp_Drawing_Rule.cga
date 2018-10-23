@@ -22,7 +22,7 @@
  */
  @Hidden
  import cs: "rules/Complete_Street.cga"
- 
+ #Attributes
  @Group("Control Setting",1)
  @Order(1)@Range("Rounded Curb", "Formal Curb","Curb", "Asphalt","Green Paint","White Paint","Yellow Paint", "Red Paint")@Description("Describes what is allocated to this one shape.")
  @Enum("Rounded Curb", "Formal Curb","Curb", "Asphalt","Green Paint","White Paint","Yellow Paint", "Red Paint")
@@ -41,7 +41,9 @@ attr Display_Textures = "true"
 attr Display_Thematics = "Thematics Off" 
 @Order(3) @Color @Description("When the Solid Color thematic is used for highlighting certain streets or mode classes, this chooses the color that is utilized by the thematic.") #@Hidden
 attr Solid_Color = "#FFFFFF"
-
+@Order(4) @Description("Texture used when texturing curbs.") @File ("tif","jpg","png","tiff","gif","jpeg","psp","jsl","sgi","tga","bmp","dds")
+attr Custom_Curb_Texture = cs.Default_Pavement
+#Functions
 _find_color(alloc)=
 	case find(alloc,"White",0)!=-1:
 		"white"
@@ -53,12 +55,18 @@ _find_color(alloc)=
 		"yellow"
 	else:
 		"white"
+#Constants
+
+const Default_Curb_Edge = cs.SidewalkFolder+"/Concrete Clean Dark.jpg"
+
+#Rules
 
 @StartRule 
 Main_Allocation_Start-->
  	set(cs.Display_Textures, Display_Textures)
  	set(cs.Display_Thematics,Display_Thematics)
  	set(cs.Solid_Color,Solid_Color)
+ 	set(cs.Sidewalk_Texture, Custom_Curb_Texture)
  	color(cs._ThematicRouter ("Conflict Zones"))
  	Main_Allocation_Rule
  	
@@ -66,7 +74,7 @@ Main_Allocation_Rule -->
 	case Main_Allocation=="Curb":
  		Curb("Pedestrian")
  	case Main_Allocation=="Formal Curb":
- 		setback(cs.Curb_Depth) {all:cs.Curbs_Mass(true,Element_Height)|remainder:Curb("Pedestrian")}
+ 		setback(cs.Curb_Depth) {all:Formal_Curb_Edge|remainder:Curb("Pedestrian")}
  	case Main_Allocation == "Rounded Curb":
  		Rounded_Curb("Pedestrian")
  	case find(Main_Allocation,"Paint",0)!=-1:
@@ -74,6 +82,10 @@ Main_Allocation_Rule -->
  	else:
  		Asphalt("Auto")
 
+Formal_Curb_Edge--> 
+	extrude(Element_Height)
+	comp(f) {all: Custom_Texture(Default_Curb_Edge)}
+	
 Curb(Mode)-->
 	extrude(Element_Height)
 	comp (f) {all:cs.General_Sidewalk_Texture("Curb")} 
@@ -106,6 +118,13 @@ Asphalt_Stamp(Mode)-->
 	deleteUV(cs._Texture_Switch)
 	color(cs._ThematicRouter (Mode))#If Display Thematics==Usage, goes to usage, if not, Thematic-strings might have other purpose later. 
 	cs.ModeReporter(Mode)
-	
+
+Custom_Texture(text)-->
+	setupProjection(0,scope.zy,2,2,0,0,1)
+	texture(text)
+	projectUV(0)
+	deleteUV(cs._Texture_Switch)
+	scaleUV(0, cs.Sidewalk_Texture_Scale, cs.Sidewalk_Texture_Scale)
+	rotateUV(0, cs.Sidewalk_Texture_Rotation)
 
  
