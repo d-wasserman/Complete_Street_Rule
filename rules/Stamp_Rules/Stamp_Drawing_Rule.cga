@@ -31,8 +31,12 @@
  @Order(2)@Range(0,10) @Description("Height of stamp element.")
  @Handle(shape=Main_Allocation_Rule, axis=y,reference=center,align=right,translate={.1,0,0}, slip=screen,color="#6666FF")
  attr Element_Height = case find(Main_Allocation,"Curb",0)!=-1:cs.Sidewalk_Height else: cs.sharrowHeight
- 
- 
+ @Order(3)@Range("true","false") @Description("If true, this setting will make the component dashed with asphalt every half-meter.")
+ @Handle(shape=Main_Allocation_Rule,axis=y,reference=center,align=center,translate={-.1,0,0},slip=inside,color ="#2244FF",type=selector)@Enum("true","false")
+ attr Dashed_Element = "false"
+ @Order(4) @Range(0,2) @Description("If there are dashed elements, this describes the width between them.")
+ @Handle(shape=Main_Allocation_Rule_With_Handle,axis=z,reference=center,align=center,translate={-.5,-.2,0},slip=inside,color ="#2244FF",type=linear)
+ attr Dashed_Width = .5
  
  @Group("DISPLAY OPTIONS",2) @Range("true","false")@Order(1)@Description("When true, textures are on display, when false textures are removed. If true it deletes an unused UVset (see comments for details).")
 attr Display_Textures = "true"
@@ -68,7 +72,20 @@ Main_Allocation_Start-->
  	set(cs.Solid_Color,Solid_Color)
  	set(cs.Sidewalk_Texture, Custom_Curb_Texture)
  	color(cs._ThematicRouter ("Conflict Zones"))
- 	Main_Allocation_Rule
+ 	Dashed_Split_Decision
+ 
+Dashed_Split_Decision-->
+	case bool(Dashed_Element):
+		Conflict_Splitter
+	else:
+	
+ 		Main_Allocation_Rule	
+Conflict_Splitter-->
+	alignScopeToGeometry(yUp,largest,0)
+	split(z) {{~max(Dashed_Width,.1):Main_Allocation_Rule|~max(Dashed_Width,.1):Asphalt("Conflict Zones",cs.sharrowHeight)}*|~max(Dashed_Width,.1):Main_Allocation_Rule_With_Handle}
+
+Main_Allocation_Rule_With_Handle-->
+	Main_Allocation_Rule
  	
 Main_Allocation_Rule --> 
 	case Main_Allocation=="Curb":
@@ -109,7 +126,9 @@ Painted_Asphalt_Stamp-->
 Asphalt(Mode)-->
 	extrude(world.up,Element_Height)
 	comp(f){all:Asphalt_Stamp("Auto")}
-	
+Asphalt(Mode,Height)-->
+	extrude(world.up,Height)
+	comp(f){all:Asphalt_Stamp("Auto")}	
 	
 Asphalt_Stamp(Mode)-->
 	setupProjection(0,scope.zx,14,14,0,0,1)
