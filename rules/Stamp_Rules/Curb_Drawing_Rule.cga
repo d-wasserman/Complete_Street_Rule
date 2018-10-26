@@ -1,0 +1,134 @@
+/*
+ * File:    Curb_Drawing_Rule.cga
+ * Created: 10/25/2018 Oct
+ * Last Updated:10/26/2018
+ * Author:  David J. Wasserman
+ * License: Apache License.
+ * Source: https://github.com/d-wasserman/Complete_Street_Rule
+# Copyright 2018 David J. Wasserman
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------
+ */
+ @Hidden
+ import cs: "rules/Complete_Street.cga"
+ 
+ import Tree : "/ESRI.lib/rules/Plants/Plant_Loader.cga" 
+ #Attributes
+ @Group("Control Setting",1)
+ @Order(1)@Range("Rounded Curb", "Formal Curb","Curb","Planting Curb")@Description("Describes what is allocated to this one shape.")
+ @Enum("Rounded Curb", "Formal Curb","Curb","Planting Curb")
+ @Handle(shape=Main_Allocation_Start,type=selector,reference=center,slip=inside,occlusion=false,color="#FF6644")
+ attr Main_Allocation = "Rounded Curb"
+ @Order(2)@Range(0,10) @Description("Height of stamp element.")
+ @Handle(shape=Main_Allocation_Start, axis=y,reference=center,align=right,translate={.1,0,0}, slip=screen,color="#6666FF")
+ attr Element_Height = case find(Main_Allocation,"Curb",0)!=-1:cs.Sidewalk_Height else: cs.sharrowHeight
+ @Order(3)@Range("true","false") @Description("If true, this setting will make the component dashed with asphalt every half-meter.")
+ @Handle(shape=Main_Allocation_Start,axis=y,reference=center,align=center,translate={-.1,0,0},slip=inside,color ="#2244FF",type=selector)@Enum("true","false")
+ attr Dashed_Element = "false"
+ @Order(4) @Range(0,2) @Description("If there are dashed elements, this describes the width between them.")
+ @Handle(shape=Main_Allocation_Rule,axis=z,reference=center,align=center,translate={-.5,-.2,0},slip=inside,color ="#2244FF",type=linear)
+ attr Dashed_Width = 1
+ 
+ @Group("DISPLAY OPTIONS",2) @Range("true","false")@Order(1)@Description("When true, textures are on display, when false textures are removed. If true it deletes an unused UVset (see comments for details).")
+attr Display_Textures = "true"
+@Order(2) @Description("Visually colors the entire street model based on the attributes of a street. Usage thematic looks best when textures are turned off.")
+@Range("Thematics Off", "Solid Color", "Peak Runoff/Permeability","Bike Preference","Pedestrian Preference","Auto Preference","Transit Preference","All Mode Preference","Usage","Transit Highlight","Bicycle Highlight","Auto Highlight","Pedestrian Highlight","Planting Highlight","Shared Mobility Highlight","Flood Scenario")
+attr Display_Thematics = "Thematics Off" 
+@Order(3) @Color @Description("When the Solid Color thematic is used for highlighting certain streets or mode classes, this chooses the color that is utilized by the thematic.") #@Hidden
+attr Solid_Color = "#FFFFFF"
+@Order(4) @Description("Texture used when texturing curbs.") @File ("tif","jpg","png","tiff","gif","jpeg","psp","jsl","sgi","tga","bmp","dds")
+attr Custom_Curb_Texture = case find(Main_Allocation,"Planter",0)!=-1: Default_Grass else: cs.Default_Pavement
+#Functions
+
+#Constants
+const Default_Grass = cs.GrassFolder+"/"+ "Standard Grass.jpg"
+const Default_Curb_Edge = cs.SidewalkFolder+"/Concrete Clean Dark.jpg"
+
+#Rules
+
+@StartRule 
+Main_Allocation_Start-->
+ 	set(cs.Display_Textures, Display_Textures)
+ 	set(cs.Display_Thematics,Display_Thematics)
+ 	set(cs.Solid_Color,Solid_Color)
+ 	set(cs.Sidewalk_Texture, Custom_Curb_Texture)
+ 	color(cs._ThematicRouter ("Conflict Zones"))
+ 	Dashed_Split_Decision
+Dashed_Split_Decision-->
+	case bool(Dashed_Element):
+		Conflict_Splitter
+	else:
+ 		Main_Allocation_Rule 		
+Conflict_Splitter-->
+	alignScopeToGeometry(yUp,largest,0)
+	split(z) {{~max(Dashed_Width,.1):Main_Allocation_Rule|~max(Dashed_Width,.1):Asphalt("Conflict Zones",cs.sharrowHeight)}*|~max(Dashed_Width,.1):Main_Allocation_Rule}
+
+
+Main_Allocation_Rule --> 
+	case Main_Allocation=="Curb":
+ 		Curb("Pedestrian")
+ 	case Main_Allocation=="Formal Curb":
+ 		setback(cs.Curb_Depth) {all:Formal_Curb_Edge|remainder:Curb("Pedestrian")}
+ 	case Main_Allocation == "Rounded Curb":
+ 		Rounded_Curb("Pedestrian")
+ 	case find(Main_Allocation,"Planting",0)!=-1:
+ 		setback(cs.Curb_Depth) {all:Formal_Curb_Edge|remainder:Planting_Area}
+ 	else:
+ 		Asphalt("Auto")
+
+Formal_Curb_Edge--> 
+	extrude(Element_Height)
+	comp(f) {all: Custom_Texture(Default_Curb_Edge)}
+	
+Curb(Mode)-->
+	extrude(Element_Height)
+	comp (f) {all:cs.General_Sidewalk_Texture("Curb")} 
+ 
+Rounded_Curb(Mode)-->
+ 	envelope(world.up,Element_Height,Element_Height/2,45,Element_Height/2,45,Element_Height/2,45,Element_Height/2,45)
+ 	comp(f) {all:cs.General_Sidewalk_Texture("Curb")}
+
+Planting_Area-->
+	extrude(Element_Height)
+	comp(f) {top:Custom_Texture(Default_Grass) Tree_Setup |side:Custom_Texture(Default_Grass)}
+	
+	
+Tree_Setup-->
+	report("Vegetation.Construction, Tree Cost",cs.TreeCostAverage)
+	Tree.Generate
+ 	
+Asphalt(Mode)-->
+	extrude(world.up,Element_Height)
+	comp(f){all:Asphalt_Stamp("Auto")}
+Asphalt(Mode,Height)-->
+	extrude(world.up,Height)
+	comp(f){all:Asphalt_Stamp("Auto")}	
+	
+Asphalt_Stamp(Mode)-->
+	setupProjection(0,scope.zx,14,14,0,0,1)
+	texture( cs.LanesFolder+"/asphalt_14x14m.jpg")
+	projectUV(0)
+	deleteUV(cs._Texture_Switch)
+	color(cs._ThematicRouter (Mode))#If Display Thematics==Usage, goes to usage, if not, Thematic-strings might have other purpose later. 
+	cs.ModeReporter(Mode)
+
+Custom_Texture(text)-->
+	setupProjection(0,scope.zy,2,2,0,0,1)
+	texture(text)
+	projectUV(0)
+	deleteUV(cs._Texture_Switch)
+	scaleUV(0, cs.Sidewalk_Texture_Scale, cs.Sidewalk_Texture_Scale)
+	rotateUV(0, cs.Sidewalk_Texture_Rotation)
+
+ 
