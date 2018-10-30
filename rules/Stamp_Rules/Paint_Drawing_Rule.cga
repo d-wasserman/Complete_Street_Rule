@@ -1,7 +1,7 @@
 /*
  * File:    Paint_Drawing_Rule.cga
  * Created: 10/25/2018 Oct
- * Last Updated:10/27/2018
+ * Last Updated:10/29/2018
  * Author:  David J. Wasserman
  * License: Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -27,7 +27,7 @@
  @Order(1)@Range("Asphalt","Green Paint","White Paint","Yellow Paint", "Red Paint")@Description("Describes what is allocated to this one shape.")
  @Enum("Asphalt","Green Paint","White Paint","Yellow Paint", "Red Paint")
  @Handle(shape=Main_Allocation_Start,type=selector,reference=center,slip=inside,occlusion=false,color="#FF6644")
- attr Main_Allocation = "White"
+ attr Main_Allocation = "White Paint"
  @Order(2)@Range(0,10) @Description("Height of stamp element.")
  @Handle(shape=Main_Allocation_Start, axis=y,reference=center,align=right,translate={.1,0,0}, slip=screen,color="#6666FF")
  attr Element_Height = cs.sharrowHeight
@@ -109,18 +109,33 @@ Dash_Edge_Paint -->
 	split(x) {cs.PaintLineWidth	:Painted_Asphalt("white")|~1:Main_Allocation_Rule|cs.PaintLineWidth	:Painted_Asphalt("white")}
 
 Main_Allocation_Rule --> 
+	case _paint_path(_find_color(Main_Allocation))!= Custom_Paint_Texture:
+		Custom_Texture
  	case find(Main_Allocation,"Paint",0)!=-1:
  		Painted_Asphalt(_find_color(Main_Allocation))
  	else:
  		Asphalt("Auto")
+ 		
+Custom_Texture-->
+	extrude(world.up,Element_Height)
+	Custom_Texture_Stamp
+
+Custom_Texture_Stamp --> 
+	setupProjection(0,scope.zx,6,6,0,0,1)
+	texture(Custom_Paint_Texture)
+	projectUV(0)
+	deleteUV(cs._Texture_Switch)
+	color(cs._ThematicRouter (Mode_Choice))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+	cs.ModeReporter(Mode_Choice)
+ 	
 
 Painted_Asphalt(paint_color)-->
 	extrude(world.up,Element_Height)
-	Painted_Asphalt_Stamp(paint_color)
+	comp(f) {all:Painted_Asphalt_Stamp(paint_color)}
 	
 Painted_Asphalt_Stamp(paint_color)-->
 	setupProjection(0,scope.zx,6,6,0,0,1)
-	texture(Custom_Paint_Texture)
+	texture(_paint_path(paint_color))
 	projectUV(0)
 	deleteUV(cs._Texture_Switch)
 	color(cs._ThematicRouter (Mode_Choice))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
