@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:10/14/2018
+ * Last Updated:11/5/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -1938,7 +1938,8 @@ Carshare_Parking_Stamp(Side)-->
 	setupProjection(0,scope.zx,'1,'1)
 	texture(LanesFolder +"/CarshareOnly.jpg")
 	projectUV(0)
-	scaleUV(0,case Side=="Right":1 else: -1,case Side=="Right":1 else: -1)
+	scaleUV(0,case (Side=="Right" || Lane_Distribution==1) && Lane_Distribution!=0:1 else: -1,
+	case (Side=="Right" || Lane_Distribution==1) && Lane_Distribution!=0:1 else: -1)
 	scaleUV(0,case rightHandTraffic: 1 else: -1,case rightHandTraffic: 1 else: -1)
 	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Shared Mobility"))			
