@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:11/5/2018
+ * Last Updated:11/6/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -130,13 +130,13 @@ attr Custom_Crosswalk_Texture	= SidewalkFolder+"/Paver Brick Red Basket Weave.jp
 attr Crosswalk_Width			= _crosswalkWidth
 
 @Group("ROAD LAYOUT","On-Street Parking",5)
-@Order(1)@Range("None","Parallel","Angled Nose In","Angled Back In", "Parallel with Curbside Passenger Loading", "Parallel with Curbside Freight Loading","Parallel with Curbside Carshare Parking","Parallel with Curbside Bus Stop") @Description("Will create parking of that type with default lengths and widths. Keep in mind, adjusting the length/width will make it lock onto that value. To reset it to automatic default, set the Attribute Connection Editor back to rule-defined value.")
+@Order(1)@Range("None","Parallel","Angled Nose In","Angled Back In", "Parallel with Curbside Passenger Loading", "Parallel with Curbside Freight Loading","Parallel with Curbside Carshare Parking","Parallel with Curbside Bus Stop","Parallel with Curbside DoBi & Scooter Parking") @Description("Will create parking of that type with default lengths and widths. Keep in mind, adjusting the length/width will make it lock onto that value. To reset it to automatic default, set the Attribute Connection Editor back to rule-defined value.")
 attr Right_Parking_Type			= "None"
 @Order(2)@Range(0,5)@Description("Good default is 8 feet (2.4384 m) with a minimum of 7 feet (2.1336 m) for low turn over locations for parallel parking. Angled parking varies on angle, but a 30-45 degree depth suggestion is 19 feet (5.7912 m). Design guidance on width varies with conditions. ")#@Hidden
 attr Right_Parking_Width		= _ParkingWidth(Right_Parking_Type) 
 @Order(3)@Range(0,10)@Description("For Parallel Parking 6.1 to 7.5 meters long is suggested, for Angled Parking 2.4 to 3 m is suggested.")#@Hidden
 attr Right_Parking_Length		= _ParkingLength(Right_Parking_Type)
-@Order(4)@Range("None","Parallel","Angled Nose In","Angled Back In", "Parallel with Curbside Passenger Loading", "Parallel with Curbside Freight Loading","Parallel with Curbside Carshare Parking","Parallel with Curbside Bus Stop")@Description("Will create parking of that type with default lengths and widths. Keep in mind, adjusting the length/width will make it lock onto that value. To reset it to automatic default, set the Attribute Connection Editor back to rule-defined value.")
+@Order(4)@Range("None","Parallel","Angled Nose In","Angled Back In", "Parallel with Curbside Passenger Loading", "Parallel with Curbside Freight Loading","Parallel with Curbside Carshare Parking","Parallel with Curbside Bus Stop","Parallel with Curbside DoBi & Scooter Parking")@Description("Will create parking of that type with default lengths and widths. Keep in mind, adjusting the length/width will make it lock onto that value. To reset it to automatic default, set the Attribute Connection Editor back to rule-defined value.")
 attr Left_Parking_Type			= "None"
 @Order(5)@Range(0,5) @Description("Good default is 8 feet (2.4384 m) with a minimum of 7 feet (2.1336 m) for low turn over locations for parallel parking. Angled parking varies on angle, but a 30-45 degree depth suggestion is 19 feet (5.7912 m). Design guidance on width varies with conditions.")#@Hidden
 attr Left_Parking_Width			= _ParkingWidth(Left_Parking_Type) 
@@ -1923,8 +1923,22 @@ Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)-->
 		Bus_Stop_Allocation(Side,"black",ParkingWidth)
 	case find(ParkingType,"Carshare",0)!=-1:
 		Carshare_Parking_Allocation(Side,"green",ParkingWidth,ParkingLength)
+	case find(ParkingType,"DoBi & Scooter",0)!=-1:
+		DoBi_Scooter_Parking(Side,ParkingWidth,ParkingLength)
 	else:
 		Asphalt("Auto")
+DoBi_Scooter_Parking(Side,ParkingWidth,ParkingLength)-->
+	split(u,unitSpace,0){.025:Asphalt("Shared Mobility")|{~.5: Dobi_Scooter_Parking_Stamp(Side,ParkingWidth,ParkingLength)|.025:Asphalt("Shared Mobility")}*}
+
+Dobi_Scooter_Parking_Stamp(Side,ParkingWidth,ParkingLength)-->
+	
+	alignScopeToGeometry(yUp, largest, 0)
+	setupProjection(0,scope.xz,'1,'1)
+	texture(LanesFolder +"/MicromobilityParking.jpg")
+	projectUV(0)
+	deleteUV(_Texture_Switch)
+	color( _ThematicRouter ("Shared Mobility"))			
+
 Carshare_Parking_Allocation(Side,Color,ParkingWidth,ParkingLength)-->
 	split(v,unitSpace,0){
 			PaintLineWidth:AsphaltPainted("green","Shared Mobility")|
