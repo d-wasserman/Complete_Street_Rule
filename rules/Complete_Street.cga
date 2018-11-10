@@ -1927,20 +1927,9 @@ LeftCurbsideAllocator(Side,ParkingType,ParkingLength,ParkingWidth)-->
 
 Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)-->
 	case find(ParkingType,"Freight",0)!=-1:
-				split(v,unitSpace,0){
-			PaintLineWidth:AsphaltPainted("yellow","Shared Mobility")|
-			~1:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("yellow","Shared Mobility")|
-				~1: Project_Zebra_Stripe("yellow","Shared Mobility")|
-				PaintLineWidth:AsphaltPainted("yellow","Shared Mobility")}|
-			PaintLineWidth:AsphaltPainted("yellow","Shared Mobility")}
+		Freight_Loading_Allocation(Side,ParkingWidth,ParkingLength)
 	case find(ParkingType,"Passenger",0)!=-1:
-		split(v,unitSpace,0){
-			PaintLineWidth:AsphaltPainted("white","Shared Mobility")|
-			~1:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("white","Shared Mobility")|
-				~1:ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth) Project_Zebra_Stripe("white","Shared Mobility")|
-				PaintLineWidth:AsphaltPainted("white","Shared Mobility")}|
-			PaintLineWidth:AsphaltPainted("white","Shared Mobility")}
-			
+		Passenger_Loading_Allocation(Side,ParkingWidth,ParkingLength)		
 	case find(ParkingType,"Bus Stop",0)!=-1:
 		Bus_Stop_Allocation(Side,"black",ParkingWidth)
 	case find(ParkingType,"Carshare",0)!=-1:
@@ -1948,12 +1937,32 @@ Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)-->
 	case find(ParkingType,"DoBi & Scooter",0)!=-1:
 		DoBi_Scooter_Parking(Side,ParkingWidth,ParkingLength)
 	else:
+		report("Curbside Management.Other Length (m)",geometry.du(0,unitSpace))
 		Asphalt("Auto")
+		
+Freight_Loading_Allocation(Side,ParkingWidth,ParkingLength)-->
+	report("Curbside Management.Freight Loading Length (m)",geometry.du(0,unitSpace))		
+	split(v,unitSpace,0){
+			PaintLineWidth:AsphaltPainted("yellow","Shared Mobility")|
+			~1:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("yellow","Shared Mobility")|
+				~1: Project_Zebra_Stripe("yellow","Shared Mobility")|
+				PaintLineWidth:AsphaltPainted("yellow","Shared Mobility")}|
+			PaintLineWidth:AsphaltPainted("yellow","Shared Mobility")}
+			
+Passenger_Loading_Allocation(Side,ParkingWidth,ParkingLength)-->
+	report("Curbside Management.Passenger Loading Length (m)",geometry.du(0,unitSpace))	
+	split(v,unitSpace,0){
+	PaintLineWidth:AsphaltPainted("white","Shared Mobility")|
+	~1:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("white","Shared Mobility")|
+		~1:ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth) Project_Zebra_Stripe("white","Shared Mobility")|
+		PaintLineWidth:AsphaltPainted("white","Shared Mobility")}|
+	PaintLineWidth:AsphaltPainted("white","Shared Mobility")}
+		
 DoBi_Scooter_Parking(Side,ParkingWidth,ParkingLength)-->
-	split(u,unitSpace,0){.025:Asphalt("Shared Mobility")|{~.5: Dobi_Scooter_Parking_Stamp(Side,ParkingWidth,ParkingLength)|.025:Asphalt("Shared Mobility")}*}
+	split(u,unitSpace,0){.025:Asphalt("Shared Mobility")|{~.5: DoBi_Scooter_Parking_Stamp(Side,ParkingWidth,ParkingLength)|.025:Asphalt("Shared Mobility")}*}
 
-Dobi_Scooter_Parking_Stamp(Side,ParkingWidth,ParkingLength)-->
-	
+DoBi_Scooter_Parking_Stamp(Side,ParkingWidth,ParkingLength)-->
+	report("Curbside Management.DoBi & Scooter Parking Length (m)",geometry.du(0,unitSpace))
 	alignScopeToGeometry(yUp, largest, 0)
 	setupProjection(0,scope.xz,'1,'1)
 	texture(LanesFolder +"/MicromobilityParking.jpg")
@@ -1962,6 +1971,7 @@ Dobi_Scooter_Parking_Stamp(Side,ParkingWidth,ParkingLength)-->
 	color( _ThematicRouter ("Shared Mobility"))			
 
 Carshare_Parking_Allocation(Side,Color,ParkingWidth,ParkingLength)-->
+	report("Curbside Management.Carshare Parking Length (m)",geometry.du(0,unitSpace))
 	split(v,unitSpace,0){
 			PaintLineWidth:AsphaltPainted("green","Shared Mobility")|
 			~ParkingWidth:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("green","Shared Mobility")|	
@@ -1981,6 +1991,7 @@ Carshare_Parking_Stamp(Side)-->
 	color( _ThematicRouter ("Shared Mobility"))			
 		
 Bus_Stop_Allocation(Side,Color,StampWidth)-->
+	report("Curbside Management.Bus Stop Length (m)",geometry.du(0,unitSpace))
 	split(v,unitSpace,0){
 			PaintLineWidth:AsphaltPainted("white","Transit")|
 			~1:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("white","Transit")|
@@ -2128,6 +2139,7 @@ ParkingReport(Side,Rear_Edge_Case,Delete_Geo)-->#This edge case parameter only m
 		case Rear_Edge_Case:
 			report("Parking."+Side+" Parking Space Area (m^2)",geometry.area)
 			report("Parking.Total Parking Space Area (m^2)",geometry.area)
+			report("Curbside Management.On-Street Parking Length (m)",geometry.du(0,unitSpace))
 			NIL
 		else:
 			NIL
@@ -2135,6 +2147,7 @@ ParkingReport(Side,Rear_Edge_Case,Delete_Geo)-->#This edge case parameter only m
 		case Rear_Edge_Case:
 			report("Parking."+Side+" Parking Space Area (m^2)",geometry.area)
 			report("Parking.Total Parking Space Area (m^2)",geometry.area)
+			report("Curbside Management.On-Street Parking Length (m)",geometry.du(0,unitSpace))
 		else:
 			X.
 ###################################################
