@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:11/6/2018
+ * Last Updated:11/10/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -17,7 +17,7 @@
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software
+# Unless required bys applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
@@ -480,7 +480,7 @@ const Curb_Depth					= 0.1574
 const BusStop_Length				= 12.192
 const Parklet_Shift					= case _Actual_Space_Management== "Best Fit" || (Parking_Protection_Bool && _Minof(Left_Buffer_Width+Street_Left_Bike_Lane_Width,Right_Buffer_Width+Street_Right_Bike_Lane_Width)>0):0 else:-_EmptySpace #if parking protection is on a shift will lead to geometric collision, but it will choose to collide if oneside does not have a bikelane/buffer (check later).   
 const Max_Sidewalk_Gap				= 5.4 #change this if you want a smaller or larger gap between first tree splits and crosswalks
-const Median_Turn_Transition_Depth  = Center_Width*1.5
+const Median_Turn_Transition_Depth  = Center_Width*(2*Speed_Limit_in_MPH/30)
 const Minimum_Turn_Curb_Width		= 1.5/Feet
 const Turn_Pocket_Curb_Width		=_Maxof(Minimum_Turn_Curb_Width,Center_Width/10)
 const Split_Divider_Width			= case LOD_Setting=="Low":3/Feet case LOD_Setting=="High":1/Feet else: 1.5/Feet
@@ -2157,9 +2157,9 @@ Striped_Centerline-->
 MedianWTurnLane-->
 	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
 						|_neighborBegin*_stopBegin*ThickPaintLineWidth:AsphaltPainted("white","Auto")
-						|(_tooShort(geometry.du(0,unitSpace),16+Median_Turn_Transition_Depth+ThickPaintLineWidth))*_neighborBegin*_stopBegin*(16+Median_Turn_Transition_Depth):MedianTurnPocket("Median",0)
+						|(_tooShort(geometry.du(0,unitSpace),16+Median_Turn_Transition_Depth+ThickPaintLineWidth))*_neighborBegin*_stopBegin*(14+Median_Turn_Transition_Depth):MedianTurnPocket("Median",0)
 						|~1:Raised_Offset_Curb("Median",1,"Auto",Center_Width/4)
-						|(_tooShort(geometry.du(0,unitSpace),16+Median_Turn_Transition_Depth+ThickPaintLineWidth))*_neighborEnd*_stopEnd*(16+Median_Turn_Transition_Depth):MedianTurnPocket("Median",2)
+						|(_tooShort(geometry.du(0,unitSpace),16+Median_Turn_Transition_Depth+ThickPaintLineWidth))*_neighborEnd*_stopEnd*(14+Median_Turn_Transition_Depth):MedianTurnPocket("Median",2)
 						|_neighborEnd*_stopEnd*ThickPaintLineWidth:AsphaltPainted("white","Auto")
 						|(_Bike_Box_Gap("End")): Bike_Box_Left_Turn_Gap("End")}
 
