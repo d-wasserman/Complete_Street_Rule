@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:11/10/2018
+ * Last Updated:11/11/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -1875,9 +1875,15 @@ BikeBoxSymbolAllocation(dir,symbol_spacing,allocation_width,bike_box_color)-->
 ParkingLane(Side,ParkingType,ParkingLength,ParkingWidth,CurbsideLength)-->
 	case find(ParkingType,"Parallel",0)!=-1:
 		ParallelParkingLane(Side,ParkingType,ParkingLength,ParkingWidth,CurbsideLength)	
- 	else:
+ 	case find(ParkingType,"Angled",0)!=-1:
  		AngledParkingLane(Side,ParkingType,ParkingLength,ParkingWidth,CurbsideLength)
-
+	else:
+		InformalStorageLane(Side)
+		
+InformalStorageLane(Side)-->
+		report("Curbside Management.Other Length (m)",geometry.du(0,unitSpace))
+		Asphalt("Storage")
+		
 ParallelParkingLane(Side,ParkingType,ParkingLength,ParkingWidth,CurbsideLength)-->
 	color( _ThematicRouter ("Storage"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
  	scaleUV(0,
@@ -1905,6 +1911,7 @@ AngledParkingLane(Side,ParkingType,ParkingLength,ParkingWidth,CurbsideLength)-->
 ParkingSpace(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
  	case rand(0,100)<=Parklet_Percentage && SpaceNumber>1:
  		Asphalt("Pedestrian")
+ 		report("Curbside Management.Sidewalk Cafe (m)",geometry.du(0,unitSpace))
  		Parklet_Insert(ParkingLength,case Side=="Right":0 else: 180)			
 	 case find(ParkingType,"Parallel",0)!=-1:
  		ParallelParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)
@@ -1924,7 +1931,7 @@ RightCurbsideAllocator(Side,ParkingType,ParkingLength,ParkingWidth)-->
 	
 LeftCurbsideAllocator(Side,ParkingType,ParkingLength,ParkingWidth)-->
 	Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)
-
+	
 Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)-->
 	case find(ParkingType,"Freight",0)!=-1:
 		Freight_Loading_Allocation(Side,ParkingWidth,ParkingLength)
@@ -1937,8 +1944,7 @@ Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)-->
 	case find(ParkingType,"DoBi & Scooter",0)!=-1:
 		DoBi_Scooter_Parking(Side,ParkingWidth,ParkingLength)
 	else:
-		report("Curbside Management.Other Length (m)",geometry.du(0,unitSpace))
-		Asphalt("Auto")
+		InformalStorageLane(Side)
 		
 Freight_Loading_Allocation(Side,ParkingWidth,ParkingLength)-->
 	report("Curbside Management.Freight Loading Length (m)",geometry.du(0,unitSpace))		
@@ -1988,7 +1994,8 @@ Carshare_Parking_Stamp(Side)-->
 	case (Side=="Right" || Lane_Distribution==1) && Lane_Distribution!=0:1 else: -1)
 	scaleUV(0,case rightHandTraffic: 1 else: -1,case rightHandTraffic: 1 else: -1)
 	deleteUV(_Texture_Switch)
-	color( _ThematicRouter ("Shared Mobility"))			
+	color( _ThematicRouter ("Shared Mobility"))
+	ModeReporter("Shared Mobility")		
 		
 Bus_Stop_Allocation(Side,Color,StampWidth)-->
 	report("Curbside Management.Bus Stop Length (m)",geometry.du(0,unitSpace))
@@ -2018,7 +2025,7 @@ Project_Zebra_Stripe(Color,Mode_Class)-->
 	projectUV(0)
 	deleteUV(_Texture_Switch)
 	color( _ThematicRouter (Mode_Class))
-	ModeReporter("Shared Mobility")
+	ModeReporter(Mode_Class)
 
 Parklet_Insert(ParkingLength,Rotation)-->
 	alignScopeToGeometry(yUp, largest, 1)
@@ -2042,7 +2049,8 @@ AngledNoseIn(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,Parkin
 	color( _ThematicRouter ("Storage"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	deleteUV(_Texture_Switch)
 	ParkingReport(Side,case SpaceNumber==1: false else:true,false)#Don't include last spot
-		
+	ModeReporter("Storage")
+	
 AngledNoseOutParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
 	AngledParkingCar((case Side=="Right":0 else:2),ParkingType,ParkingLength, ParkingWidth,SpaceNumber)
 	scaleUV(0,1,(case Side=="Right":
@@ -2054,6 +2062,7 @@ AngledNoseOutParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLengt
 	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Storage"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	ParkingReport(Side,case SpaceNumber==1: false else:true,false) #Don't include last spot
+	ModeReporter("Storage")
 	
 ParallelParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
 	case SpaceNumber==TotalSpacesonSide-2:#1 from index total, 1 from additional split- Start
@@ -2139,7 +2148,7 @@ ParkingReport(Side,Rear_Edge_Case,Delete_Geo)-->#This edge case parameter only m
 		case Rear_Edge_Case:
 			report("Parking."+Side+" Parking Space Area (m^2)",geometry.area)
 			report("Parking.Total Parking Space Area (m^2)",geometry.area)
-			report("Curbside Management.On-Street Parking Length (m)",geometry.du(0,unitSpace))
+			report("Curbside Management.On-Street Parking Length (m)",geometry.du(0,unitSpace))	
 			NIL
 		else:
 			NIL
@@ -2148,6 +2157,7 @@ ParkingReport(Side,Rear_Edge_Case,Delete_Geo)-->#This edge case parameter only m
 			report("Parking."+Side+" Parking Space Area (m^2)",geometry.area)
 			report("Parking.Total Parking Space Area (m^2)",geometry.area)
 			report("Curbside Management.On-Street Parking Length (m)",geometry.du(0,unitSpace))
+				
 		else:
 			X.
 ###################################################
