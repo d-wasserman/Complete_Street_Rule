@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:11/11/2018
+ * Last Updated:11/12/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -2102,8 +2102,13 @@ ParkingInsertCap (Rotation,Obj_Path)-->
 	alignScopeToGeometry(yUp,largest,0)
 	rotateScope(0,Rotation,0)
 	i(StencilFolder+Obj_Path)
-	extrude(sharrowHeight)	
-	AsphaltPainted("white","Storage")
+	extrude(sharrowHeight)
+	tileUV(0,7,7)
+	cleanupGeometry(all,0.001)
+	texture(LanesFolder+"/asphalt_painted_white_7x7m.jpg")
+	deleteUV(_Texture_Switch)
+	color( _ThematicRouter ("Storage"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+
 
 ParallelParkingTexture(Side,ParkingLength,ParkingWidth,ReportBool)-->
  	scaleUV(0,1,(case Side=="Right":
@@ -3186,7 +3191,7 @@ AsphaltPainted(paintColor,Usage) -->
 		texture(LanesFolder+"/asphalt_painted_" + paintColor + "_7x7m.jpg")
 		deleteUV(_Texture_Switch)
 		color( _ThematicRouter (Usage))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-		ModeReporter("Auto")
+		ModeReporter(Usage)
 	else:#If Black redirect to asphalt rule.
 		Asphalt(Usage)
 
