@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:11/12/2018
+ * Last Updated:11/13/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -1975,7 +1975,8 @@ DoBi_Scooter_Parking_Stamp(Side,ParkingWidth,ParkingLength)-->
 	projectUV(0)
 	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Shared Mobility"))			
-
+	ModeReporter("Shared Mobility")
+	
 Carshare_Parking_Allocation(Side,Color,ParkingWidth,ParkingLength)-->
 	report("Curbside Management.Carshare Parking Length (m)",geometry.du(0,unitSpace))
 	split(v,unitSpace,0){
