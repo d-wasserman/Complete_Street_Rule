@@ -2,9 +2,10 @@
 Complete Streets is a robust procedural street example that incorporates knowledge and ideas from various sources of transportation planning knowledge including NACTO Design Guidelines, AASHTO Design Recommendations, and MUTCD standards. The goal of the rule is to represent a diversity of street configurations to support multimodal planning in urban areas, and provide some basis for before and after comparisons of street treatments and transportation investments in Esri CityEngine. Along with visualization, the street rule includes analytical reports on various aspects of the geometry of the street that can be used to inform rough cost estimates. In addition to these analytics, the street rule has various customizable thematics and reports that use information from the geometry and configuration of the street to suggest how it might impact the "stress levels" put on different modes. The street rule intends to represent transportation planning treatments for complete streets within urban areas and common highway configurations that might include shoulders, Jersey barriers, and HOV Lanes.
 This is an updated repository for a modified version of the ESRI Complete Street rule by the original rule author.
 
-## Demonstration Animation
+## Scenario Oriented Design Tool
 
 ![alt tag](https://github.com/d-wasserman/Complete_Street_Rule/blob/master/images/CSRuleCEDemo.gif)
+
 
 # Instructions
 To open and interact with this project, do the following:
@@ -60,7 +61,9 @@ This still needs to be tested more so please comment if you have any issues with
 
 9. Handles Support: Local Edits allow randomly generated and spaced assets to be moved within a CityEngine model rather than post processed in PhotoShop or some other 3D modeling software. Current assets and elements that can be edited with handles include: Street Lamps|Traffic Lights|Trees|Benches.
 
-10. Other miscellaneous changes.
+10. Curbside Management: There are changes to parallel parking that provide a template for how cities can reallocate curbspace to support micro-mobility (scooters/bikeshare/DoBi), transit operations, freight loading zones, and passenger drop off locations to support TNC/Taxi operations and in preparation for supporting shared autonomous vehicles. 
+
+11. Other miscellaneous changes.
 
 	-Dead end exception, dead ends, treated like they have a connection (for non-singular cross sections and shorter segments). 
 	
