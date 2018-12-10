@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:11/13/2018
+ * Last Updated:12/9/2018
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -1790,6 +1790,7 @@ Cycle_Track_ObjIns(Object_Type,Buffer_File,Width)-->
 	alignScopeToGeometry(yUp,largest,0)
 	s(0,0,0)
 	i(ObjectFolder+Buffer_File)
+	label(Object_Type)
 	deleteUV(_Texture_Switch)
 	report("Objects."+Object_Type+ " Count",1)
 	center(xz)
@@ -1940,7 +1941,7 @@ Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)-->
 	case find(ParkingType,"Bus Stop",0)!=-1:
 		Bus_Stop_Allocation(Side,"black",ParkingWidth)
 	case find(ParkingType,"Carshare",0)!=-1:
-		Carshare_Parking_Allocation(Side,"green",ParkingWidth,ParkingLength)
+		Carshare_Parking_Split(Side,"green",ParkingWidth,ParkingLength)
 	case find(ParkingType,"DoBi & Scooter",0)!=-1:
 		DoBi_Scooter_Parking(Side,ParkingWidth,ParkingLength)
 	else:
@@ -1976,6 +1977,9 @@ DoBi_Scooter_Parking_Stamp(Side,ParkingWidth,ParkingLength)-->
 	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Shared Mobility"))			
 	ModeReporter("Shared Mobility")
+
+Carshare_Parking_Split(Side,Color,ParkingWidth,ParkingLength)-->
+	split(u,unitSpace,0) {~ParkingLength:Carshare_Parking_Allocation(Side,Color,ParkingWidth,ParkingLength)}*
 	
 Carshare_Parking_Allocation(Side,Color,ParkingWidth,ParkingLength)-->
 	report("Curbside Management.Carshare Parking Length (m)",geometry.du(0,unitSpace))
@@ -2035,6 +2039,7 @@ Parklet_Insert(ParkingLength,Rotation)-->
  	t(Parklet_Shift,0,0)
  	report("Objects.Parklet Count",1)
  	i(Parklet_Object)
+ 	label("Parklet")
  	deleteUV(_Texture_Switch)
  	
 AngledNoseIn(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
@@ -2129,6 +2134,7 @@ ParallelParkingCarStep2(dir,ParkingLength, ParkingWidth) -->
 	rotateScope(0,DirectionalRotation,0) 
 	s(0,0,0)
 	i(vehicleAsset("car"))
+	label("parked car")
 	t(0,0,(ParkingLength/2))#+1) 
 	center(x)
 	deleteUV(_Texture_Switch)
@@ -2147,6 +2153,7 @@ AngledParkingCarStep2(DirsenseFlip,NoseSenseFlip,Rotation_Angle,ParkingLength, P
 	t((ParkingWidth/2.3),0,(ParkingLength)) # Suggest changing base concept later.
 	rotateScope(0,NoseSenseFlip*-Rotation_Angle,0)
 	i(vehicleAsset("car"))
+	label("parked car")
 	deleteUV(_Texture_Switch)
 	
 ParkingReport(Side,Rear_Edge_Case,Delete_Geo)-->#This edge case parameter only makes sure the correct number of parking spaces is reported. 
@@ -2663,6 +2670,7 @@ Lamp_Center_Asset(Side_Rotation,Shape_Edge,Dir,Offset)-->
 	t(0,0,Offset)
 	report("Objects.Street Lamp Count", 1)
 	i(Street_Lamp_Object)
+	label("Street Lamp")
 	deleteUV(_Texture_Switch)
 	
 ##########################################
@@ -3012,6 +3020,7 @@ Traffic_Light_Asset(index)-->
 	t(0,0,0.1)
 	report("Objects.Traffic Lights Count", 1)
 	i(Traffic_Light_Object)
+	label("Traffic Light")
 	deleteUV(_Texture_Switch)
 
 Sidewalk_Lamp(offset) -->
@@ -3027,6 +3036,7 @@ LampAsset(offset) -->
 	r(0,90,0)
 	i(Street_Lamp_Object)
 	t(.2,0,offset)
+	label("Street Lamp")
 	deleteUV(_Texture_Switch)
 
 Parking_Meter_Setup-->
@@ -3138,6 +3148,7 @@ Bench_Insert-->
 	case SBench_Toggle:
  		t( SBench_Translate_X ,0, SBench_Translate_Z )
 		i(Bench_Object)
+		label("Bench")
 		deleteUV(_Texture_Switch)
 	else:
 		NIL
@@ -3179,6 +3190,7 @@ Sign_Objects_Insert(Object_Identity,File_Extension,RotationAng,Translation,SX,SY
 		t(scope.sx-SX,0,0)
 		t(Translation,0,0)
 		i(File_Extension)
+		label("Signs")
 		s(SX,SY,SZ)
 		report("Objects."+Object_Identity+" Count",1)
 		deleteUV(_Texture_Switch)
@@ -3267,6 +3279,7 @@ VehicleAsset(type) -->
 	r(0,90,0)
 	r(0,DirectionalRotation,0) 
 	i(vehicleAsset(type))
+	label(type)
 	color( _ThematicRouter (case type=="bus":"Transit" else:"Auto"))
 	Delete_Texture
 
@@ -3310,7 +3323,10 @@ Bike(dir,Bike_Lane_Width,bike_probability) -->
 BikeAsset(Bike_Lane_Width) -->
 	rotateScope(0,DirectionalRotation,0) 
 	t(0,0,Bike_Lane_Width/2 + rand(-Bike_Lane_Width/4,Bike_Lane_Width/4)) 
-	s(0,0,0) i(bikeAsset) r(scopeCenter,0,90,0)
+	s(0,0,0) 
+	i(bikeAsset) 
+	r(scopeCenter,0,90,0)
+	label("bicylist")
 	Bike_Delete_Texture_Color # will only color when textures are removed. 
 
 	
@@ -3359,6 +3375,7 @@ Human -->
 		t(0,0,'rand(0.1,0.6))
 		s(0,rand(1.7,1.9),0) r(0,dirHuman,0) 
 		i(peopleAsset)
+		label("person")
 		color( _ThematicRouter ("Pedestrian"))
 		deleteUV(_Texture_Switch)
 	else:
