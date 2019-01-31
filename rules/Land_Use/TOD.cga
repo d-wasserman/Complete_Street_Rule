@@ -120,8 +120,6 @@ attr Side_Baseheight	=Front_Baseheight
 attr Roof_Angle = case Roof_Type=="Envelope":90 case Roof_Type=="Shed":2.5 else: 30
 
 
-
-
 @Group("STREETSCAPE CONNECTIONS","Greenspace",9)
 @Order(1) @Range("Grass","Trees & Plantings") @Description("Describes how green spaces is allocated. If Trees & Plantings is selected, trees can appear in sized greenspaces.")
 attr Greenspace_Type="Trees & Plantings"
@@ -139,6 +137,48 @@ attr Greenspace_Tree_1_Percentage 		= 1
 attr Greenspace_Tree_2_Type				= "None"
 
 
+###### add - Leilei #######
+@Group("TOD","Bus Bonuses",11)
+@Order(1) @Range("Trips Per Hour","Number of High Frequency Routes") @Description("Determines which bonus mode to consider.")#may need reword on this.
+attr Bus_Bonus_Mode = "Trips Per Hour"
+@Order(2) @Description("This field in GIS attribute data sums the number of trips per hour for the nearest bus stop.")
+attr Bus_NumTripsPerHr = 0 
+@Order(3) @Description ("This field in GIS attribute data sums the number of high frequency routes for the nearest bus stop.")
+attr Bus_rte_count = 0 
+@Order(4) @Range(0,10) @Description("Bonus FAR based on the bonus mode choices.")#may need reword on this.
+attr Initial_Bus_FAR_Bonus = 
+	case Bus_Bonus_Mode == "Trips Per Hour": Bus_NumTripsPerHr * 0.1 
+	else: Bus_rte_count * 1 #are these numbers correct?
+@Order(5) @Range(0,5280) @Description("The distance away from bus stop that FAR drops.")#may need reword on this.
+attr Bus_Decay_Increment = 500
+@Order(6) @Range(0,10) @Description("The rate that FAR drops at each distance increment away from the bus stop.")#may need reword on this.
+attr Bus_Decay_Rate = 1
+
+@Group("TOD","Rail & BRT Bonuses",13)
+@Order(1) @Range("Rail Present","Trips Per Hour","Number of High Frequency Routes") @Description("Determines which bonus mode to consider. If a rail way is present, FAR bonus will be decided based on the present of rail. If there is no rail, FAR bonus will be determined by BRT information.")#may need reword on this.
+attr Rail_Bonus_Mode = "Rail Present"
+@Order(2) @Description("This field in GIS attribute data sums the number of trips per hour for the nearest rail station.")
+attr Rail_NumTripsPerHr = 0
+@Order(3) @Description ("This field in GIS attribute data sums the number of high frequency routes for the nearest rail station.")
+attr Rail_rte_count = 0 
+@Order(4) @Range(0,15) @Description("Bonus FAR based on the bonus mode choices.")#may need reword on this.
+attr Initial_Rail_FAR_Bonus = 
+	case Rail_Bonus_Mode == "Rail Present": Rail_rte_count * 2 #I don't understand this one...
+	case Rail_Bonus_Mode == "Trips Per Hour": Rail_NumTripsPerHr * 0.2 
+	else: Rail_rte_count * 2 #are these numbers correct?
+@Order(5) @Range(0,10560) @Description("The distance away from rail/BRT stop that FAR drops.")#may need reword on this.
+attr Rail_Decay_Increment = 1000
+@Order(6) @Range(0,15) @Description("The rate that FAR drops at each distance increment away from the bus stop.")#may need reword on this.
+attr Rail_Decay_Rate = 1
+
+#This group contains information I thought we should have in parcel data#
+@Group("Parcel Info (Temporary)", 15)
+@Order(1) @Range(0,15) @Description("This field reads the existing FAR from zoning regulations.")
+attr Z_FAR = rand(0,15)
+@Order(2) @Range("Single-family","Multi-family","Commercial","Retail","Other") @Description("This field reads the existing land use (generalized 5 zones) from zoning regulations.")#5 cats here just for examples.
+attr Z_LandUse = "Multi-family"
+############################
+
 #####################
 #Hidden_Attributes
 #####################
@@ -151,6 +191,16 @@ attr Ground_Elevation=0
 attr FootPrint_Elevation=0
 @Order(4)@Hidden
 attr Lot_Edge_Count=0
+#Bonus FAR and building footprint initial attribute
+	
+@Order(5)@Hidden
+attr Bus_NEAR_DIST = 0
+@Order(6)@Hidden
+attr Rail_NEAR_DIST = 0
+@Order(7) @Hidden
+attr TargetGFA = _Total_TargetFAR * Building_Footprint
+@Order(8) @Hidden
+attr Building_Footprint = geometry.area
 
 #Building Feature dimensions
 @Order(1) @Range(0,10) @Hidden @Description("These set of attributes control the buildings articulation and external potential openings to water.")
@@ -341,6 +391,20 @@ _Cumulative_Setback(floornum,setbackType)=
 	else:
 		(floornum-Building_Setback_Floor)*Building_Setback
 
+###### add - Leilei ###########		
+const Bus_num_increment = ceil(Bus_NEAR_DIST/Bus_Decay_Increment)
+const Rail_num_increment = ceil(Rail_NEAR_DIST/Rail_Decay_Increment)
+		
+_get_Bonus_FAR_Decay(initialFAR, decay_rate, num_increment) = 
+	case initialFAR - (initialFAR * decay_rate) * num_increment >= 0: 
+			initialFAR - (initialFAR * decay_rate) * num_increment
+	else: _get_Bonus_FAR_Decay(initialFAR, decay_rate, num_increment-1)
+	
+_Total_TargetFAR = 
+	Z_FAR + _get_Bonus_FAR_Decay(Initial_Bus_FAR_Bonus, Bus_Decay_Rate, Bus_num_increment) 
+	+ _get_Bonus_FAR_Decay(Initial_Rail_FAR_Bonus, Rail_Decay_Rate, Rail_num_increment)
+###############################	
+		
 #Reporting Functions
 _isWall(Location)= case Location=="Wall"||Location=="Window"||Location=="Door" || Location=="Frame Top":true else: false
 ##########################
@@ -425,6 +489,9 @@ const Floor_Count_Abs=abs(Floor_Count)
 const TreeCostAverage = 750 
 const GrassSurfaceCostAverage = 10	# In square meters
 const HardscapePaverCost = 25		# In square meters
+
+
+
 #################
 #Rules
 #
@@ -458,8 +525,13 @@ SplitZ(xIndex) -->
 Lot_Setup(xIndex,zIndex)-->
 	set(Lot_Area,geometry.area)
 	set(Lot_Edge_Count,geometry.nEdges)
+	set(TargetGFA, Lot_Area * _Total_TargetFAR)
 	report("Zoning.Lot Area", Lot_Area)
 	report("Zoning.Lot Count",1)
+	##### add - Leilei ##########
+	report("Zoning.Lot Target GFA",TargetGFA)
+	report("Zoning.Target FAR", _Total_TargetFAR)
+	#############################
 	#[case Text_On: Text.Generate else: NIL]
 	RightSetback
 		
@@ -507,7 +579,12 @@ Footprint_SizeCheck-->
 		FootPrintFoundation
 FootPrintFoundation -->
 	#Report footprint area, declare underfloor extrusion
+	set(Building_Footprint, geometry.area)
+	##### add - Leilei ########
+	set(Floor_Count, ceil(TargetGFA/Building_Footprint)) #this changes the Floor_Count in the original attribute settings.
+	###########################
 	report("Zoning.Initial Footprint Area (M^2)",geometry.area())
+	report("Zoning.Number of Floors",Floor_Count)
 	ActualFootPrint
 	label("Foot Print")
 
@@ -557,11 +634,12 @@ Massing(floornum)-->
 	#align massing up, create with envelop function
 	case floornum==first_Floor:
 		alignScopeToAxes(y)
-		extrude(Ground_Floor_Height)
+		extrude(world.up.flatTop, Ground_Floor_Height)
 		Floors(floornum)
-	case floornum<=Floor_Count_Abs:
+	#case floornum<=Floor_Count_Abs:
+	case floornum<=Floor_Count:
 		alignScopeToAxes(y)
-		extrude(Floor_Height)
+		extrude(world.up.flatTop, Floor_Height)
 		Floors(floornum)
 	else:
 		alignScopeToAxes(y)
