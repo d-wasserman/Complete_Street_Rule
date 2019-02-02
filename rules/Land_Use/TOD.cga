@@ -1,6 +1,7 @@
 /**
  * File:    TOD.cga
  * Created: 12 Sept 2018 18:18:06 GMT
+ * Updated: 2 Feb 2019 16:12:06 GMT
  * Author:  David J. Wasserman & Leilei Duan
  *
 	Copyright 2018 David Joseph Wasserman & Leilei Duan
@@ -34,22 +35,41 @@ attr Transparency=.33
 attr LOD_Setting="Low"
 @Order(7)@Range(-3,3) @Description("Translates the lot shape up or down. Helps for adjusting shape position to match sidewalk height, but can be used to demonstrate grade based adaptation.")
 attr Grade_Adjustment=0 #0.102
+###### add - Leilei #######
+@Group("TOD","Bus Bonuses",2)
+@Order(1) @Range("Trips Per Hour","Number of High Frequency Routes") @Description("Determines which bonus mode to consider.")#may need reword on this.
+attr Bus_Bonus_Mode = "Trips Per Hour"
+@Order(2) @Description("This field in GIS attribute data sums the number of trips per hour for the nearest bus stop.")
+attr Bus_NumTripsPerHr = 0 
+@Order(3) @Description ("This field in GIS attribute data sums the number of high frequency routes for the nearest bus stop.")
+attr Bus_rte_count = 0 
+@Order(4) @Range(0,10) @Description("Bonus FAR based on the bonus mode choices.")#may need reword on this.
+attr Initial_Bus_FAR_Bonus = 
+	case Bus_Bonus_Mode == "Trips Per Hour": Bus_NumTripsPerHr * 0.1 
+	else: Bus_rte_count * 1 #are these numbers correct?
+@Order(5) @Range(0,5280) @Description("The distance away from bus stop that FAR drops.")#may need reword on this.
+attr Bus_Decay_Increment = 500
+@Order(6) @Range(0,10) @Description("The rate that FAR drops at each distance increment away from the bus stop.")#may need reword on this.
+attr Bus_Decay_Rate = 1
 
-@Group("ZONING","Transit Settings",3)
-@Range(0,5280)@Order(1) @Description("The proximity to transit measured in Feet.") #@Leilei - Miles?
-attr Proximity_To_Transit = 500 
-@Range(0,5280)@Order(2) @Description("The step interval for which transit proximity and transit bonuses are recalculated. For example, if 500, the increments for height bonuses are calculated at 500, 1000, 1500, etc feet.")
-attr Proximity_Increment = 500
-@Range(0,10)@Order(3) @Description("This is a linear decrease factor in the density bonus.")
-attr Proximity_Linear_Decay_Factor = 1
-@Range(0,10)@Order(4) @Description("This is an expoential decreasee factor in the density bonus.")
-attr Proximity_Exponential_Decay_Factor = 0
-@Range(0,100)@Order(5) @Description("This represents the number of high frequency routes within proximity to the target parcel.")
-attr Number_Of_High_Frequency_Routes = 1
-@Range(0,100)@Order(6) @Description("Additional height in stories per height increment.")
-attr Height_Bonus_Per_Service_Increment = 2 # How does this impact setbacks? Do you want to add a parameter for that?
+@Group("TOD","Rail & BRT Bonuses",3)
+@Order(1) @Range("Rail Present","Trips Per Hour","Number of High Frequency Routes") @Description("Determines which bonus mode to consider. If a rail way is present, FAR bonus will be decided based on the present of rail. If there is no rail, FAR bonus will be determined by BRT information.")#may need reword on this.
+attr Rail_Bonus_Mode = "Rail Present"
+@Order(2) @Description("This field in GIS attribute data sums the number of trips per hour for the nearest rail station.")
+attr Rail_NumTripsPerHr = 0
+@Order(3) @Description ("This field in GIS attribute data sums the number of high frequency routes for the nearest rail station.")
+attr Rail_rte_count = 0 
+@Order(4) @Range(0,15) @Description("Bonus FAR based on the bonus mode choices.")#may need reword on this.
+attr Initial_Rail_FAR_Bonus = 
+	case Rail_Bonus_Mode == "Rail Present": Rail_rte_count * 2 #I don't understand this one...
+	case Rail_Bonus_Mode == "Trips Per Hour": Rail_NumTripsPerHr * 0.2 
+	else: Rail_rte_count * 2 #are these numbers correct?
+@Order(5) @Range(0,10560) @Description("The distance away from rail/BRT stop that FAR drops.")#may need reword on this.
+attr Rail_Decay_Increment = 1000
+@Order(6) @Range(0,15) @Description("The rate that FAR drops at each distance increment away from the bus stop.")#may need reword on this.
+attr Rail_Decay_Rate = 1
 
-@Group("ZONING","Ground Level Setbacks",3)
+@Group("ZONING","Ground Level Setbacks",4)
 @Range(0,10)@Order(1)@Description("Creates a street oriented setback away from the front edge of the lot in meters.")
 attr Front_Yard_Depth	=1#_initialSetBacks("Front")
 @Range(0,10)@Order(2)@Description("Creates a street oriented setback away from the rear edge of the lot in meters.")
@@ -135,41 +155,6 @@ attr Greenspace_Tree_1_Type				= "Random"
 attr Greenspace_Tree_1_Percentage 		= 1
 @Order(7)@Description("Determines the species of the tree/plant selected for secondary tree for more variation. If this is not None, Tree 2 will appear if Tree 1 does not fire with the current percentage. This does mean that you cannot drop tree density if you alternate trees.")@Range("None","Random","Alder Buckthorn","Amazon Sword Plant","American Chestnut","American Sycamore","Apricot","Australian Pine","Baldcypress","Balsam Fir","Bamboo","Banana Tree","Basswood","Bay Laurel","Black Locust","Blue Gum Eucalyptus","Boxwood","Cabbage Palm Fern","California Bay","California Incense Cedar","California Palm","California Redwood","California Walnut","Coconut Palm","Common Hawthorn","Common Whitebeam","Conker Tree","Date Palm","Desert Willow","Douglas Fir","European Beech","European Larch","Ficus","Field Elm","Flannelbush","Flowering Dogwood","Giant Sequoia","Hedgehog Agave","Japanese Angelica Tree","Lacy Tree Philodendron","Leyland Cypress","Lily of the Valley","Lodgepole Pine","Mediterranean Buckthorn","Mexican Palmetto","Mountain Mahogany","Northern Red Oak","Norway Maple","Norway Spruce","Orange Tree","Orchid","Oval-leaved Privet","Palm Lily","Palo Verde","Paper Birch","Parlour Palm","Prickly Pear Cactus","Red Alder","Red Hickory","Rhododendron Azaleas","Rose","Ruffle Palm","Saguaro Cactus","Sassafras","Scots Pine","Sea Islands Yucca","Shadbush","Snake Plant","Southern Magnolia","Spanish Broom","Strawberry Tree","Sugar Maple","Sunflower","Sweetgum","Umbrella Acacia","Western Juniper","White Ash","White Oak","White Poplar","White Willow","Witch Hazel","","_____________________________","GENERICS","","Generic Dead Tree","Generic Stump","Generic Unknown","","_____________________________","PROXIES","","Algarrobo","American Elderberry","American Pepper","American Silverberry","Athel Tamarisk","Avocado","Black Tupelo","Buttonbush","Canada Buffaloberry","Chinaberry Tree","Chinese Tallow Tree","Common Hackberry","Common Holly","Common Persimmon","Desert Bitterbrush","European Hornbeam","Giant Chinquapin","Honey Locust","Hophornbeam","Huckleberry Shrub","Japanese Hemlock","Japanese Nutmeg","Judas Tree","Lawson Cypress","Loblolly Bay","Mexican Buckeye","Necklacepod","Northern Bilberry","Northern White Cedar","Octopus Tree","Osage Orange","Paper Bark Tree","Pawpaw","Persian Silk Tree","Princess Tree","Smooth Sumac","Sourwood","Southern Wax Myrtle","Tanoak","Tree of Heaven","Turkish Hazel","Western Soapberry","White Mulberry","Yellow Poplar","Yew")#@Hidden
 attr Greenspace_Tree_2_Type				= "None"
-
-
-###### add - Leilei #######
-@Group("TOD","Bus Bonuses",11)
-@Order(1) @Range("Trips Per Hour","Number of High Frequency Routes") @Description("Determines which bonus mode to consider.")#may need reword on this.
-attr Bus_Bonus_Mode = "Trips Per Hour"
-@Order(2) @Description("This field in GIS attribute data sums the number of trips per hour for the nearest bus stop.")
-attr Bus_NumTripsPerHr = 0 
-@Order(3) @Description ("This field in GIS attribute data sums the number of high frequency routes for the nearest bus stop.")
-attr Bus_rte_count = 0 
-@Order(4) @Range(0,10) @Description("Bonus FAR based on the bonus mode choices.")#may need reword on this.
-attr Initial_Bus_FAR_Bonus = 
-	case Bus_Bonus_Mode == "Trips Per Hour": Bus_NumTripsPerHr * 0.1 
-	else: Bus_rte_count * 1 #are these numbers correct?
-@Order(5) @Range(0,5280) @Description("The distance away from bus stop that FAR drops.")#may need reword on this.
-attr Bus_Decay_Increment = 500
-@Order(6) @Range(0,10) @Description("The rate that FAR drops at each distance increment away from the bus stop.")#may need reword on this.
-attr Bus_Decay_Rate = 1
-
-@Group("TOD","Rail & BRT Bonuses",13)
-@Order(1) @Range("Rail Present","Trips Per Hour","Number of High Frequency Routes") @Description("Determines which bonus mode to consider. If a rail way is present, FAR bonus will be decided based on the present of rail. If there is no rail, FAR bonus will be determined by BRT information.")#may need reword on this.
-attr Rail_Bonus_Mode = "Rail Present"
-@Order(2) @Description("This field in GIS attribute data sums the number of trips per hour for the nearest rail station.")
-attr Rail_NumTripsPerHr = 0
-@Order(3) @Description ("This field in GIS attribute data sums the number of high frequency routes for the nearest rail station.")
-attr Rail_rte_count = 0 
-@Order(4) @Range(0,15) @Description("Bonus FAR based on the bonus mode choices.")#may need reword on this.
-attr Initial_Rail_FAR_Bonus = 
-	case Rail_Bonus_Mode == "Rail Present": Rail_rte_count * 2 #I don't understand this one...
-	case Rail_Bonus_Mode == "Trips Per Hour": Rail_NumTripsPerHr * 0.2 
-	else: Rail_rte_count * 2 #are these numbers correct?
-@Order(5) @Range(0,10560) @Description("The distance away from rail/BRT stop that FAR drops.")#may need reword on this.
-attr Rail_Decay_Increment = 1000
-@Order(6) @Range(0,15) @Description("The rate that FAR drops at each distance increment away from the bus stop.")#may need reword on this.
-attr Rail_Decay_Rate = 1
 
 #This group contains information I thought we should have in parcel data#
 @Group("Parcel Info (Temporary)", 15)
@@ -258,34 +243,6 @@ _initialFootprint = case find(Land_Use_1,"Family",0)!=-1:
 _initialHeight=((Floor_Count_Abs-1)*Floor_Height)+Ground_Floor_Height
 _initialBaseHeights= Building_Height -Floor_Height*3
 _initialTotalHeight = _initialHeight ++.3048
-	
-# _initialBuildingHeight(LU)= 
-# 					case find(LU_SLR.getValueByDORUC(LU,LU_SLR.Intensity_Class),"Low",0)!=-1:
-# 						float(listRandom("1;1;1;1;1;1;2;2;2;3"))*Floor_Height
-# 					case find(LU_SLR.getValueByDORUC(LU,LU_SLR.Intensity_Class),"Mid",0)!=-1:
-# 						float(listRandom("4;4;4;4;4;5;5;6;7"))*Floor_Height
-# 					case find(LU_SLR.getValueByDORUC(LU,LU_SLR.Intensity_Class),"High",0)!=-1:
-# 						float(listRandom("8;8;8;8;8;8;8;9;9;10;11;12;13;14;15")	)*Floor_Height
-# 					else:
-# 						float(listRandom("1;1;1;1;1;2"))*Floor_Height
-					
-# _initialSetBacks(setbackSide) = 
-# 					case find(HAZUS_Land_Use_1,"RES",0)!=-1  && Lot_Area>2000 && Floor_Count<=3: 
-# 						rint(rand(4,6))
-# 					case find(HAZUS_Land_Use_1,"RES",0)!=-1  && Lot_Area>1000 && Floor_Count<=3: 
-# 						rint(rand(2,4))
-# 					case find(HAZUS_Land_Use_1,"AGR",0)!=-1:
-# 						rint(rand(10000,20000))
-# 					case find(HAZUS_Land_Use_1,"IND6",0)!=-1:
-# 						rint(rand(10000,20000))
-# 					else:
-# 						case (setbackSide=="Front") && Elevate_Structure!="None":
-# 							_Minof(Elevation_Height/Stair_Slope,Max_Stair_Setback)
-# 						case setbackSide!="Front" && Elevate_Structure!="None":		
-# 							1
-# 						else:
-# 							rint(rand(1,2))
-
 				
 _initialSetbackThreshold=
 	min(Front_Rear_Wing_Depth,Right_Left_Wing_Depth)*.25						
@@ -636,18 +593,15 @@ Massing(floornum)-->
 		alignScopeToAxes(y)
 		extrude(world.up.flatTop, Ground_Floor_Height)
 		Floors(floornum)
-	#case floornum<=Floor_Count_Abs:
+
 	case floornum<=Floor_Count:
 		alignScopeToAxes(y)
 		extrude(world.up.flatTop, Floor_Height)
 		Floors(floornum)
+		print(floornum)
 	else:
 		alignScopeToAxes(y)
 		Floors(floornum)		
-		
-Floors_Split-->
-	split(y){Ground_Floor_Height:Ground_Floor(split.index,split.total-1)
-			|{Floor_Height:Other_Floors(split.index,split.total-1)}*}
 Floors(floornum)-->
 	case floornum==first_Floor:			
 		Ground_Floor(floornum,Floor_Count_Abs)
