@@ -39,14 +39,14 @@ attr Grade_Adjustment=0 #0.102
 @Group("TOD","Bus Bonuses",2)
 @Order(1) @Range("Trips Per Hour","Number of High Frequency Routes") @Description("Determines which bonus mode to consider.")#may need reword on this.
 attr Bus_Bonus_Mode = "Trips Per Hour"
-@Order(2) @Description("This field in GIS attribute data sums the number of trips per hour for the nearest bus stop.")
-attr Bus_NumTripsPerHr = 0 
-@Order(3) @Description ("This field in GIS attribute data sums the number of high frequency routes for the nearest bus stop.")
-attr Bus_rte_count = 0 
+@Order(2) @Description("This field in GIS attribute data sums the number of trips per hour for the nearest bus stop or is a count of the number of high frequency routes at a stop. ")
+attr Bus_Frequency_Metric = 0 
+@Order(3) @Description ("This field represents the proximity to the closest facility of interest.")
+attr Bus_Stop_Proximity = 0 
 @Order(4) @Range(0,10) @Description("Bonus FAR based on the bonus mode choices.")#may need reword on this.
 attr Initial_Bus_FAR_Bonus = 
-	case Bus_Bonus_Mode == "Trips Per Hour": Bus_NumTripsPerHr * 0.1 
-	else: Bus_rte_count * 1 #are these numbers correct?
+	case Bus_Bonus_Mode == "Trips Per Hour": Bus_Frequency_Metric * 0.1 
+	else: Bus_Frequency_Metric * 1 
 @Order(5) @Range(0,5280) @Description("The distance away from bus stop that FAR drops.")#may need reword on this.
 attr Bus_Decay_Increment = 500
 @Order(6) @Range(0,10) @Description("The rate that FAR drops at each distance increment away from the bus stop.")#may need reword on this.
@@ -56,14 +56,14 @@ attr Bus_Decay_Rate = 1
 @Order(1) @Range("Rail Present","Trips Per Hour","Number of High Frequency Routes") @Description("Determines which bonus mode to consider. If a rail way is present, FAR bonus will be decided based on the present of rail. If there is no rail, FAR bonus will be determined by BRT information.")#may need reword on this.
 attr Rail_Bonus_Mode = "Rail Present"
 @Order(2) @Description("This field in GIS attribute data sums the number of trips per hour for the nearest rail station.")
-attr Rail_NumTripsPerHr = 0
-@Order(3) @Description ("This field in GIS attribute data sums the number of high frequency routes for the nearest rail station.")
-attr Rail_rte_count = 0 
+attr Rail_Frequency_Metric = 0
+@Order(3) @Description ("This field represents the proximity to the closest facility of interest.")
+attr Rail_Stop_Proximity = 0 
 @Order(4) @Range(0,15) @Description("Bonus FAR based on the bonus mode choices.")#may need reword on this.
 attr Initial_Rail_FAR_Bonus = 
-	case Rail_Bonus_Mode == "Rail Present": Rail_rte_count * 2 #I don't understand this one...
-	case Rail_Bonus_Mode == "Trips Per Hour": Rail_NumTripsPerHr * 0.2 
-	else: Rail_rte_count * 2 #are these numbers correct?
+	case Rail_Bonus_Mode == "Rail Present": min(1,Rail_Stop_Proximity)
+	case Rail_Bonus_Mode == "Trips Per Hour": Rail_Stop_Proximity* 0.2 
+	else: Rail_Stop_Proximity * 2 #are these numbers correct?
 @Order(5) @Range(0,10560) @Description("The distance away from rail/BRT stop that FAR drops.")#may need reword on this.
 attr Rail_Decay_Increment = 1000
 @Order(6) @Range(0,15) @Description("The rate that FAR drops at each distance increment away from the bus stop.")#may need reword on this.
@@ -96,10 +96,6 @@ attr Land_Use_2 = "None"
 @Order(3) @Range(0,100) @Description("Number of floors of land use type 2.")
 attr Use_2_Floors= 2
 
-#@Order(6) @Range("Short Duration","Long Duration") @Description("Duration of the HAZUS Flood Hazard.")
-#attr HAZUS_Hazard_Duration = "Long Duration"
-#@Order(7) @Range("Fresh Water","Salt Water") @Description("Water Type of the HAZUS Flood Hazard.")
-#attr HAZUS_Water_Type = "Salt Water"
 
 @Group("ZONING","Buildable Volume",5)
 @Order(6) @Range("Square", "L-Shaped","U-Shaped", "O-Shaped","Forced Square") @Description("Controls the footprint configuration after the lots setbacks are applied. Depth of U/L/O wings is controlled by attributes below.")
@@ -160,8 +156,6 @@ attr Greenspace_Tree_2_Type				= "None"
 @Group("Parcel Info (Temporary)", 15)
 @Order(1) @Range(0,15) @Description("This field reads the existing FAR from zoning regulations.")
 attr Z_FAR = rand(0,15)
-@Order(2) @Range("Single-family","Multi-family","Commercial","Retail","Other") @Description("This field reads the existing land use (generalized 5 zones) from zoning regulations.")#5 cats here just for examples.
-attr Z_LandUse = "Multi-family"
 ############################
 
 #####################
@@ -178,10 +172,6 @@ attr FootPrint_Elevation=0
 attr Lot_Edge_Count=0
 #Bonus FAR and building footprint initial attribute
 	
-@Order(5)@Hidden
-attr Bus_NEAR_DIST = 0
-@Order(6)@Hidden
-attr Rail_NEAR_DIST = 0
 @Order(7) @Hidden
 attr TargetGFA = _Total_TargetFAR * Building_Footprint
 @Order(8) @Hidden
@@ -349,12 +339,12 @@ _Cumulative_Setback(floornum,setbackType)=
 		(floornum-Building_Setback_Floor)*Building_Setback
 
 ###### add - Leilei ###########		
-const Bus_num_increment = ceil(Bus_NEAR_DIST/Bus_Decay_Increment)
-const Rail_num_increment = ceil(Rail_NEAR_DIST/Rail_Decay_Increment)
+const Bus_num_increment = floor(Bus_Stop_Proximity/Bus_Decay_Increment)
+const Rail_num_increment = floor(Rail_Stop_Proximity/Rail_Decay_Increment)
 		
 _get_Bonus_FAR_Decay(initialFAR, decay_rate, num_increment) = 
-	case initialFAR - (initialFAR * decay_rate) * num_increment >= 0: 
-			initialFAR - (initialFAR * decay_rate) * num_increment
+	case initialFAR - ( decay_rate * num_increment )>= 0: 
+			initialFAR - ( decay_rate * num_increment)
 	else: _get_Bonus_FAR_Decay(initialFAR, decay_rate, num_increment-1)
 	
 _Total_TargetFAR = 
@@ -488,6 +478,7 @@ Lot_Setup(xIndex,zIndex)-->
 	##### add - Leilei ##########
 	report("Zoning.Lot Target GFA",TargetGFA)
 	report("Zoning.Target FAR", _Total_TargetFAR)
+	print(_Total_TargetFAR)
 	#############################
 	#[case Text_On: Text.Generate else: NIL]
 	RightSetback
@@ -593,12 +584,10 @@ Massing(floornum)-->
 		alignScopeToAxes(y)
 		extrude(world.up.flatTop, Ground_Floor_Height)
 		Floors(floornum)
-
 	case floornum<=Floor_Count:
 		alignScopeToAxes(y)
 		extrude(world.up.flatTop, Floor_Height)
 		Floors(floornum)
-		print(floornum)
 	else:
 		alignScopeToAxes(y)
 		Floors(floornum)		
