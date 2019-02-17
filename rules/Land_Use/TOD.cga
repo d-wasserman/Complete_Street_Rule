@@ -1,7 +1,7 @@
 /**
  * File:    TOD.cga
  * Created: 12 Sept 2018 18:18:06 GMT
- * Updated: 2 Feb 2019 16:12:06 GMT
+ * Updated: 16 Feb 2019 16:12:06 GMT
  * Author:  David J. Wasserman & Leilei Duan
  *
 	Copyright 2018 David Joseph Wasserman & Leilei Duan
@@ -61,7 +61,7 @@ attr Rail_Frequency_Metric = 0
 attr Rail_Stop_Proximity = 0 
 @Order(4) @Range(0,15) @Description("Bonus FAR based on the bonus mode choices.")#may need reword on this.
 attr Initial_Rail_FAR_Bonus = 
-	case Rail_Bonus_Mode == "Rail Present": min(1,Rail_Stop_Proximity)
+	case Rail_Bonus_Mode == "Rail Present": 2
 	case Rail_Bonus_Mode == "Trips Per Hour": Rail_Stop_Proximity* 0.2 
 	else: Rail_Stop_Proximity * 2 #are these numbers correct?
 @Order(5) @Range(0,10560) @Description("The distance away from rail/BRT stop that FAR drops.")#may need reword on this.
@@ -161,10 +161,12 @@ attr Greenspace_Tree_2_Type				= "None"
 @Order(1)@Hidden
 attr Lot_Area=geometry.area()
 @Order(2)@Hidden
-attr Ground_Elevation=0
+attr Initial_Footprint_Area = 0
 @Order(3)@Hidden
-attr FootPrint_Elevation=0
+attr Ground_Elevation=0
 @Order(4)@Hidden
+attr FootPrint_Elevation=0
+@Order(5)@Hidden
 attr Lot_Edge_Count=0
 #Bonus FAR and building footprint initial attribute
 
@@ -329,7 +331,7 @@ _Cumulative_Setback(floornum,setbackType)=
 	else:
 		(floornum-Building_Setback_Floor)*Building_Setback
 
-###### add - Leilei ###########		
+###### Transit & Zoning FAR Control ###########		
 const Bus_num_increment = floor(Bus_Stop_Proximity/Bus_Decay_Increment)
 const Rail_num_increment = floor(Rail_Stop_Proximity/Rail_Decay_Increment)
 		
@@ -338,9 +340,12 @@ _get_Bonus_FAR_Decay(initialFAR, decay_rate, num_increment) =
 			initialFAR - ( decay_rate * num_increment)
 	else: _get_Bonus_FAR_Decay(initialFAR, decay_rate, num_increment-1)
 	
-_Total_TargetFAR(initialFAR) = 
+_Total_Target_FAR (initialFAR) = 
 	initialFAR + _get_Bonus_FAR_Decay(Initial_Bus_FAR_Bonus, Bus_Decay_Rate, Bus_num_increment) 
 	+ _get_Bonus_FAR_Decay(Initial_Rail_FAR_Bonus, Rail_Decay_Rate, Rail_num_increment)
+	
+_Left_Over_GFA(GFA_Used) =
+	(_Total_Target_FAR(Base_FAR) * Lot_Area) - GFA_Used
 ###############################	
 		
 #Reporting Functions
@@ -466,9 +471,10 @@ Lot_Setup(xIndex,zIndex)-->
 	report("Zoning.Lot Area", Lot_Area)
 	report("Zoning.Lot Count",1)
 	##### add - Leilei ##########
-	report("Zoning.Lot Target GFA",_Total_TargetFAR(Base_FAR)*geometry.area)
-	report("Zoning.Target FAR", _Total_TargetFAR(Base_FAR))
-	print( _Total_TargetFAR(Base_FAR))
+	report("Zoning.Lot Target GFA", _Total_Target_FAR (Base_FAR)*geometry.area)
+	report("Zoning.Target FAR", _Total_Target_FAR (Base_FAR))
+	print(_Total_Target_FAR(Base_FAR * geometry.area))
+	
 	#############################
 	#[case Text_On: Text.Generate else: NIL]
 	RightSetback
@@ -517,79 +523,79 @@ Footprint_SizeCheck-->
 		FootPrintFoundation
 FootPrintFoundation -->
 	#Report footprint area, declare underfloor extrusion
-	report("Zoning.Initial Footprint Area (M^2)",geometry.area())
+	set(Initial_Footprint_Area,geometry.area())
+	report("Zoning.Initial Footprint Area (M^2)",Initial_Footprint_Area)
 	ActualFootPrint(first_Floor, Max_Floor_Count )
-	print( Max_Floor_Count )
 	label("Foot Print")
 
 		
 ActualFootPrint(floor_num,totalfloors)-->
-		Building_Setback_Rule(first_Floor)
+		Building_Setback_Rule(first_Floor,0)#Starting GFA is Zero
 		
-Building_Setback_Rule(floornum)-->
+Building_Setback_Rule(floornum,used_gfa)-->
 	case floornum==first_Floor || _Cumulative_Setback(floornum,Building_Setback_Type)>Setback_Size_Threshold :
 		alignScopeToAxes(y)
-		Massing(floornum)
-			
+		Massing(floornum,used_gfa)
 	else:
 		case Building_Setback_Side=="Front": #Building_Setback_Side"Front","Back","Right and Left Side","All Sides"
 			setback(_Setback_Determination(Building_Setback,floornum,Building_Setback_Floor,Building_Setback_Type))
 			{object.front:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")
-			|remainder:Massing(floornum)}
+			|remainder:Massing(floornum,used_gfa)}
 		
 		case Building_Setback_Side=="Back":
 			setback(_Setback_Determination(Building_Setback,floornum,Building_Setback_Floor,Building_Setback_Type))
 			{street.back:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")
-			|remainder:Massing(floornum)}
+			|remainder:Massing(floornum,used_gfa)}
 		
 		case Building_Setback_Side=="Right and Left Side":
 			setback(_Setback_Determination(Building_Setback,floornum,Building_Setback_Floor,Building_Setback_Type))
 			{street.right:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")|
 			street.left:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")
-			|remainder:Massing(floornum)}
+			|remainder:Massing(floornum,used_gfa)}
 			
 		case Building_Setback_Side=="All Sides":
 			setback(_Setback_Determination(Building_Setback,floornum,Building_Setback_Floor,Building_Setback_Type))
 			{all:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")
-			|remainder:Massing(floornum)}
+			|remainder:Massing(floornum,used_gfa)}
 			
 		case Building_Setback_Side=="Right and Left Side": 
 			setback(_Setback_Determination(Building_Setback,floornum,Building_Setback_Floor,Building_Setback_Type))
 			{object.back:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")
-			|remainder:Massing(floornum)}	
+			|remainder:Massing(floornum,used_gfa)}	
 		else:	
 			setback(_Setback_Determination(Building_Setback,floornum,Building_Setback_Floor,Building_Setback_Type))
 			{street.front:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")
-			|remainder:Massing(floornum)}
+			|remainder:Massing(floornum,used_gfa)}
 		
 
 
-Massing(floornum)-->
+Massing(floornum,used_gfa)-->
 	#align massing up, create with envelop function
 	case floornum==first_Floor:
 		alignScopeToAxes(y)
 		extrude(world.up.flatTop, Ground_Floor_Height)
-		Floors(floornum)
+		Floors(floornum,used_gfa)
 	case floornum<= Max_Floor_Count :
+		print(_Left_Over_GFA(geometry.area()+used_gfa) )
 		alignScopeToAxes(y)
 		extrude(world.up.flatTop, Floor_Height)
-		Floors(floornum)
+		Floors(floornum,used_gfa)
 	else:
 		alignScopeToAxes(y)
-		Floors(floornum)		
-Floors(floornum)-->
+		Floors(floornum,used_gfa)		
+Floors(floornum,used_gfa)-->
 	case floornum==first_Floor:			
-		Ground_Floor(floornum,Floor_Count_Abs)
+		Ground_Floor(floornum,Floor_Count_Abs,used_gfa)
 	else:
-		Other_Floors(floornum,Floor_Count_Abs)
+		Other_Floors(floornum,Floor_Count_Abs,used_gfa)
 		
-Ground_Floor(floornum,totalfloors)-->
-	case floornum<totalfloors:
+Ground_Floor(floornum,totalfloors,used_gfa)-->
+	case  _Left_Over_GFA(used_gfa) > 10 &&  floornum<totalfloors:
 		comp(f) {bottom:Floor_Base(floornum,totalfloors)
 		|street.front:Ground_Street_Facing(floornum,totalfloors)
 		|street.back:Ground_Rear_Facing(floornum,totalfloors)
 		|side:Ground_Exterior_Sidewall(floornum,totalfloors)
-		|top: Building_Setback_Rule (floornum+1)}
+		|top: Building_Setback_Rule (floornum+1,used_gfa)}
 	else:
 		comp(f) {top:Roof_Setup(floornum+1,totalfloors+1)
 		|bottom:Floor_Base(floornum,totalfloors)
@@ -598,13 +604,13 @@ Ground_Floor(floornum,totalfloors)-->
 		|side:Ground_Exterior_Sidewall(floornum,totalfloors)}
 
 
-Other_Floors(floornum,totalfloors)-->
-		case floornum!=totalfloors:
+Other_Floors(floornum,totalfloors,used_gfa)-->
+		case  _Left_Over_GFA(used_gfa) > 10 && floornum!=totalfloors:
 			comp(f) {bottom:Floor_Base(floornum,totalfloors)
 					|street.front:Street_Facing(floornum,totalfloors)
 					|street.back:Rear_Facing(floornum,totalfloors)
 					|side:Exterior_Sidewall(floornum,totalfloors)
-					|top: Building_Setback_Rule(floornum+1)}
+					|top: Building_Setback_Rule(floornum+1,geometry.area()+used_gfa)}
 		else:
 			comp(f){top:Roof_Setup(floornum+1,totalfloors+1)|# Add ceiling on last floor
 					bottom:Floor_Base(floornum,totalfloors)|
@@ -793,7 +799,7 @@ Color_Floor_Wall(floornum,totalfloors,Location)-->
 		X.
 	case Scenario_Representation =="Gradient Color Floor":
 		#texture("default:uv")
-		color(colorRGBToHex(floornum/totalfloors,floornum/totalfloors,1))
+		color(colorRGBToHex(floornum*Initial_Footprint_Area/(_Total_Target_FAR(Base_FAR) * Lot_Area),floornum*Initial_Footprint_Area/(_Total_Target_FAR(Base_FAR) * Lot_Area),1))
 		[case _isWall(Location):report("Zoning.Total Exterior Wall Area (M^2)", geometry.area()) else: NIL]
 		X.
 	else:
