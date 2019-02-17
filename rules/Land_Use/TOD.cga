@@ -538,7 +538,7 @@ FootPrintFoundation -->
 
 		
 ActualFootPrint(floor_num,totalfloors)-->
-		Building_Setback_Rule(first_Floor,0)#Starting GFA is Zero
+		Building_Setback_Rule(first_Floor,geometry.area())
 		
 Building_Setback_Rule(floornum,used_gfa)-->
 	case floornum==first_Floor || _Cumulative_Setback(floornum,Building_Setback_Type)>Setback_Size_Threshold :
@@ -597,12 +597,13 @@ Floors(floornum,used_gfa)-->
 		Other_Floors(floornum,Floor_Count_Abs,used_gfa)
 		
 Ground_Floor(floornum,totalfloors,used_gfa)-->
-	case  _Left_Over_GFA(used_gfa) > 10 &&  floornum<totalfloors:
+	case  _Left_Over_GFA(used_gfa) > 100 &&  floornum<totalfloors:
+		print(used_gfa)
 		comp(f) {bottom:Floor_Base(floornum,totalfloors)
 		|street.front:Ground_Street_Facing(floornum,totalfloors)
 		|street.back:Ground_Rear_Facing(floornum,totalfloors)
 		|side:Ground_Exterior_Sidewall(floornum,totalfloors)
-		|top: Building_Setback_Rule (floornum+1,used_gfa)}
+		|top: Building_Setback_Rule (floornum+1,geometry.area()+used_gfa)}
 	else:
 		comp(f) {top:Roof_Setup(floornum+1,totalfloors+1)
 		|bottom:Floor_Base(floornum,totalfloors)
@@ -612,7 +613,8 @@ Ground_Floor(floornum,totalfloors,used_gfa)-->
 
 
 Other_Floors(floornum,totalfloors,used_gfa)-->
-		case  _Left_Over_GFA(used_gfa) > 10 && floornum!=totalfloors:
+		case  _Left_Over_GFA(used_gfa) > 100 && floornum!=totalfloors:
+			print(used_gfa)
 			comp(f) {bottom:Floor_Base(floornum,totalfloors)
 					|street.front:Street_Facing(floornum,totalfloors)
 					|street.back:Rear_Facing(floornum,totalfloors)
@@ -736,8 +738,8 @@ Door(floornum,totalfloors,Location)-->
 Floor_Base(floornum,totalfloors)-->
 	#This is the base for all the floors, all floors, even underground floors are called here. 
 	#print(floornum)
-	report("Actual GFA.Actual Total GFA",geometry.area)
-	report("Actual FAR.Actual Floor Area Ratio (FAR)",geometry.area/(Lot_Area))
+	report("Actual GFA.Actual Total GFA",geometry.area())
+	report("Actual FAR.Actual Floor Area Ratio (FAR)",geometry.area()/(Lot_Area))
 	report("Floors.Number of Floors", 1)
 	reverseNormals
 	alignScopeToAxes(y)
