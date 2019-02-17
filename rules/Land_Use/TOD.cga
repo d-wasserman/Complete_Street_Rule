@@ -27,7 +27,7 @@ import Tree : "/ESRI.lib/rules/Plants/Plant_Loader.cga" # Taken from ESRI.lib an
 ######################
 #Attribute Declaration
 @Group("DISPLAY SETTINGS","Display",1)
-@Order(1)@Range("Color By Intensity","Color by Transit Service","Gradient Color Floor","Usage","Colored")
+@Order(1)@Range("Gradient Color Floor","Usage","Colored")#"Color By Intensity","Color by Transit Service",
 attr Scenario_Representation ="Gradient Color Floor"
 @Order(2)@Range(0,1)
 attr Transparency=.33
@@ -68,7 +68,7 @@ attr FAR_Per_Unit_Rail_Frequency =
 	else: 2
 @Order(4) @Range(0,15) @Description("Net Bonus FAR based on the bonus mode choices.")#may need reword on this.
 attr Initial_Rail_FAR_Bonus = 
-	case Rail_Bonus_Mode == "Rail Present": FAR_Per_Unit_Rail_Frequency
+	case Rail_Bonus_Mode == "Rail Present": min(1,Rail_Frequency_Metric)*FAR_Per_Unit_Rail_Frequency
 	case Rail_Bonus_Mode == "Trips Per Hour": Rail_Frequency_Metric*FAR_Per_Unit_Rail_Frequency
 	else: Rail_Frequency_Metric* FAR_Per_Unit_Rail_Frequency
 @Order(5) @Description ("This field represents the proximity to the closest facility of interest.")
@@ -138,7 +138,7 @@ attr Lot_Rotation=0
 attr Split_Offset = "Align to Shape"
 @Group("ZONING","Land Use",6)
 @Order(1) @Range("Single Family","Multi-Family Walk-Up","Multi-Family Elevator","Retail & Services","Commercial & Office","Industrial & Manufacturing","Transportation & Utility","Public Facilities & Institutions","Open Space & Outdoor Recreation","Parking","Vacant") @Description("General land use categories. You can map your data to this schema or alter the rule to fit your land use database")
-attr Land_Use_1 = case geometry.area()>4000:"Open Space & Outdoor Recreation"  case p(.5):"Single Family" case p(.15):"Multi-family Walk Up" else: "Commercial & Office"
+attr Land_Use_1 = case geometry.area()>4000:"Open Space & Outdoor Recreation"  case p(.5):"Multi-family Walk Up" else: "Commercial & Office"
 @Order(2) @Range("None","Single Family","Multi-Family Walk-Up","Multi-Family Elevator","Retail & Services","Commercial & Office","Industrial & Manufacturing","Transportation & Utility","Public Facilities & Institutions","Open Space & Outdoor Recreation","Parking","Vacant") @Description("General land use categories. You can map your data to this schema or alter the rule to fit your land use database")
 attr Land_Use_2 = "None"
 @Order(3) @Range(0,100) @Description("Number of floors of land use type 2.")
@@ -477,15 +477,14 @@ SplitZ(xIndex) -->
 Lot_Setup(xIndex,zIndex)-->
 	set(Lot_Area,geometry.area)
 	set(Lot_Edge_Count,geometry.nEdges)
-	report("Zoning.Lot Area", Lot_Area)
-	report("Zoning.Lot Count",1)
+	report("Lot Area.Lot Area", Lot_Area)
+	report("Lot Count.Lot Count",1)
 	##### add - Leilei ##########
-	report("Zoning.Lot Target GFA", _Total_Target_FAR (Base_FAR)*geometry.area)
-	report("Zoning.Target FAR", _Total_Target_FAR (Base_FAR))
-
-	
-	#############################
-	#[case Text_On: Text.Generate else: NIL]
+	report("Zoned GFA.Lot Target GFA", _Total_Target_FAR (Base_FAR)*geometry.area)
+	report("Zoned FAR.Target FAR", _Total_Target_FAR (Base_FAR))
+	report("FAR Breakdown.Rail FAR Contribution",_get_Bonus_FAR_Decay(Initial_Rail_FAR_Bonus, Rail_Decay_Rate, Rail_num_increment))
+	report("FAR Breakdown.Bus FAR Contribution",_get_Bonus_FAR_Decay(Initial_Bus_FAR_Bonus, Bus_Decay_Rate, Bus_num_increment))
+	report("FAR Breakdown.Base FAR Contribution",Base_FAR)
 	RightSetback
 		
 		
@@ -533,7 +532,7 @@ Footprint_SizeCheck-->
 FootPrintFoundation -->
 	#Report footprint area, declare underfloor extrusion
 	set(Initial_Footprint_Area,geometry.area())
-	report("Zoning.Initial Footprint Area (M^2)",Initial_Footprint_Area)
+	report("Footprint.Initial Footprint Area (M^2)",Initial_Footprint_Area)
 	ActualFootPrint(first_Floor, Max_Floor_Count )
 	label("Foot Print")
 
@@ -737,9 +736,9 @@ Door(floornum,totalfloors,Location)-->
 Floor_Base(floornum,totalfloors)-->
 	#This is the base for all the floors, all floors, even underground floors are called here. 
 	#print(floornum)
-	report("Zoning.Total GFA",geometry.area)
-	report("Zoning.Floor Area Ratio (FAR)",geometry.area/(Lot_Area))
-	report("Zoning.Number of Floors", 1)
+	report("Actual GFA.Actual Total GFA",geometry.area)
+	report("Actual FAR.Actual Floor Area Ratio (FAR)",geometry.area/(Lot_Area))
+	report("Floors.Number of Floors", 1)
 	reverseNormals
 	alignScopeToAxes(y)
 	X.
@@ -797,18 +796,18 @@ Floor_Material_Setup(floornum,totalfloors,Location)-->
 Color_Floor_Wall(floornum,totalfloors,Location)-->
 	case Scenario_Representation == "Usage":
 		# Usage coloring is handled later due to horizontal floor split logic.
-		[case _isWall(Location):report("Zoning.Total Exterior Wall Area (M^2)", geometry.area()) else: NIL]
+		[case _isWall(Location):report("Walls.Total Exterior Wall Area (M^2)", geometry.area()) else: NIL]
 		Usage_Color(floornum,totalfloors)
 	
 	case Scenario_Representation =="Colored":
 		#texture("default:uv")
 		color(_Building_Color(Location))
-		[case _isWall(Location):report("Zoning.Total Exterior Wall Area (M^2)", geometry.area()) else: NIL]
+		[case _isWall(Location):report("Walls.Total Exterior Wall Area (M^2)", geometry.area()) else: NIL]
 		X.
 	case Scenario_Representation =="Gradient Color Floor":
 		#texture("default:uv")
 		color(colorRGBToHex(floornum*Initial_Footprint_Area/(_Total_Target_FAR(Base_FAR) * Lot_Area),floornum*Initial_Footprint_Area/(_Total_Target_FAR(Base_FAR) * Lot_Area),1))
-		[case _isWall(Location):report("Zoning.Total Exterior Wall Area (M^2)", geometry.area()) else: NIL]
+		[case _isWall(Location):report("Walls.Total Exterior Wall Area (M^2)", geometry.area()) else: NIL]
 		X.
 	else:
 		# Error.
