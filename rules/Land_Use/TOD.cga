@@ -1,7 +1,7 @@
 /**
  * File:    TOD.cga
  * Created: 12 Sept 2018 18:18:06 GMT
- * Updated: 16 Feb 2019 16:12:06 GMT
+ * Updated: 17 Feb 2019 16:12:06 GMT
  * Author:  David J. Wasserman & Leilei Duan
  *
 	Copyright 2018 David Joseph Wasserman & Leilei Duan
@@ -41,15 +41,19 @@ attr Grade_Adjustment=0 #0.102
 attr Bus_Bonus_Mode = "Trips Per Hour"
 @Order(2) @Description("This field in GIS attribute data sums the number of trips per hour for the nearest bus stop or is a count of the number of high frequency routes at a stop. ")
 attr Bus_Frequency_Metric = 0 
-@Order(3) @Description ("This field represents the proximity to the closest facility of interest.")
-attr Bus_Stop_Proximity = 0 
-@Order(4) @Range(0,10) @Description("Bonus FAR based on the bonus mode choices.")#may need reword on this.
+@Order(3) @Range(0,5) @Description("This fiield is the amount of FAR Bonus per unit of frequency to give for a transit overlay.")
+attr FAR_Per_Unit_Bus_Frequency = 
+	case Bus_Bonus_Mode == "Trips Per Hour":  0.1
+	else: 1
+@Order(4) @Range(0,15) @Description("Net Bonus FAR based on the bonus mode choices.")#may need reword on this.
 attr Initial_Bus_FAR_Bonus = 
-	case Bus_Bonus_Mode == "Trips Per Hour": Bus_Frequency_Metric * 0.1 
-	else: Bus_Frequency_Metric * 1 
-@Order(5) @Range(0,5280) @Description("The distance away from bus stop that FAR drops.")#may need reword on this.
+	case Bus_Bonus_Mode == "Trips Per Hour": Bus_Frequency_Metric*FAR_Per_Unit_Bus_Frequency
+	else: Bus_Frequency_Metric* FAR_Per_Unit_Bus_Frequency
+@Order(5) @Description ("This field represents the proximity to the closest facility of interest.")
+attr Bus_Stop_Proximity = 0 
+@Order(6) @Range(0,5280) @Description("The distance away from bus stop that FAR drops 1 decay increment.")#may need reword on this.
 attr Bus_Decay_Increment = 500
-@Order(6) @Range(0,10) @Description("The rate that FAR drops at each distance increment away from the bus stop.")#may need reword on this.
+@Order(7) @Range(0,10) @Description("The rate that FAR drops at each distance increment away from the bus stop.")#may need reword on this.
 attr Bus_Decay_Rate = 1
 
 @Group("TOD","Rail & BRT Bonuses",3)
@@ -57,16 +61,21 @@ attr Bus_Decay_Rate = 1
 attr Rail_Bonus_Mode = "Rail Present"
 @Order(2) @Description("This field in GIS attribute data sums the number of trips per hour for the nearest rail station.")
 attr Rail_Frequency_Metric = 0
-@Order(3) @Description ("This field represents the proximity to the closest facility of interest.")
-attr Rail_Stop_Proximity = 0 
-@Order(4) @Range(0,15) @Description("Bonus FAR based on the bonus mode choices.")#may need reword on this.
+@Order(3) @Range(0,5) @Description("This fiield is the amount of FAR Bonus per unit of frequency to give for a transit overlay.")
+attr FAR_Per_Unit_Rail_Frequency = 
+	case Rail_Bonus_Mode == "Rail Present": 2
+	case Rail_Bonus_Mode == "Trips Per Hour":  0.2 
+	else: 2
+@Order(4) @Range(0,15) @Description("Net Bonus FAR based on the bonus mode choices.")#may need reword on this.
 attr Initial_Rail_FAR_Bonus = 
-	case Rail_Bonus_Mode == "Rail Present": min(1,Rail_Frequency_Metric)
-	case Rail_Bonus_Mode == "Trips Per Hour": Rail_Frequency_Metric* 0.2 
-	else: Rail_Frequency_Metric* 2 #are these numbers correct?
-@Order(5) @Range(0,10560) @Description("The distance away from rail/BRT stop that FAR drops.")#may need reword on this.
+	case Rail_Bonus_Mode == "Rail Present": FAR_Per_Unit_Rail_Frequency
+	case Rail_Bonus_Mode == "Trips Per Hour": Rail_Frequency_Metric*FAR_Per_Unit_Rail_Frequency
+	else: Rail_Frequency_Metric* FAR_Per_Unit_Rail_Frequency
+@Order(5) @Description ("This field represents the proximity to the closest facility of interest.")
+attr Rail_Stop_Proximity = 0 
+@Order(6) @Range(0,10560) @Description("The distance away from rail/BRT stop that FAR drops 1 decay increment.")#may need reword on this.
 attr Rail_Decay_Increment = 1000
-@Order(6) @Range(0,15) @Description("The rate that FAR drops at each distance increment away from the bus stop.")#may need reword on this.
+@Order(7) @Range(0,15) @Description("The rate that FAR drops at each distance increment away from the bus stop.")#may need reword on this.
 attr Rail_Decay_Rate = 1
 
 @Group("ZONING","Buildable Volume",4)
