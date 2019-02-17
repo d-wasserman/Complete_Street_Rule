@@ -473,7 +473,7 @@ Lot_Setup(xIndex,zIndex)-->
 	##### add - Leilei ##########
 	report("Zoning.Lot Target GFA", _Total_Target_FAR (Base_FAR)*geometry.area)
 	report("Zoning.Target FAR", _Total_Target_FAR (Base_FAR))
-	print(_Total_Target_FAR(Base_FAR * geometry.area))
+
 	
 	#############################
 	#[case Text_On: Text.Generate else: NIL]
@@ -576,7 +576,6 @@ Massing(floornum,used_gfa)-->
 		extrude(world.up.flatTop, Ground_Floor_Height)
 		Floors(floornum,used_gfa)
 	case floornum<= Max_Floor_Count :
-		print(_Left_Over_GFA(geometry.area()+used_gfa) )
 		alignScopeToAxes(y)
 		extrude(world.up.flatTop, Floor_Height)
 		Floors(floornum,used_gfa)
