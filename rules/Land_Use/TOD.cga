@@ -69,35 +69,7 @@ attr Rail_Decay_Increment = 1000
 @Order(6) @Range(0,15) @Description("The rate that FAR drops at each distance increment away from the bus stop.")#may need reword on this.
 attr Rail_Decay_Rate = 1
 
-@Group("ZONING","Ground Level Setbacks",4)
-@Range(0,10)@Order(1)@Description("Creates a street oriented setback away from the front edge of the lot in meters.")
-attr Front_Yard_Depth	=1#_initialSetBacks("Front")
-@Range(0,10)@Order(2)@Description("Creates a street oriented setback away from the rear edge of the lot in meters.")
-attr Rear_Yard_Depth	=1#_initialSetBacks("Rear")
-@Range(0,10)@Order(3)@Description("Creates a street oriented setback away from the edge of the lot in meters. Controls the Right and Left Side Setback until the Left Side Setback is changed from its default value.")
-attr Right_Yard_Depth	=1#_initialSetBacks("Side")
-@Range(0,10)@Order(4)@Description("Creates a street oriented setback away from the left edge of the lot in meters, overrides existing Right Setback which it defaults to.")
-attr Left_Yard_Depth	=Right_Yard_Depth
-@Range(100,1000000)@Order(5)@Description("Threshold Area before the lot subdivision rule is triggered. Starts at 1.5 acres.")
-attr Lot_Area_Threshold=6070.28
-@Range(10,10000)@Order(6)@Description("Width in the X direction of the resulting subdivided lots if the area threshold is met.")
-attr Lot_X_Width=50
-@Range(10,10000)@Order(7)@Description("Width in the Z direction of the resulting subdivided lots if the area threshold is met.")
-attr Lot_Z_Width=50
-@Range(0,360) @Order(8) @Description("Controls the rotation of the underlying lot.")
-attr Lot_Rotation=0
-@Range("Align to Grid", "Align to Shape")@Order(9) @Description("Determines initial subdivision alignment.")
-attr Split_Offset = "Align to Shape"
-@Group("ZONING","Land Use",4)
-@Order(1) @Range("Single Family","Multi-Family Walk-Up","Multi-Family Elevator","Retail & Services","Commercial & Office","Industrial & Manufacturing","Transportation & Utility","Public Facilities & Institutions","Open Space & Outdoor Recreation","Parking","Vacant") @Description("General land use categories. You can map your data to this schema or alter the rule to fit your land use database")
-attr Land_Use_1 = case geometry.area()>4000:"Open Space & Outdoor Recreation"  case p(.5):"Single Family" case p(.15):"Multi-family Walk Up" else: "Commercial & Office"
-@Order(2) @Range("None","Single Family","Multi-Family Walk-Up","Multi-Family Elevator","Retail & Services","Commercial & Office","Industrial & Manufacturing","Transportation & Utility","Public Facilities & Institutions","Open Space & Outdoor Recreation","Parking","Vacant") @Description("General land use categories. You can map your data to this schema or alter the rule to fit your land use database")
-attr Land_Use_2 = "None"
-@Order(3) @Range(0,100) @Description("Number of floors of land use type 2.")
-attr Use_2_Floors= 2
-
-
-@Group("ZONING","Buildable Volume",5)
+@Group("ZONING","Buildable Volume",4)
 @Order(6) @Range("Square", "L-Shaped","U-Shaped", "O-Shaped","Forced Square") @Description("Controls the footprint configuration after the lots setbacks are applied. Depth of U/L/O wings is controlled by attributes below.")
 attr Footprint_Type= "Square" #_initialFootprint
 @Order(7) @Range("Flat", "Hip", "Gable", "Shed") @Description("Determines the roof types of the chosen building, or can be changed to an envelope that can be altered by a base height/setback angle.")
@@ -134,6 +106,34 @@ attr Rear_Baseheight	=Front_Baseheight
 attr Side_Baseheight	=Front_Baseheight
 @Order(24)@Range(0,90)@Description("Determines the angle the building ascension inclines after the respective base heights are reached when evelopes are on, but when envelope are off it controls the angle of the roofs.")
 attr Roof_Angle = case Roof_Type=="Envelope":90 case Roof_Type=="Shed":2.5 else: 30
+
+
+@Group("ZONING","Ground Level Setbacks",5)
+@Range(0,10)@Order(1)@Description("Creates a street oriented setback away from the front edge of the lot in meters.")
+attr Front_Yard_Depth	=1#_initialSetBacks("Front")
+@Range(0,10)@Order(2)@Description("Creates a street oriented setback away from the rear edge of the lot in meters.")
+attr Rear_Yard_Depth	=1#_initialSetBacks("Rear")
+@Range(0,10)@Order(3)@Description("Creates a street oriented setback away from the edge of the lot in meters. Controls the Right and Left Side Setback until the Left Side Setback is changed from its default value.")
+attr Right_Yard_Depth	=1#_initialSetBacks("Side")
+@Range(0,10)@Order(4)@Description("Creates a street oriented setback away from the left edge of the lot in meters, overrides existing Right Setback which it defaults to.")
+attr Left_Yard_Depth	=Right_Yard_Depth
+@Range(100,1000000)@Order(5)@Description("Threshold Area before the lot subdivision rule is triggered. Starts at 1.5 acres.")
+attr Lot_Area_Threshold=6070.28
+@Range(10,10000)@Order(6)@Description("Width in the X direction of the resulting subdivided lots if the area threshold is met.")
+attr Lot_X_Width=50
+@Range(10,10000)@Order(7)@Description("Width in the Z direction of the resulting subdivided lots if the area threshold is met.")
+attr Lot_Z_Width=50
+@Range(0,360) @Order(8) @Description("Controls the rotation of the underlying lot.")
+attr Lot_Rotation=0
+@Range("Align to Grid", "Align to Shape")@Order(9) @Description("Determines initial subdivision alignment.")
+attr Split_Offset = "Align to Shape"
+@Group("ZONING","Land Use",6)
+@Order(1) @Range("Single Family","Multi-Family Walk-Up","Multi-Family Elevator","Retail & Services","Commercial & Office","Industrial & Manufacturing","Transportation & Utility","Public Facilities & Institutions","Open Space & Outdoor Recreation","Parking","Vacant") @Description("General land use categories. You can map your data to this schema or alter the rule to fit your land use database")
+attr Land_Use_1 = case geometry.area()>4000:"Open Space & Outdoor Recreation"  case p(.5):"Single Family" case p(.15):"Multi-family Walk Up" else: "Commercial & Office"
+@Order(2) @Range("None","Single Family","Multi-Family Walk-Up","Multi-Family Elevator","Retail & Services","Commercial & Office","Industrial & Manufacturing","Transportation & Utility","Public Facilities & Institutions","Open Space & Outdoor Recreation","Parking","Vacant") @Description("General land use categories. You can map your data to this schema or alter the rule to fit your land use database")
+attr Land_Use_2 = "None"
+@Order(3) @Range(0,100) @Description("Number of floors of land use type 2.")
+attr Use_2_Floors= 2
 
 
 @Group("STREETSCAPE CONNECTIONS","Greenspace",9)
