@@ -1,6 +1,7 @@
 /**
  * File:    TOD.cga
  * Created: 12 Sept 2018 18:18:06 GMT
+ * Updated: 17 Feb 2019 16:12:06 GMT
  * Author:  David J. Wasserman & Leilei Duan
  *
 	Copyright 2018 David Joseph Wasserman & Leilei Duan
@@ -34,22 +35,89 @@ attr Transparency=.33
 attr LOD_Setting="Low"
 @Order(7)@Range(-3,3) @Description("Translates the lot shape up or down. Helps for adjusting shape position to match sidewalk height, but can be used to demonstrate grade based adaptation.")
 attr Grade_Adjustment=0 #0.102
+###### add - Leilei #######
+@Group("TOD","Bus Bonuses",2)
+@Order(1) @Range("Trips Per Hour","Number of High Frequency Routes") @Description("Determines which bonus mode to consider.")#may need reword on this.
+attr Bus_Bonus_Mode = "Trips Per Hour"
+@Order(2) @Description("This field in GIS attribute data sums the number of trips per hour for the nearest bus stop or is a count of the number of high frequency routes at a stop. ")
+attr Bus_Frequency_Metric = 0 
+@Order(3) @Range(0,5) @Description("This fiield is the amount of FAR Bonus per unit of frequency to give for a transit overlay.")
+attr FAR_Per_Unit_Bus_Frequency = 
+	case Bus_Bonus_Mode == "Trips Per Hour":  0.1
+	else: 1
+@Order(4) @Range(0,15) @Description("Net Bonus FAR based on the bonus mode choices.")#may need reword on this.
+attr Initial_Bus_FAR_Bonus = 
+	case Bus_Bonus_Mode == "Trips Per Hour": Bus_Frequency_Metric*FAR_Per_Unit_Bus_Frequency
+	else: Bus_Frequency_Metric* FAR_Per_Unit_Bus_Frequency
+@Order(5) @Description ("This field represents the proximity to the closest facility of interest.")
+attr Bus_Stop_Proximity = 0 
+@Order(6) @Range(0,5280) @Description("The distance away from bus stop that FAR drops 1 decay increment.")#may need reword on this.
+attr Bus_Decay_Increment = 500
+@Order(7) @Range(0,10) @Description("The rate that FAR drops at each distance increment away from the bus stop.")#may need reword on this.
+attr Bus_Decay_Rate = 1
 
-@Group("ZONING","Transit Settings",3)
-@Range(0,5280)@Order(1) @Description("The proximity to transit measured in Feet.") #@Leilei - Miles?
-attr Proximity_To_Transit = 500 
-@Range(0,5280)@Order(2) @Description("The step interval for which transit proximity and transit bonuses are recalculated. For example, if 500, the increments for height bonuses are calculated at 500, 1000, 1500, etc feet.")
-attr Proximity_Increment = 500
-@Range(0,10)@Order(3) @Description("This is a linear decrease factor in the density bonus.")
-attr Proximity_Linear_Decay_Factor = 1
-@Range(0,10)@Order(4) @Description("This is an expoential decreasee factor in the density bonus.")
-attr Proximity_Exponential_Decay_Factor = 0
-@Range(0,100)@Order(5) @Description("This represents the number of high frequency routes within proximity to the target parcel.")
-attr Number_Of_High_Frequency_Routes = 1
-@Range(0,100)@Order(6) @Description("Additional height in stories per height increment.")
-attr Height_Bonus_Per_Service_Increment = 2 # How does this impact setbacks? Do you want to add a parameter for that?
+@Group("TOD","Rail & BRT Bonuses",3)
+@Order(1) @Range("Rail Present","Trips Per Hour","Number of High Frequency Routes") @Description("Determines which bonus mode to consider. If a rail way is present, FAR bonus will be decided based on the present of rail. If there is no rail, FAR bonus will be determined by BRT information.")#may need reword on this.
+attr Rail_Bonus_Mode = "Rail Present"
+@Order(2) @Description("This field in GIS attribute data sums the number of trips per hour for the nearest rail station.")
+attr Rail_Frequency_Metric = 0
+@Order(3) @Range(0,5) @Description("This fiield is the amount of FAR Bonus per unit of frequency to give for a transit overlay.")
+attr FAR_Per_Unit_Rail_Frequency = 
+	case Rail_Bonus_Mode == "Rail Present": 2
+	case Rail_Bonus_Mode == "Trips Per Hour":  0.2 
+	else: 2
+@Order(4) @Range(0,15) @Description("Net Bonus FAR based on the bonus mode choices.")#may need reword on this.
+attr Initial_Rail_FAR_Bonus = 
+	case Rail_Bonus_Mode == "Rail Present": FAR_Per_Unit_Rail_Frequency
+	case Rail_Bonus_Mode == "Trips Per Hour": Rail_Frequency_Metric*FAR_Per_Unit_Rail_Frequency
+	else: Rail_Frequency_Metric* FAR_Per_Unit_Rail_Frequency
+@Order(5) @Description ("This field represents the proximity to the closest facility of interest.")
+attr Rail_Stop_Proximity = 0 
+@Order(6) @Range(0,10560) @Description("The distance away from rail/BRT stop that FAR drops 1 decay increment.")#may need reword on this.
+attr Rail_Decay_Increment = 1000
+@Order(7) @Range(0,15) @Description("The rate that FAR drops at each distance increment away from the bus stop.")#may need reword on this.
+attr Rail_Decay_Rate = 1
 
-@Group("ZONING","Ground Level Setbacks",3)
+@Group("ZONING","Buildable Volume",4)
+@Order(6) @Range("Square", "L-Shaped","U-Shaped", "O-Shaped","Forced Square") @Description("Controls the footprint configuration after the lots setbacks are applied. Depth of U/L/O wings is controlled by attributes below.")
+attr Footprint_Type= "Square" #_initialFootprint
+@Order(7) @Range("Flat", "Hip", "Gable", "Shed") @Description("Determines the roof types of the chosen building, or can be changed to an envelope that can be altered by a base height/setback angle.")
+attr Roof_Type=case Max_Floor_Count <=3:"Hip" else:"Flat"
+@Order(8) @Range(0,20) @Description("Generally controls front and rear depths for the L/U/O operations. For L and U Shapes, controls the front depth, for O shapes it controls the Front and Rear Depths.")
+attr Front_Rear_Wing_Depth = (rand(9,12))
+@Order(9) @Range(0,20) @Description("Generally controls right and left depths for the L/U/O operations. For L, controls the left depth, for U and O controls left and right depth.")
+attr Right_Left_Wing_Depth = (rand(9,12))
+@Order(10) @Range(1,100)@Description("This determines the base target Floor Area Ratio (FAR) of the building. This impacts height given a set of setbacks.")
+attr Base_FAR = 4
+@Order(11) @Range(1,100)@Description("Maximum number of floors possible for the building. Is used by default to determine heights.")
+attr Max_Floor_Count = 50
+@Order(12) @Range(1,10000)@Description("Zoning Height Limit of Building. If this is exceeded, a report will be triggered, and it will show as faded red above the building equal to the difference.")
+attr Height_Limit = _initialTotalHeight 
+@Order(13)@Range(0,5)@Description("Determines the height of the 1st floor of the building.")
+attr Ground_Floor_Height = 3.75
+@Order(15)@Range(0,5)@Description("Determines the height of all floors other than the first floor.")
+attr Floor_Height		=3.25
+@Order(16)@Range(0,10) @Description("Determines the setback of of each floor from the previous floor. Stops at some minimum size.")
+attr Building_Setback= 1#_intitalBuildingSetback
+@Order(17)@Range("From Street","Front","Back","Right and Left Side","All Sides")@Description("Determines the size of building setback for the building. The setbacks adjust based on the setback type.")
+attr Building_Setback_Side="From Street"
+@Order(18)@Range(1,20)@Description("This attribute controls the floors on which setbacks start, with the first floor starting at one.")
+attr Building_Setback_Floor=2
+@Order(19)@Range("Wedding Cake","Alternating","One Setback")@Description("Determines the type of building setback for the building.")
+attr Building_Setback_Type="Alternating"
+@Order(20) @Range(5,30) @Description("A parameter that determines the threshold for width and length before a building is no longer being setback.")
+attr Setback_Size_Threshold =_initialSetbackThreshold
+@Order(21) @Hidden @Range(0,100)  @Description("Height of the front base of the building before the building angles back with the Envelope function. Changing the front will change the side and rear too.")
+attr Front_Baseheight	= (Base_FAR/2)*Floor_Height
+@Order(22)@Hidden @Range(0,100) 	@Description("Hidden: Height of the rear base of the building before the building angles back with the Envelope function. Changing the front will change the side and rear too.")
+attr Rear_Baseheight	=Front_Baseheight
+@Order(23)@Hidden @Range(0,100)	@Description("Hidden: Height of the side base of the building before the building angles back. Changing the front will change the side and rear too.")
+attr Side_Baseheight	=Front_Baseheight
+@Order(24)@Range(0,90)@Description("Determines the angle the building ascension inclines after the respective base heights are reached when evelopes are on, but when envelope are off it controls the angle of the roofs.")
+attr Roof_Angle = case Roof_Type=="Envelope":90 case Roof_Type=="Shed":2.5 else: 30
+
+
+@Group("ZONING","Ground Level Setbacks",5)
 @Range(0,10)@Order(1)@Description("Creates a street oriented setback away from the front edge of the lot in meters.")
 attr Front_Yard_Depth	=1#_initialSetBacks("Front")
 @Range(0,10)@Order(2)@Description("Creates a street oriented setback away from the rear edge of the lot in meters.")
@@ -68,58 +136,13 @@ attr Lot_Z_Width=50
 attr Lot_Rotation=0
 @Range("Align to Grid", "Align to Shape")@Order(9) @Description("Determines initial subdivision alignment.")
 attr Split_Offset = "Align to Shape"
-@Group("ZONING","Land Use",4)
+@Group("ZONING","Land Use",6)
 @Order(1) @Range("Single Family","Multi-Family Walk-Up","Multi-Family Elevator","Retail & Services","Commercial & Office","Industrial & Manufacturing","Transportation & Utility","Public Facilities & Institutions","Open Space & Outdoor Recreation","Parking","Vacant") @Description("General land use categories. You can map your data to this schema or alter the rule to fit your land use database")
 attr Land_Use_1 = case geometry.area()>4000:"Open Space & Outdoor Recreation"  case p(.5):"Single Family" case p(.15):"Multi-family Walk Up" else: "Commercial & Office"
 @Order(2) @Range("None","Single Family","Multi-Family Walk-Up","Multi-Family Elevator","Retail & Services","Commercial & Office","Industrial & Manufacturing","Transportation & Utility","Public Facilities & Institutions","Open Space & Outdoor Recreation","Parking","Vacant") @Description("General land use categories. You can map your data to this schema or alter the rule to fit your land use database")
 attr Land_Use_2 = "None"
 @Order(3) @Range(0,100) @Description("Number of floors of land use type 2.")
 attr Use_2_Floors= 2
-
-#@Order(6) @Range("Short Duration","Long Duration") @Description("Duration of the HAZUS Flood Hazard.")
-#attr HAZUS_Hazard_Duration = "Long Duration"
-#@Order(7) @Range("Fresh Water","Salt Water") @Description("Water Type of the HAZUS Flood Hazard.")
-#attr HAZUS_Water_Type = "Salt Water"
-
-@Group("ZONING","Buildable Volume",5)
-@Order(6) @Range("Square", "L-Shaped","U-Shaped", "O-Shaped","Forced Square") @Description("Controls the footprint configuration after the lots setbacks are applied. Depth of U/L/O wings is controlled by attributes below.")
-attr Footprint_Type= "Square" #_initialFootprint
-@Order(7) @Range("Flat", "Hip", "Gable", "Shed") @Description("Determines the roof types of the chosen building, or can be changed to an envelope that can be altered by a base height/setback angle.")
-attr Roof_Type=case Floor_Count<=3:"Hip" else:"Flat"
-@Order(8) @Range(0,20) @Description("Generally controls front and rear depths for the L/U/O operations. For L and U Shapes, controls the front depth, for O shapes it controls the Front and Rear Depths.")
-attr Front_Rear_Wing_Depth = (rand(9,12))
-@Order(9) @Range(0,20) @Description("Generally controls right and left depths for the L/U/O operations. For L, controls the left depth, for U and O controls left and right depth.")
-attr Right_Left_Wing_Depth = (rand(9,12))
-@Order(10) @Range(0,2000)  @Description("This is the starting height of the building. It determines the starting floor count and building height.")
-attr Building_Height	= 20#_initialBuildingHeight(DORUC_Land_Use)
-@Order(11) @Range(1,100)@Description("Total number of floors in the building. Is used by default to determine heights.")
-attr Floor_Count = ceil(Building_Height/Floor_Height)
-@Order(12) @Range(1,10000)@Description("Zoning Height Limit of Building. If this is exceeded, a report will be triggered, and it will show as faded red above the building equal to the difference.")
-attr Height_Limit = _initialTotalHeight 
-@Order(13)@Range(0,5)@Description("Determines the height of the 1st floor of the building.")
-attr Ground_Floor_Height = 3.75
-@Order(15)@Range(0,5)@Description("Determines the height of all floors other than the first floor.")
-attr Floor_Height		=3.25
-@Order(16)@Range(0,10) @Description("Determines the setback of of each floor from the previous floor. Stops at some minimum size.")
-attr Building_Setback= 1#_intitalBuildingSetback
-@Order(17)@Range("From Street","Front","Back","Right and Left Side","All Sides")@Description("Determines the size of building setback for the building. The setbacks adjust based on the setback type.")
-attr Building_Setback_Side="From Street"
-@Order(18)@Range(1,20)@Description("This attribute controls the floors on which setbacks start, with the first floor starting at one.")
-attr Building_Setback_Floor=2
-@Order(19)@Range("Wedding Cake","Alternating","One Setback")@Description("Determines the type of building setback for the building.")
-attr Building_Setback_Type="Alternating"
-@Order(20) @Range(5,30) @Description("A parameter that determines the threshold for width and length before a building is no longer being setback.")
-attr Setback_Size_Threshold =_initialSetbackThreshold
-@Order(21) @Hidden @Range(0,100)  @Description("Height of the front base of the building before the building angles back with the Envelope function. Changing the front will change the side and rear too.")
-attr Front_Baseheight	=_initialBaseHeights
-@Order(22)@Hidden @Range(0,100) 	@Description("Hidden: Height of the rear base of the building before the building angles back with the Envelope function. Changing the front will change the side and rear too.")
-attr Rear_Baseheight	=Front_Baseheight
-@Order(23)@Hidden @Range(0,100)	@Description("Hidden: Height of the side base of the building before the building angles back. Changing the front will change the side and rear too.")
-attr Side_Baseheight	=Front_Baseheight
-@Order(24)@Range(0,90)@Description("Determines the angle the building ascension inclines after the respective base heights are reached when evelopes are on, but when envelope are off it controls the angle of the roofs.")
-attr Roof_Angle = case Roof_Type=="Envelope":90 case Roof_Type=="Shed":2.5 else: 30
-
-
 
 
 @Group("STREETSCAPE CONNECTIONS","Greenspace",9)
@@ -138,6 +161,7 @@ attr Greenspace_Tree_1_Percentage 		= 1
 @Order(7)@Description("Determines the species of the tree/plant selected for secondary tree for more variation. If this is not None, Tree 2 will appear if Tree 1 does not fire with the current percentage. This does mean that you cannot drop tree density if you alternate trees.")@Range("None","Random","Alder Buckthorn","Amazon Sword Plant","American Chestnut","American Sycamore","Apricot","Australian Pine","Baldcypress","Balsam Fir","Bamboo","Banana Tree","Basswood","Bay Laurel","Black Locust","Blue Gum Eucalyptus","Boxwood","Cabbage Palm Fern","California Bay","California Incense Cedar","California Palm","California Redwood","California Walnut","Coconut Palm","Common Hawthorn","Common Whitebeam","Conker Tree","Date Palm","Desert Willow","Douglas Fir","European Beech","European Larch","Ficus","Field Elm","Flannelbush","Flowering Dogwood","Giant Sequoia","Hedgehog Agave","Japanese Angelica Tree","Lacy Tree Philodendron","Leyland Cypress","Lily of the Valley","Lodgepole Pine","Mediterranean Buckthorn","Mexican Palmetto","Mountain Mahogany","Northern Red Oak","Norway Maple","Norway Spruce","Orange Tree","Orchid","Oval-leaved Privet","Palm Lily","Palo Verde","Paper Birch","Parlour Palm","Prickly Pear Cactus","Red Alder","Red Hickory","Rhododendron Azaleas","Rose","Ruffle Palm","Saguaro Cactus","Sassafras","Scots Pine","Sea Islands Yucca","Shadbush","Snake Plant","Southern Magnolia","Spanish Broom","Strawberry Tree","Sugar Maple","Sunflower","Sweetgum","Umbrella Acacia","Western Juniper","White Ash","White Oak","White Poplar","White Willow","Witch Hazel","","_____________________________","GENERICS","","Generic Dead Tree","Generic Stump","Generic Unknown","","_____________________________","PROXIES","","Algarrobo","American Elderberry","American Pepper","American Silverberry","Athel Tamarisk","Avocado","Black Tupelo","Buttonbush","Canada Buffaloberry","Chinaberry Tree","Chinese Tallow Tree","Common Hackberry","Common Holly","Common Persimmon","Desert Bitterbrush","European Hornbeam","Giant Chinquapin","Honey Locust","Hophornbeam","Huckleberry Shrub","Japanese Hemlock","Japanese Nutmeg","Judas Tree","Lawson Cypress","Loblolly Bay","Mexican Buckeye","Necklacepod","Northern Bilberry","Northern White Cedar","Octopus Tree","Osage Orange","Paper Bark Tree","Pawpaw","Persian Silk Tree","Princess Tree","Smooth Sumac","Sourwood","Southern Wax Myrtle","Tanoak","Tree of Heaven","Turkish Hazel","Western Soapberry","White Mulberry","Yellow Poplar","Yew")#@Hidden
 attr Greenspace_Tree_2_Type				= "None"
 
+############################
 
 #####################
 #Hidden_Attributes
@@ -146,11 +170,15 @@ attr Greenspace_Tree_2_Type				= "None"
 @Order(1)@Hidden
 attr Lot_Area=geometry.area()
 @Order(2)@Hidden
-attr Ground_Elevation=0
+attr Initial_Footprint_Area = 0
 @Order(3)@Hidden
-attr FootPrint_Elevation=0
+attr Ground_Elevation=0
 @Order(4)@Hidden
+attr FootPrint_Elevation=0
+@Order(5)@Hidden
 attr Lot_Edge_Count=0
+#Bonus FAR and building footprint initial attribute
+
 
 #Building Feature dimensions
 @Order(1) @Range(0,10) @Hidden @Description("These set of attributes control the buildings articulation and external potential openings to water.")
@@ -179,7 +207,7 @@ _isEven(num)=
 		false
 
 _Stories_Type=
-		case Floor_Count<=1:
+		case Max_Floor_Count <=1:
 			"One Story"
 		else:
 			"Two Story"
@@ -206,36 +234,7 @@ _initialFootprint = case find(Land_Use_1,"Family",0)!=-1:
 						else:"Square"
 
 _initialHeight=((Floor_Count_Abs-1)*Floor_Height)+Ground_Floor_Height
-_initialBaseHeights= Building_Height -Floor_Height*3
 _initialTotalHeight = _initialHeight ++.3048
-	
-# _initialBuildingHeight(LU)= 
-# 					case find(LU_SLR.getValueByDORUC(LU,LU_SLR.Intensity_Class),"Low",0)!=-1:
-# 						float(listRandom("1;1;1;1;1;1;2;2;2;3"))*Floor_Height
-# 					case find(LU_SLR.getValueByDORUC(LU,LU_SLR.Intensity_Class),"Mid",0)!=-1:
-# 						float(listRandom("4;4;4;4;4;5;5;6;7"))*Floor_Height
-# 					case find(LU_SLR.getValueByDORUC(LU,LU_SLR.Intensity_Class),"High",0)!=-1:
-# 						float(listRandom("8;8;8;8;8;8;8;9;9;10;11;12;13;14;15")	)*Floor_Height
-# 					else:
-# 						float(listRandom("1;1;1;1;1;2"))*Floor_Height
-					
-# _initialSetBacks(setbackSide) = 
-# 					case find(HAZUS_Land_Use_1,"RES",0)!=-1  && Lot_Area>2000 && Floor_Count<=3: 
-# 						rint(rand(4,6))
-# 					case find(HAZUS_Land_Use_1,"RES",0)!=-1  && Lot_Area>1000 && Floor_Count<=3: 
-# 						rint(rand(2,4))
-# 					case find(HAZUS_Land_Use_1,"AGR",0)!=-1:
-# 						rint(rand(10000,20000))
-# 					case find(HAZUS_Land_Use_1,"IND6",0)!=-1:
-# 						rint(rand(10000,20000))
-# 					else:
-# 						case (setbackSide=="Front") && Elevate_Structure!="None":
-# 							_Minof(Elevation_Height/Stair_Slope,Max_Stair_Setback)
-# 						case setbackSide!="Front" && Elevate_Structure!="None":		
-# 							1
-# 						else:
-# 							rint(rand(1,2))
-
 				
 _initialSetbackThreshold=
 	min(Front_Rear_Wing_Depth,Right_Left_Wing_Depth)*.25						
@@ -341,6 +340,23 @@ _Cumulative_Setback(floornum,setbackType)=
 	else:
 		(floornum-Building_Setback_Floor)*Building_Setback
 
+###### Transit & Zoning FAR Control ###########		
+const Bus_num_increment = floor(Bus_Stop_Proximity/Bus_Decay_Increment)
+const Rail_num_increment = floor(Rail_Stop_Proximity/Rail_Decay_Increment)
+		
+_get_Bonus_FAR_Decay(initialFAR, decay_rate, num_increment) = 
+	case initialFAR - ( decay_rate * num_increment )>= 0: 
+			initialFAR - ( decay_rate * num_increment)
+	else: _get_Bonus_FAR_Decay(initialFAR, decay_rate, num_increment-1)
+	
+_Total_Target_FAR (initialFAR) = 
+	initialFAR + _get_Bonus_FAR_Decay(Initial_Bus_FAR_Bonus, Bus_Decay_Rate, Bus_num_increment) 
+	+ _get_Bonus_FAR_Decay(Initial_Rail_FAR_Bonus, Rail_Decay_Rate, Rail_num_increment)
+	
+_Left_Over_GFA(GFA_Used) =
+	(_Total_Target_FAR(Base_FAR) * Lot_Area) - GFA_Used
+###############################	
+		
 #Reporting Functions
 _isWall(Location)= case Location=="Wall"||Location=="Window"||Location=="Door" || Location=="Frame Top":true else: false
 ##########################
@@ -420,11 +436,14 @@ const DarkRed = "#a30303"
 
 #Attribute Absolute Values
 const first_Floor=1
-const Floor_Count_Abs=abs(Floor_Count)
+const Floor_Count_Abs=abs( Max_Floor_Count )
 # Vegetation and Hardscape costs 
 const TreeCostAverage = 750 
 const GrassSurfaceCostAverage = 10	# In square meters
 const HardscapePaverCost = 25		# In square meters
+
+
+
 #################
 #Rules
 #
@@ -460,6 +479,12 @@ Lot_Setup(xIndex,zIndex)-->
 	set(Lot_Edge_Count,geometry.nEdges)
 	report("Zoning.Lot Area", Lot_Area)
 	report("Zoning.Lot Count",1)
+	##### add - Leilei ##########
+	report("Zoning.Lot Target GFA", _Total_Target_FAR (Base_FAR)*geometry.area)
+	report("Zoning.Target FAR", _Total_Target_FAR (Base_FAR))
+
+	
+	#############################
 	#[case Text_On: Text.Generate else: NIL]
 	RightSetback
 		
@@ -507,82 +532,78 @@ Footprint_SizeCheck-->
 		FootPrintFoundation
 FootPrintFoundation -->
 	#Report footprint area, declare underfloor extrusion
-	report("Zoning.Initial Footprint Area (M^2)",geometry.area())
-	ActualFootPrint
+	set(Initial_Footprint_Area,geometry.area())
+	report("Zoning.Initial Footprint Area (M^2)",Initial_Footprint_Area)
+	ActualFootPrint(first_Floor, Max_Floor_Count )
 	label("Foot Print")
 
 		
-ActualFootPrint-->
-		Building_Setback_Rule(first_Floor)
+ActualFootPrint(floor_num,totalfloors)-->
+		Building_Setback_Rule(first_Floor,0)#Starting GFA is Zero
 		
-Building_Setback_Rule(floornum)-->
+Building_Setback_Rule(floornum,used_gfa)-->
 	case floornum==first_Floor || _Cumulative_Setback(floornum,Building_Setback_Type)>Setback_Size_Threshold :
 		alignScopeToAxes(y)
-		Massing(floornum)
-			
+		Massing(floornum,used_gfa)
 	else:
 		case Building_Setback_Side=="Front": #Building_Setback_Side"Front","Back","Right and Left Side","All Sides"
 			setback(_Setback_Determination(Building_Setback,floornum,Building_Setback_Floor,Building_Setback_Type))
 			{object.front:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")
-			|remainder:Massing(floornum)}
+			|remainder:Massing(floornum,used_gfa)}
 		
 		case Building_Setback_Side=="Back":
 			setback(_Setback_Determination(Building_Setback,floornum,Building_Setback_Floor,Building_Setback_Type))
 			{street.back:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")
-			|remainder:Massing(floornum)}
+			|remainder:Massing(floornum,used_gfa)}
 		
 		case Building_Setback_Side=="Right and Left Side":
 			setback(_Setback_Determination(Building_Setback,floornum,Building_Setback_Floor,Building_Setback_Type))
 			{street.right:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")|
 			street.left:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")
-			|remainder:Massing(floornum)}
+			|remainder:Massing(floornum,used_gfa)}
 			
 		case Building_Setback_Side=="All Sides":
 			setback(_Setback_Determination(Building_Setback,floornum,Building_Setback_Floor,Building_Setback_Type))
 			{all:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")
-			|remainder:Massing(floornum)}
+			|remainder:Massing(floornum,used_gfa)}
 			
 		case Building_Setback_Side=="Right and Left Side": 
 			setback(_Setback_Determination(Building_Setback,floornum,Building_Setback_Floor,Building_Setback_Type))
 			{object.back:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")
-			|remainder:Massing(floornum)}	
+			|remainder:Massing(floornum,used_gfa)}	
 		else:	
 			setback(_Setback_Determination(Building_Setback,floornum,Building_Setback_Floor,Building_Setback_Type))
 			{street.front:extrude(oneInch) Floor_Material_Setup(floornum,Floor_Count_Abs,"Roof")
-			|remainder:Massing(floornum)}
+			|remainder:Massing(floornum,used_gfa)}
 		
 
 
-Massing(floornum)-->
+Massing(floornum,used_gfa)-->
 	#align massing up, create with envelop function
 	case floornum==first_Floor:
 		alignScopeToAxes(y)
-		extrude(Ground_Floor_Height)
-		Floors(floornum)
-	case floornum<=Floor_Count_Abs:
+		extrude(world.up.flatTop, Ground_Floor_Height)
+		Floors(floornum,used_gfa)
+	case floornum<= Max_Floor_Count :
 		alignScopeToAxes(y)
-		extrude(Floor_Height)
-		Floors(floornum)
+		extrude(world.up.flatTop, Floor_Height)
+		Floors(floornum,used_gfa)
 	else:
 		alignScopeToAxes(y)
-		Floors(floornum)		
-		
-Floors_Split-->
-	split(y){Ground_Floor_Height:Ground_Floor(split.index,split.total-1)
-			|{Floor_Height:Other_Floors(split.index,split.total-1)}*}
-Floors(floornum)-->
+		Floors(floornum,used_gfa)		
+Floors(floornum,used_gfa)-->
 	case floornum==first_Floor:			
-		Ground_Floor(floornum,Floor_Count_Abs)
+		Ground_Floor(floornum,Floor_Count_Abs,used_gfa)
 	else:
-		Other_Floors(floornum,Floor_Count_Abs)
+		Other_Floors(floornum,Floor_Count_Abs,used_gfa)
 		
-Ground_Floor(floornum,totalfloors)-->
-	case floornum<totalfloors:
+Ground_Floor(floornum,totalfloors,used_gfa)-->
+	case  _Left_Over_GFA(used_gfa) > 10 &&  floornum<totalfloors:
 		comp(f) {bottom:Floor_Base(floornum,totalfloors)
 		|street.front:Ground_Street_Facing(floornum,totalfloors)
 		|street.back:Ground_Rear_Facing(floornum,totalfloors)
 		|side:Ground_Exterior_Sidewall(floornum,totalfloors)
-		|top: Building_Setback_Rule (floornum+1)}
+		|top: Building_Setback_Rule (floornum+1,used_gfa)}
 	else:
 		comp(f) {top:Roof_Setup(floornum+1,totalfloors+1)
 		|bottom:Floor_Base(floornum,totalfloors)
@@ -591,13 +612,13 @@ Ground_Floor(floornum,totalfloors)-->
 		|side:Ground_Exterior_Sidewall(floornum,totalfloors)}
 
 
-Other_Floors(floornum,totalfloors)-->
-		case floornum!=totalfloors:
+Other_Floors(floornum,totalfloors,used_gfa)-->
+		case  _Left_Over_GFA(used_gfa) > 10 && floornum!=totalfloors:
 			comp(f) {bottom:Floor_Base(floornum,totalfloors)
 					|street.front:Street_Facing(floornum,totalfloors)
 					|street.back:Rear_Facing(floornum,totalfloors)
 					|side:Exterior_Sidewall(floornum,totalfloors)
-					|top: Building_Setback_Rule(floornum+1)}
+					|top: Building_Setback_Rule(floornum+1,geometry.area()+used_gfa)}
 		else:
 			comp(f){top:Roof_Setup(floornum+1,totalfloors+1)|# Add ceiling on last floor
 					bottom:Floor_Base(floornum,totalfloors)|
@@ -718,6 +739,7 @@ Floor_Base(floornum,totalfloors)-->
 	#print(floornum)
 	report("Zoning.Total GFA",geometry.area)
 	report("Zoning.Floor Area Ratio (FAR)",geometry.area/(Lot_Area))
+	report("Zoning.Number of Floors", 1)
 	reverseNormals
 	alignScopeToAxes(y)
 	X.
@@ -785,7 +807,7 @@ Color_Floor_Wall(floornum,totalfloors,Location)-->
 		X.
 	case Scenario_Representation =="Gradient Color Floor":
 		#texture("default:uv")
-		color(colorRGBToHex(floornum/totalfloors,floornum/totalfloors,1))
+		color(colorRGBToHex(floornum*Initial_Footprint_Area/(_Total_Target_FAR(Base_FAR) * Lot_Area),floornum*Initial_Footprint_Area/(_Total_Target_FAR(Base_FAR) * Lot_Area),1))
 		[case _isWall(Location):report("Zoning.Total Exterior Wall Area (M^2)", geometry.area()) else: NIL]
 		X.
 	else:
