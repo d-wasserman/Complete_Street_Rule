@@ -61,9 +61,9 @@ attr Rail_Frequency_Metric = 0
 attr Rail_Stop_Proximity = 0 
 @Order(4) @Range(0,15) @Description("Bonus FAR based on the bonus mode choices.")#may need reword on this.
 attr Initial_Rail_FAR_Bonus = 
-	case Rail_Bonus_Mode == "Rail Present": 2
-	case Rail_Bonus_Mode == "Trips Per Hour": Rail_Stop_Proximity* 0.2 
-	else: Rail_Stop_Proximity * 2 #are these numbers correct?
+	case Rail_Bonus_Mode == "Rail Present": min(1,Rail_Frequency_Metric)
+	case Rail_Bonus_Mode == "Trips Per Hour": Rail_Frequency_Metric* 0.2 
+	else: Rail_Frequency_Metric* 2 #are these numbers correct?
 @Order(5) @Range(0,10560) @Description("The distance away from rail/BRT stop that FAR drops.")#may need reword on this.
 attr Rail_Decay_Increment = 1000
 @Order(6) @Range(0,15) @Description("The rate that FAR drops at each distance increment away from the bus stop.")#may need reword on this.
