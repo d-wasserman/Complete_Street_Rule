@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated:12/15/2018
+ * Last Updated: 03/16/2019
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -619,9 +619,8 @@ _Initital_Transit_Lane_Sides=
 	
 _getInitialStop(connection,nLanes) =
 	case _hasStop(connection) && (streetLength>20):
-		case connection=="ROUNDABOUT": 60%: "with stop marking" else: "arrows for right turn"
-		case nLanes>2				 : 25%: "line only" 25%: "with stop marking" 15%: "arrows on all lanes" 12%: "arrows on side lanes" 17%: "arrows for right turn" else: "line only"
-		else		 				 : 35%: "line only" 45%: "with stop marking" 10%: "arrows on all lanes" 10%: "arrows on side lanes" else: "line only"
+		case connection=="ROUNDABOUT": "arrows for right turn"
+		else		 				 : "line only"
 	else: "none"
 
 _InititalSpeedLimit=
