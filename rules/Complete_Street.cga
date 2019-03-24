@@ -2061,7 +2061,7 @@ Bus_Stop_Stamp(Side,Color)-->
 	scaleUV(0,case Side=="Right":1 else: -1,case Side=="Right":1 else: -1)
 	scaleUV(0,case rightHandTraffic: 1 else: -1,case rightHandTraffic: 1 else: -1)
 	deleteUV(_Texture_Switch)
-	color( _ThematicRouter ("Transit","bus_lane"))
+	color( _ThematicRouter ("Transit","bus_pull_in"))
 	
 	
 Project_Zebra_Stripe(Color,Mode_Class,LabelID)-->
