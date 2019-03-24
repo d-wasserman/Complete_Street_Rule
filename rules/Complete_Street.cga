@@ -81,7 +81,7 @@ attr Space_Management= "Best Fit"
 attr LOD_Setting	  ="Moderate"
 @Range(0,1) @Order(7)@Description("This attribute controls the transparency of the street models created by the rule.")#@Hidden
 attr Transparency	  = 0
-@Range(0,1) @Order(8) @Description("This attribute adjusts the global specularity of the street model.") @Hidden
+@Range(0,1) @Order(8) @Description("This attribute adjusts the global specularity of the street model.") #@Hidden
 attr Specularity	  = 1
 @Enum("true","false") @Order(9)@Description("This attribute controls whether key reporting elements are enabled. Low LOD defaults to turning reports off.") @Hidden
 attr Reporting_On = case LOD_Setting == "Low": "false" else: "true"
@@ -2606,6 +2606,7 @@ Median_Plant_Base-->
 	case Median_Ground_Cover =="None":
 		WalkWay_Texture
 	else:
+		Planting_Curb(Median_Tree_Spacing)
 		Tree_Setup("Median", Median_Tree_1_Percentage , Median_Tree_1_Type,Median_Tree_2_Type, Median_Tree_1_Height, Median_Tree_2_Height )
 		Median_Planting
 

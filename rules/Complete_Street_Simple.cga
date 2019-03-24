@@ -2606,6 +2606,7 @@ Median_Plant_Base-->
 	case Median_Ground_Cover =="None":
 		WalkWay_Texture
 	else:
+		Planting_Curb(Median_Tree_Spacing)
 		Tree_Setup("Median", Median_Tree_1_Percentage , Median_Tree_1_Type,Median_Tree_2_Type, Median_Tree_1_Height, Median_Tree_2_Height )
 		Median_Planting
 
