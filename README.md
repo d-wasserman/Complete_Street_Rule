@@ -21,7 +21,9 @@ To open and interact with this project, do the following:
 
 6.	Expand the imported project folder in Navigator window and click the scenes folder.
 
-7.	Double click the .cej file to open the scene in CityEngine.
+7.	If you are using CityEngine 2019 and above, this rule depends on the Esri.lib libraries for Vegetation at minimum. Install those optional libraries before using the rule. 
+
+8.	Double click the .cej file to open the scene in CityEngine.
 
 If all you need is the rule for your current project: 
 1.	Click Clone or Download > Download Zip above to download the project zip file to your computer.
@@ -32,11 +34,13 @@ If all you need is the rule for your current project:
 
 4.	Move the Complete_Streets folder in assets to your current project's assets folder. 
 
-5.	Move the files ending in .CGA in the rules folder to your current project's rules's folder. 
+5.	Move the files ending in .CGA in the rules folder to your current project's rules's folder.
 
 6.	Open CityEngine. 
 
-7.	Apply rule to desired street segments.
+7.	If you are using CityEngine 2019 and above, this rule depends on the Esri.lib libraries for Vegetation at minimum. Install those optional libraries before using the rule. 
+
+8.	Apply rule to desired street segments.
 
 ![alt tag](https://github.com/d-wasserman/Complete_Street_Rule/blob/master/images/RoadDietEX.jpg)
 
