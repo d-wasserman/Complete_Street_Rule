@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 04/05/2019
+ * Last Updated: 04/11/2019
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -714,9 +714,9 @@ _Car_Angle(ParkingType)				=
 	case find(ParkingType,"Parallel",0)!=-1:
 		0
 	case leftHandTraffic:
-		120
+		300
 	else:
-		60
+		240
 _Front_Parking_Spacing(Parking_Type) = 
 case Front_Parking_Spacing!=0:
 	Front_Parking_Spacing
@@ -2173,8 +2173,8 @@ ParallelParkingCar(dir,ParkingLength, ParkingWidth) -->
 	else: NIL
 
 ParallelParkingCarStep2(dir,ParkingLength, ParkingWidth) -->
-	alignScopeToGeometry(yUp, 0, (case dir==2:3 else:1))#If distortion is too high, the edge numbers might change making this look weird. Hard to evaluate options. 
-	rotateScope(0,DirectionalRotation,0) 
+	alignScopeToGeometry(yUp, 0, (case dir==2:1 else:3))#If distortion is too high, the edge numbers might change making this look weird. Hard to evaluate options. 
+	rotateScope(0,DirectionalRotation ,0) 
 	s(0,0,0)
 	i(vehicleAsset("car"))
 	label("parked car")
@@ -3325,7 +3325,7 @@ Vehicle(dir,type) -->
 VehicleAsset(type) -->
 	t(0,0,'rand(0.4,0.6)) 
 	s(0,0,0) 
-	r(0,90,0)
+	r(0,-90,0)
 	r(0,DirectionalRotation,0) 
 	i(vehicleAsset(type))
 	label(type)
