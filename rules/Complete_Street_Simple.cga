@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 04/11/2019
+ * Last Updated: 04/18/2019
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -369,21 +369,21 @@ attr Right_Parked_Car_Angle			= _Car_Angle(Right_Parking_Type)
 attr Left_Parked_Car_Angle			= _Car_Angle(Left_Parking_Type)
 
 @Group("CUSTOM OBJECTS",90) 
-@Order(1)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
+@Order(1)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
 attr Street_Lamp_Object						=Default_Lamp
-@Order(2)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
+@Order(2)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
 attr Parking_Meter_Object					=Default_Parking_Meter
-@Order(3)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
+@Order(3)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
 attr Traffic_Light_Object					=Default_Traffic_Light
-@Order(4)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
+@Order(4)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
 attr Wayfinder_Object						=Default_WayFinder
-@Order(5)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
+@Order(5)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
 attr Bench_Object							=Default_Bench
-@Order(6)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
+@Order(6)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
 attr Bike_Rack_Object						=Default_Bike_Rack
-@Order(7)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
+@Order(7)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
 attr Bus_Stop_Object						=Default_BusStop
-@Order(8)@File("dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
+@Order(8)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
 attr Parklet_Object							=Default_Parklet					
 ######################################################
 #Bridge Attributes									 #
@@ -521,7 +521,7 @@ const Random_Grass					=(fileRandom(GrassFolder + "/*.jpg"))
 const Angled_Gap					= 5
 const _Place_Colored_Curb			= case(find(Buffer_Type,"Curb",0)!=-1 || !Parking_Protection_Bool): true else: false
 #Object Model Constants
-const Default_Lamp					= (LampsFolder +"/lamp.04.single.lod0.obj")
+const Default_Lamp					= (LampsFolder +"/Overhanging_Street_-_Light_off.glb")
 const Default_Parking_Meter			= (ObjectFolder+ "/parkingMeter.obj")
 const Default_Traffic_Light			= (TrafficControlFolder+ "/traffic_light.02.big_with_lamp_and_sign.lod1.obj")
 const Default_WayFinder				= (ObjectFolder+ "/WayFinder.obj")
@@ -2695,14 +2695,14 @@ Street_Lamp_Center(Location,Dir)-->
 
 Street_Lamp_Sider(Dir)-->
 	case Median_Street_Lamps =="Both":
-		split(v,unitSpace,0) {.5:Lamp_Center_Asset(90,case Dir==0:0 else:2,Dir,Median_Street_Lamp_Offset)
+		split(v,unitSpace,0) {.5:Lamp_Center_Asset(180,case Dir==0:0 else:2,Dir,Median_Street_Lamp_Offset)
 							 |~1:NIL
-							 |.5:Lamp_Center_Asset(-180,case Dir==0:5 else:3,Dir,-Median_Street_Lamp_Offset)}
+							 |.5:Lamp_Center_Asset(-90,case Dir==0:5 else:3,Dir,-Median_Street_Lamp_Offset)}
 	case Median_Street_Lamps =="Right":
 		split(v,unitSpace,0) {~1:NIL
-							 |.5:Lamp_Center_Asset(-180,case Dir==0:5 else:3,Dir,-Median_Street_Lamp_Offset)}
+							 |.5:Lamp_Center_Asset(-90,case Dir==0:5 else:3,Dir,-Median_Street_Lamp_Offset)}
 	case Median_Street_Lamps =="Left":
-		split(v,unitSpace,0) {.5:Lamp_Center_Asset(90,case Dir==0:0 else:2,Dir,Median_Street_Lamp_Offset)
+		split(v,unitSpace,0) {.5:Lamp_Center_Asset(180,case Dir==0:0 else:2,Dir,Median_Street_Lamp_Offset)
 							 |~1:NIL}
 	else:
 		NIL
@@ -2710,7 +2710,7 @@ Lamp_Center_Asset(Side_Rotation,Shape_Edge,Dir,Offset)-->
 	alignScopeToGeometry(yUp, largest,Shape_Edge)
 	alignScopeToAxes(y)		// place the Lamps vertically
 	center(xz)
-	s(0,5,0)				//set initital height to 5 others are based on OBJ
+	s(0,0,0)				//set initital height to 5 others are based on OBJ
 	r(0,Side_Rotation,0)
 	t(0,0,Offset)
 	report("Objects.Street Lamp Count", 1)
@@ -3073,7 +3073,8 @@ Sidewalk_Lamp(offset) -->
 	alignScopeToGeometry(yUp,largest,0)
 	alignScopeToAxes(y)		// place the Lamps vertically
 	center(xz)
-	s(0,5,0)				// set height to 5 meters
+	r(0,90,0)
+	s(0,0,0)				// set height to 5 meters
 	report("Objects.Street Lamp Count", 1)
 	LampAsset(offset)		// since the scope's dimenstion are zero in x and z, these are set according to the asset
 	
