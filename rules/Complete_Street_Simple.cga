@@ -478,7 +478,7 @@ const Median_Layout_Threshold		= case find(Center_Type,"Turn Lane",0)!=-1:Lane_W
 const Median_Walkway_Expansion		= ln(abs((Center_Width-Median_Layout_Threshold)/2))
 const Speed_Related_Expansion		= ln(abs(Speed_Limit_in_MPH/5))
 const Bench_Threshold_Width			= .9
-const Bench_Adjuster				=.5
+const Bench_Adjuster				= 1
 const Default_Pavement				= SidewalkFolder+"/Concrete Clean Light.jpg"
 const Planting_Threshold_Width		= 2
 const Median_Stop_Adjuster			=-1
@@ -525,7 +525,7 @@ const Default_Lamp					= (LampsFolder +"/Overhanging_Street_-_Light_off.glb")
 const Default_Parking_Meter			= (ObjectFolder+ "/parkingMeter.obj")
 const Default_Traffic_Light			= (TrafficControlFolder+ "/traffic_light.02.big_with_lamp_and_sign.lod1.obj")
 const Default_WayFinder				= (ObjectFolder+ "/WayFinder.obj")
-const Default_Bench					= (ObjectFolder+ "/Bench.obj")
+const Default_Bench					= (ObjectFolder+ "/Park_Bench_2.glb")
 const Default_Bike_Rack				= (ObjectFolder+ "/Bike_Rack.obj")
 const Default_Parklet				= (ObjectFolder+ "/Parklet_"+LOD_Object_Choice+"_LOD.obj")
 const Default_BusStop				= (ObjectFolder+ "/Bus_Stop.obj")
@@ -2659,20 +2659,20 @@ Bench_Rule(Boulevard_Side,Dir)-->  # DEAL WITH BUSTOP ANOTHER WAY_ DO A SPLIT TH
 
 Median_Bench_Rotator (Dir)-->
 	case Dir==2:
-		rotateScope(0,90,0)
+		rotateScope(0,0,0)
 		Median_Bench_Insert (Dir)
 	else: 
-		rotateScope(0,270,0)
+		rotateScope(0,180,0)
 		Median_Bench_Insert (Dir)		
 
 Median_Bench_Insert (Dir)-->
 	case Dir==2 && (Median_Benches=="Both"||Median_Benches=="Left"):
-		s(1,1,2)
+		s(0,0,0)
 		center(xz)
 		t(-WalkWay_Width/2+Bench_Adjuster,0,0)
 		Bench_Insert
 	case Dir==0 && (Median_Benches=="Both"||Median_Benches=="Right"):
-		s(1,1,2)
+		s(0,0,0)
 		center(xz)
 		t(-WalkWay_Width/2+Bench_Adjuster,0,0)
 		Bench_Insert
@@ -3182,13 +3182,13 @@ Sidewalk_Bench_Loader(splitNum,splitTotal,Plant_Side_Base_Switch)-->
 		NIL
 
 Sidewalk_Bench_Insert(Dir,geometry_Len)-->
-	case geometry.du(0,unitSpace)>1: #Remember two gaps, so it is 2 (width of bench)/2
+	case geometry.du(0,unitSpace)>1.5: #Remember two gaps, so it is 2 (width of bench)/2
 		alignScopeToAxes(y)
 		alignScopeToGeometry(yUp, largest, 0)
-		rotateScope(0,90,0)
-		s(0.75,1,2)
-		t(.25+(Sidewalk_Planting_Width/10),0,geometry_Len-1)#When geometry.du is used functionality is different (alignment issue?) passed parameter works best likely because it is before scope manipulation (rotate etc)dv. might work instead.
+		s(0,0,0)
+		t(geometry_Len,0,(Sidewalk_Planting_Width/10)+.25)#When geometry.du is used functionality is different (alignment issue?) passed parameter works best likely because it is before scope manipulation (rotate etc)dv. might work instead.
 		Bench_Insert
+		
 	else:
 		NIL
 		
