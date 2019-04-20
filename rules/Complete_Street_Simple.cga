@@ -374,7 +374,7 @@ attr Street_Lamp_Object						=Default_Lamp
 @Order(2)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
 attr Parking_Meter_Object					=Default_Parking_Meter
 @Order(3)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
-attr Traffic_Light_Object					=Default_Traffic_Light
+attr Traffic_Light_Object					= case streetWidth > 11: Default_Large_Traffic_Light else: Default_Small_Traffic_Light
 @Order(4)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
 attr Wayfinder_Object						=Default_WayFinder
 @Order(5)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
@@ -523,7 +523,8 @@ const _Place_Colored_Curb			= case(find(Buffer_Type,"Curb",0)!=-1 || !Parking_Pr
 #Object Model Constants
 const Default_Lamp					= (LampsFolder +"/Overhanging_Street_-_Light_off.glb")
 const Default_Parking_Meter			= (ObjectFolder+ "/parkingMeter.obj")
-const Default_Traffic_Light			= (TrafficControlFolder+ "/traffic_light.02.big_with_lamp_and_sign.lod1.obj")
+const Default_Small_Traffic_Light	= (TrafficControlFolder+ "/Traffic_Light_1.glb")
+const Default_Large_Traffic_Light	= (TrafficControlFolder+ "/Traffic_Light_2.glb")
 const Default_WayFinder				= (ObjectFolder+ "/WayFinder.obj")
 const Default_Bench					= (ObjectFolder+ "/Park_Bench_2.glb")
 const Default_Bike_Rack				= (ObjectFolder+ "/Bike_Rack.obj")
@@ -3057,11 +3058,11 @@ Traffic_Light_Setup-->
 Traffic_Light(index)-->
 	alignScopeToAxes(y)		// place the Lamps vertically
 	t(TLight_Translate_X,0,-TLight_Translate_Z)
-	s(0,5,0)				// set height to 5 meters
+	s(0,0,0)				// set height to 5 meters
 	Traffic_Light_Asset(index)
 
 Traffic_Light_Asset(index)-->
-	r(0,90,0)
+	r(0,180,0)
 	t(0,0,0.1)
 	report("Objects.Traffic Lights Count", 1)
 	i(Traffic_Light_Object)
