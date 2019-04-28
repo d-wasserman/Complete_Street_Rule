@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 04/27/2019
+ * Last Updated: 04/28/2019
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -3158,7 +3158,7 @@ Sidewalk_Bike_Lane_Loader(Dir)-->
 	split(u,unitSpace,0){~1:scaleUV(0,DirectionalFlip,1)BikeLaneSection(case Dir==0:1 else:-1,_Sidewalk_BikeLane_Width(Dir))}
 
 Sidewalk_Object_Split(RotationAng)-->
-	split(u,unitSpace,0){'_Bus_Alloc("Sidewalk"):Bus_Objects_Insert("Bus Stop",Bus_Stop_Object,RotationAng+90,Sidewalk_Bus_Stop_Setback,4,3,3)
+	split(u,unitSpace,0){'_Bus_Alloc("Sidewalk"): Bus_Stop_Insert("Bus Stop",Bus_Stop_Object,RotationAng+90,.5)
 						|'_Bike_Rack_Alloc("Sidewalk"):Bike_Rack_Split(RotationAng,0)
 						|'_WayFinder_Alloc("Sidewalk"):Bus_Objects_Insert("Wayfinder",Wayfinder_Object,RotationAng,-.5,.3,3,0.5)}
 
