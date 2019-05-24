@@ -1,7 +1,7 @@
 /*
  * File:    Paint_Drawing_Rule.cga
  * Created: 10/25/2018 Oct
- * Last Updated:10/29/2018
+ * Last Updated:5/14/2019
  * Author:  David J. Wasserman
  * License: Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -40,6 +40,10 @@
  @Order(5) @Range("true","false") @Description("Adds a white paint edge to dashed elements.")
  @Handle(shape=Main_Allocation_Rule,axis=y,reference=right,align=right,translate={-.1,0,0},slip=inside,color ="#22DDFF",type=selector)@Enum("true","false")
  attr Paint_Edge_Element = "true"
+ @Order(6) @Range(0,360) @Description("Rotation along Z axis for scope of painted area.")
+ attr Z_Rotation = 0
+ @Order(7) @Range(0,10) @Description("Setback amount from outside of the shape. Gives a painted shape a white outline.")
+ attr Outline_Thickness = 0
  
  
  @Group("DISPLAY OPTIONS",2) @Range("true","false")@Order(1)@Description("When true, textures are on display, when false textures are removed. If true it deletes an unused UVset (see comments for details).")
@@ -87,7 +91,11 @@ Main_Allocation_Start-->
  	set(cs.Display_Thematics,Display_Thematics)
  	set(cs.Solid_Color,Solid_Color)
  	color(cs._ThematicRouter (Mode_Choice))
- 	Dashed_Split_Decision
+ 	Setback_Element
+ 	
+Setback_Element--> 
+	setback (Outline_Thickness) {all:Main_Allocation_Rule|
+			remainder: Dashed_Split_Decision}
  
 Dashed_Split_Decision-->
 	case bool(Dashed_Element):
@@ -97,6 +105,7 @@ Dashed_Split_Decision-->
  		
 Conflict_Splitter-->
 	alignScopeToGeometry(yUp,largest,0)
+	rotateScope(0,Z_Rotation,0)
 	split(z) {{~max(Dashed_Width,.1):Dash_Allocation|~max(Dashed_Width,.1):Asphalt("Conflict Zones",cs.sharrowHeight)}*|~max(Dashed_Width,.1):Dash_Allocation}
 
 Dash_Allocation-->
