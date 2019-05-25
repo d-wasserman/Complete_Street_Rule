@@ -4,7 +4,7 @@ This is an updated repository for a modified version of the ESRI Complete Street
 
 ## Scenario Oriented Design Tool
 
-![alt tag](https://github.com/d-wasserman/Complete_Street_Rule/blob/master/images/CSRuleCEDemo.gif)
+![alt tag](/images/CSRuleCEDemo.gif)
 
 
 # Instructions
@@ -42,7 +42,7 @@ If all you need is the rule for your current project:
 
 8.	Apply rule to desired street segments.
 
-![alt tag](https://github.com/d-wasserman/Complete_Street_Rule/blob/master/images/RoadDietEX.jpg)
+![alt tag](/images/RoadDietEX.jpg)
 
 # Key changes to the rule include:
 
