@@ -87,4 +87,5 @@ This still needs to be tested more so please comment if you have any issues with
 
 # Citations
 If you use the complete street rule in academic research or as part of professional reports, please cite the rule as the following: 
+
 Wasserman, D. Complete Street Rule. (2019) GitHub repository, https://github.com/d-wasserman/Complete_Street_Rule.
