@@ -84,3 +84,8 @@ This still needs to be tested more so please comment if you have any issues with
 	-Furniture Zone Width Parameter was added to adjust the gap between the sidewalk and the curb. This parameter is set to small gap, but can be increased. 
 	
 	-Paint Reporting is removed from the rule. Feedback indicating it was slowing down the rule, and made editing the rule more difficult. 
+
+# Citations
+If you use the complete street rule in academic research or as part of professional reports, please cite the rule as the following: 
+
+Wasserman, D. Complete Street Rule. (2019) GitHub repository, https://github.com/d-wasserman/Complete_Street_Rule.
