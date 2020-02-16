@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 09/8/2019
+ * Last Updated: 02/15/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -661,13 +661,13 @@ _ParkingWidth(ParkingType)				=
 	case find(ParkingType,"Parallel",0)!=-1:
 		2.44 #Door zone should have another 1-1.5 ft if parking is on inside
 	else:
-		6.1
+		6.7 # 22 ft
 	
 _ParkingLength(ParkingType)				=
 	case ParkingType=="None":
 		0
 	case find(ParkingType,"Parallel",0)!=-1:
-		6.1
+		6.7 # 22 ft
 	else:
 		2.6
 	

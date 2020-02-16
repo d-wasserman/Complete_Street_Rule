@@ -1,13 +1,13 @@
 /*
- * File:    Complete Street.cga
+ * File:    Complete Street_Simple.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 09/8/2019
+ * Last Updated: 02/15/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
 # ESRI Attribution License:
 #	ESRI Derivative work
-#	http://mappingcenter.esri.com/downloa#ds/AttributionAndLicense_05_09_07.pdf
+#	http://mappingcenter.esri.com/downloads/AttributionAndLicense_05_09_07.pdf
 #
 # Copyright 2018 David J. Wasserman
 #
@@ -661,13 +661,13 @@ _ParkingWidth(ParkingType)				=
 	case find(ParkingType,"Parallel",0)!=-1:
 		2.44 #Door zone should have another 1-1.5 ft if parking is on inside
 	else:
-		6.1
+		6.7 # 22 ft
 	
 _ParkingLength(ParkingType)				=
 	case ParkingType=="None":
 		0
 	case find(ParkingType,"Parallel",0)!=-1:
-		6.1
+		6.7 # 22 ft
 	else:
 		2.6
 	
@@ -771,7 +771,7 @@ const _stopBegin 			   = case Stop_Begin =="none" || _oneWayForward: 0 else: 1
 const _stopEnd 				   = case Stop_End =="none"   || _oneWayReverse: 0 else: 1
 const _neighborBegin		   = case Stop_Begin !="none" || _hasStop(connectionStart):1 else: 0
 const _neighborEnd			   = case Stop_End !="none" || _hasStop(connectionEnd):1 else: 0
-const _crosswalkWidth		   = case _Maxof(sidewalkWidthLeft,sidewalkWidthRight)==0:3 else:(_Maxof(sidewalkWidthLeft,sidewalkWidthRight)+ 0.1524)//changed to match width of largest sidewalk +0.1524 (6 inches), if 0 default is 2. 
+const _crosswalkWidth		   = case _Maxof(sidewalkWidthLeft,sidewalkWidthRight)==0:3 else:(_Maxof(sidewalkWidthLeft,sidewalkWidthRight)+ 0.1524)//changed to match width of largest sidewalk + 0.1524 (6 inches), if 0 default is 2. 
 const _crosswalkBeginWidth	   = case Crosswalk_Begin =="none": 0 else: (Crosswalk_Width)
 const _crosswalkEndWidth 	   = case Crosswalk_End =="none"  : 0 else: (Crosswalk_Width)
 const _centerWidth	 		   = case oneWay || Center_Type=="None": 0 
