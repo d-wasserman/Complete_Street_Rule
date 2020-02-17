@@ -44,7 +44,7 @@ If all you need is the rule for your current project:
 
 ![alt tag](/images/RoadDietEX.jpg)
 
-# Key Features of the Complete Street Rule:
+# Key Features of the Complete Street Rule
 
 * Enables Quick Visualization of Multiple Features of Complete Streets: The rule can be used to quickly iterate on high level cross-sectional designs for streets through changes to its parameters. The features that can be visualized include bike lanes, bike lane buffers, shared-use lanes, bus lanes, HOV lanes, parking lanes, medians, two-way left turn lanes, and sidewalks featuring trees, street furniture, and other amenities. 
 
