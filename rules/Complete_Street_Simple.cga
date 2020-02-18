@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street_Simple.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 02/15/2020
+ * Last Updated: 02/18/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -3096,7 +3096,7 @@ LampAsset(offset) -->
 	t( SLight_Translate_X ,0, SLight_Translate_Z )
 	r(0,90,0)
 	i(Street_Lamp_Object)
-	t(.2,0,offset)
+	t(offset,0,0)
 	label("Street Lamp")
 	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Pedestrian","lamp"))
