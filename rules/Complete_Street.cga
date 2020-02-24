@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 02/18/2020
+ * Last Updated: 02/23/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -566,7 +566,7 @@ const Design_Speed					= case Speed_Limit_in_MPH>=40:Speed_Limit_in_MPH+7.5 else
 const Brake_Reaction_Dist			= 1.47*Design_Speed*Brake_Reaction_Time
 const Braking_Dist					= 1.075*((Design_Speed*Design_Speed)/Deceleration_Rate)# Time spent actually braking
 const Stopping_Sight_Dist			= Brake_Reaction_Dist+Braking_Dist
-#Unit Conversion- in terms of number of unit per meter,meter^2, or meter^3- convert by unit *conversion factor==new unit
+##Unit Conversion- in terms of number of unit per meter,meter^2, or meter^3- convert by unit *conversion factor==new unit
 const SquareFeet					=10.7639 #per meter ^2
 const Feet							=3.28084 #per meter ^1
 const Miles							=0.00062137 #per meter ^1
@@ -3240,7 +3240,7 @@ Sidewalk_Planting--># THis is set up this way to support a vegetated buffer with
 Planting_Curb(Planting_Spacing)-->
 	case Sidewalk_Planting_Border == "Curb":
 		split(u,unitSpace,0){Curb_Depth*_ContiguousPlantingSwitch(Planting_Spacing):Curbs_Mass(true,Sidewalk_Height/2)|
-			~1:split(v,unitSpace,0){Curb_Depth:Curbs_Mass(false,Sidewalk_Height/2)|~1:NIL|Curb_Depth:Curbs_Mass(false,Sidewalk_Height/2)}|
+			~1:split(v,unitSpace,0){Curb_Depth*_ContiguousPlantingSwitch(Planting_Spacing):Curbs_Mass(false,Sidewalk_Height/2)|~1:NIL|Curb_Depth*_ContiguousPlantingSwitch(Planting_Spacing):Curbs_Mass(false,Sidewalk_Height/2)}|
 		Curb_Depth*_ContiguousPlantingSwitch(Planting_Spacing):Curbs_Mass(true,Sidewalk_Height/2)}
 	else:
 		NIL
@@ -3324,13 +3324,13 @@ VehicleTaxiOrCar(dir) -->
 
 Bus_Vehicle(dir,type) --> 
 	case p(busProb):
-		split(u,unitSpace,0){ ~1: NIL | 0.5: alignScopeToGeometry(yUp,dir) VehicleAsset(type) | ~1: NIL }
+		split(u,unitSpace,0){ ~1: NIL | 0.5: alignScopeToGeometry(yUp,0,dir) VehicleAsset(type) | ~1: NIL }
 	else:
 		NIL	
 
 Vehicle(dir,type) --> 
 	case p(vehiclesProb):
-		split(u,unitSpace,0){ ~1: NIL | 0.5: alignScopeToGeometry(yUp,dir) VehicleAsset(type) | ~1: NIL }
+		split(u,unitSpace,0){ ~1: NIL | 0.5: alignScopeToGeometry(yUp,0,dir) VehicleAsset(type) | ~1: NIL }
 	else:
 		NIL	
 		
@@ -3377,7 +3377,7 @@ else:
 	
 Bike(dir,Bike_Lane_Width,bike_probability) --> 
 	case p(bike_probability):
-		split(u,unitSpace,0){ ~1: NIL | 0.5: alignScopeToGeometry(yUp,dir) BikeAsset(Bike_Lane_Width) | ~1: NIL }
+		split(u,unitSpace,0){ ~1: NIL | 0.5: alignScopeToGeometry(yUp,0,dir) BikeAsset(Bike_Lane_Width) | ~1: NIL }
 	else:
 		NIL	
 		
@@ -3718,11 +3718,11 @@ BridgeSolid -->
 BridgeMaterial(color_chooser) -->
 	case find(str(color_chooser),"#",0)!=-1:
 		color(color_chooser)
-		setupProjection(0,scope.xy,~12,~9,1) projectUV(0)
+		setupProjection(0,scope.xy,~12,~9,0,0,0) projectUV(0)
 		texture(Default_Pavement)
 		deleteUV(_Texture_Switch)
 	else:
-		setupProjection(0,scope.xy,~12,~9,1) projectUV(0)
+		setupProjection(0,scope.xy,~12,~9) projectUV(0)
 		texture(Default_Pavement)
 		deleteUV(_Texture_Switch)
 	
@@ -3731,7 +3731,7 @@ RailMaterial -->
 	case texturingOn:
 		set(material.specular.r, 1) set(material.specular.g, 1) set(material.specular.b, 1)
 		set(material.shininess, 20)
-		setupProjection(0,scope.xy,~12,~9,1) projectUV(0)
+		setupProjection(0,scope.xy,~12,~9,0,0,1) projectUV(0)
 		texture(SidewalkFolder+"/Concrete Rough Light.jpg")
 		RailMaterialStep2
 	else:		
