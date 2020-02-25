@@ -1,6 +1,8 @@
-These step by step instructions provide insight on how to integrate 
-
 # Instructions
+These step by step instructions provide insight on how to open a new project or how to integrate the rule into your existing project. 
+
+## Open Complete Street Rule Project
+
 To open and interact with this project, do the following:
 1.	Click Clone or Download > Download Zip above to download the project zip file to your computer.
 
@@ -17,6 +19,8 @@ To open and interact with this project, do the following:
 7.	If you are using CityEngine 2019 and above, this rule depends on the Esri.lib libraries for Vegetation at minimum. Install those optional libraries before using the rule. 
 
 8.	Double click the .cej file to open the scene in CityEngine.
+
+## Add Complete Street Rule to Existing Project
 
 If all you need is the rule for your current project: 
 1.	Click Clone or Download > Download Zip above to download the project zip file to your computer.
