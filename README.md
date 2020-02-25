@@ -7,43 +7,10 @@ This is an updated repository for a modified version of the ESRI Complete Street
 
 ![alt tag](/images/CSRuleCEDemo.gif)
 
-
 # Instructions
-To open and interact with this project, do the following:
-1.	Click Clone or Download > Download Zip above to download the project zip file to your computer.
 
-2.	Unzip the repository folder in a selected workspace.
+If you are new to using CityEngine, then the instructions on this [page](Instructions.md) provide step by step instructions on how to open the project or integrate the rule into an existing project. 
 
-3.	Launch CityEngine.
-
-4.	Locate the unzipped project folder and click Open.
-
-5.	Keep the default settings and click Finish.
-
-6.	Expand the imported project folder in Navigator window and click the scenes folder.
-
-7.	If you are using CityEngine 2019 and above, this rule depends on the Esri.lib libraries for Vegetation at minimum. Install those optional libraries before using the rule. 
-
-8.	Double click the .cej file to open the scene in CityEngine.
-
-If all you need is the rule for your current project: 
-1.	Click Clone or Download > Download Zip above to download the project zip file to your computer.
-
-2.	Unzip the repository folder in a selected workspace.
-
-3.	Go into the directory and find the "rules" and "assets" folder. 
-
-4.	Move the Complete_Streets folder in assets to your current project's assets folder. 
-
-5.	Move the files ending in .CGA in the rules folder to your current project's rules's folder.
-
-6.	Open CityEngine. 
-
-7.	If you are using CityEngine 2019 and above, this rule depends on the Esri.lib libraries for Vegetation at minimum. Install those optional libraries before using the rule. 
-
-8.	Apply rule to desired street segments.
-
-![alt tag](/images/RoadDietEX.jpg)
 
 # Key Features of the Complete Street Rule
 
@@ -58,6 +25,8 @@ If all you need is the rule for your current project:
 * CityeEngine Handles Support: Local Edits allow randomly generated and spaced assets to be moved within a CityEngine model rather than post processed in PhotoShop or some other 3D modeling software. Current assets and elements that can be edited with handles include: Street Lamps|Traffic Lights|Trees|Benches|Curbside Allocations.
 
 * Support for Multiple Levels of Detail (LOD): If LOD is set to High, the street will now pick default population parameters to make the street seem occupied. LOD Settings are now Low (Asset choice changes to reduce polygon count), Moderate (high polygon assets/choices), and High/Very High (high polygon assets and populated streets).
+
+![alt tag](/images/Road_Diet_Update.jpg)
 
 # Citations
 If you use the complete street rule in academic research or as part of professional reports, please cite the rule as the following: 
