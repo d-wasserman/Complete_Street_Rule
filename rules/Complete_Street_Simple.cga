@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 02/23/2020
+ * Last Updated: 02/29/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -2799,64 +2799,60 @@ randomTreeType =
 ###################################################
 # Crosswalk
 #
+
 Crosswalk(crosswalkType,uvSet) -->
+	report("Crosswalk.Crosswalk Area",geometry.area())
+	NoGeometryModeReporter("Conflict Zones")
+	color( _ThematicRouter ("Conflict Zones","crosswalk"))
+	CrosswalkDirector(crosswalkType,uvSet)
+	
+CrosswalkDirector(crosswalkType,uvSet)-->
 	case crosswalkType == "transverse"	 : CrosswalkTransverse(uvSet)
 	case crosswalkType == "dashed"    	 : CrosswalkDashed(uvSet)
 	case crosswalkType == "ladder"    	 : CrosswalkLadder(uvSet)
-	case crosswalkType == "solid"     	 : AsphaltPainted( Crosswalk_Color,"Conflict Zones","crosswalk")
+	case crosswalkType == "solid"     	 : AsphaltPainted( Crosswalk_Color)
 	case crosswalkType == "custom"	 	 : CrosswalkWalkway(true)
 	case crosswalkType == "ladder custom": CrosswalkLadderWalkway(uvSet)
 	case crosswalkType == "raised custom": CrosswalkRaised(uvSet)
 	else							     : CrosswalkContintental
 
 CrosswalkContintental -->
-	report("Crosswalk.Crosswalk Area",geometry.area())
-	split(v,uvSpace,0){ (ceil(geometry.vMin-0.01)-geometry.vMin): Asphalt("Conflict Zones","crosswalk")
+	split(v,uvSpace,0){ (ceil(geometry.vMin-0.01)-geometry.vMin): Asphalt
 					  | ~1: CrosswalkStripes(1)
-					  | geometry.vMax-floor(geometry.vMax+0.01): Asphalt("Conflict Zones","crosswalk") }
+					  | geometry.vMax-floor(geometry.vMax+0.01): Asphalt }
 
 CrosswalkLadder(uvSet) -->
-	report("Crosswalk.Crosswalk Area",geometry.area())
-	split(u,uvSpace,uvSet){ 0.17: AsphaltPainted( Crosswalk_Color,"Conflict Zones","crosswalk") 
+	split(u,uvSpace,uvSet){ 0.17: AsphaltPainted( Crosswalk_Color) 
 						  | ~1  : CrosswalkStripes(1)
-						  | 0.17: AsphaltPainted( Crosswalk_Color,"Conflict Zones","crosswalk" ) }	
+						  | 0.17: AsphaltPainted( Crosswalk_Color ) }	
 
 CrosswalkTransverse(uvSet) -->
-	report("Crosswalk.Crosswalk Area",geometry.area())
-	split(u,uvSpace,uvSet){ 0.27: AsphaltPainted( Crosswalk_Color,"Conflict Zones","crosswalk" ) 
-						  | ~1  : Asphalt("Conflict Zones","crosswalk")
-						  | 0.27: AsphaltPainted( Crosswalk_Color,"Conflict Zones","crosswalk" ) }
+	split(u,uvSpace,uvSet){ 0.27: AsphaltPainted( Crosswalk_Color ) 
+						  | ~1  : Asphalt
+						  | 0.27: AsphaltPainted( Crosswalk_Color ) }
 
 CrosswalkLadderWalkway(uvSet)-->
-	report("Crosswalk.Crosswalk Area",geometry.area())
-	split(u,uvSpace,uvSet){ 0.27: AsphaltPainted( Crosswalk_Color,"Conflict Zones","crosswalk") 
+	split(u,uvSpace,uvSet){ 0.27: AsphaltPainted( Crosswalk_Color) 
 						  | ~1  : CrosswalkWalkway(false)
-						  | 0.27: AsphaltPainted( Crosswalk_Color,"Conflict Zones","crosswalk") }	
+						  | 0.27: AsphaltPainted( Crosswalk_Color) }	
 CrosswalkDashed(uvSet) -->
-	report("Crosswalk.Crosswalk Area",geometry.area())
 	split(u,uvSpace,uvSet){ 0.17: CrosswalkStripes(0.6) 
-						  | ~1  : Asphalt("Conflict Zones","crosswalk")
+						  | ~1  : Asphalt
 						  | 0.17: CrosswalkStripes(0.6) }	
 
 CrosswalkStripes(stripeWidth) -->
-	report("Crosswalk.Crosswalk Area",geometry.area())
 	cleanupGeometry(all, 0.001) 
 	tileUV(0,0,~1) scaleUV(0,1,1/8/stripeWidth) 		# to setup the v-direction: a continental crosswalk line is 1m width, and the texture contains 8 of these.
 	texture(LanesFolder + "/crosswalk_continental_"+ Crosswalk_Color +".jpg")
 	deleteUV(_Texture_Switch)
-	color( _ThematicRouter ("Conflict Zones","crosswalk"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-	ModeReporter ("Conflict Zones")
-
+	
 CrosswalkWalkway(reporting)-->
 	case reporting:
 		tileUV(0,2,2) texture(Custom_Crosswalk_Texture)
 		deleteUV(_Texture_Switch)
-		color( _ThematicRouter ("Conflict Zones","crosswalk"))#If Display Thematics==Usage, goes to usage, if not, Thematic.
-		report("Crosswalk.Crosswalk Area",geometry.area())
 	else:
 		tileUV(0,2,2) texture(Custom_Crosswalk_Texture)
 		deleteUV(_Texture_Switch)
-		color( _ThematicRouter ("Conflict Zones","crosswalk"))#If Display Thematics==Usage, goes to usage, if not, Thematic.
 		
 CrosswalkRaised(uvSet)-->
 	split(u,uvSpace,uvSet){ 0.4: Insert_Slope(Sidewalk_Height,case uvSet==1:180 else: 0)
@@ -2864,7 +2860,6 @@ CrosswalkRaised(uvSet)-->
 						  | 0.4: Insert_Slope(Sidewalk_Height,case uvSet==1:0 else: 180)}
 
 Insert_Slope(height,rotation)-->
-	report("Crosswalk.Crosswalk Area",geometry.area())
 	rotateUV(0,rotation)
     normalizeUV(0, uv, collectiveAllFaces)
 	alignScopeToAxes(y)
@@ -2873,7 +2868,6 @@ Insert_Slope(height,rotation)-->
 	texture(Custom_Crosswalk_Texture)
 	projectUV(0)
 	deleteUV(_Texture_Switch)
-	color( _ThematicRouter ("Conflict Zones","crosswalk"))#If Display Thematics==Usage, goes to usage, if not, Thematic.
 ###################################################
 # Other default Start Rules of the graph
 #
@@ -3257,8 +3251,22 @@ Sign_Objects_Insert(Object_Identity,File_Extension,RotationAng,Translation,SX,SY
 		report("Objects."+Object_Identity+" Count",1)
 		deleteUV(_Texture_Switch)
 ##################################################
-#Paint Reporting	
+#Paint & Asphalt Reporting	
 #Asphalt Painted is actually retrofitted to be the paint and mode reporting aggregator, all "Paint Areas" originate here. 
+Asphalt(Usage,LabelID) -->
+		tileUV(0,14,14)
+		cleanupGeometry(all, 0.001)
+		texture( LanesFolder+"/asphalt_14x14m.jpg")
+		deleteUV(_Texture_Switch)
+		color( _ThematicRouter (Usage,LabelID))#If Display Thematics==Usage, goes to usage, if not, Thematic-strings might have other purpose later. 
+		ModeReporter(Usage)
+		
+Asphalt -->
+		tileUV(0,14,14)
+		cleanupGeometry(all, 0.001)
+		texture( LanesFolder+"/asphalt_14x14m.jpg")
+		deleteUV(_Texture_Switch)
+
 AsphaltPainted(paintColor,Usage,LabelID) -->
 	case paintColor!="black":# This makes sure that if the color is black, it is thrown into Asphalt Reporting
 		tileUV(0,7,7)
@@ -3269,6 +3277,15 @@ AsphaltPainted(paintColor,Usage,LabelID) -->
 		ModeReporter(Usage)
 	else:#If Black redirect to asphalt rule.
 		Asphalt(Usage,LabelID)
+
+AsphaltPainted(paintColor) -->
+	case paintColor!="black":# This makes sure that if the color is black, it is thrown into Asphalt Reporting
+		tileUV(0,7,7)
+		cleanupGeometry(all,0.001)
+		texture(LanesFolder+"/asphalt_painted_" + paintColor + "_7x7m.jpg")
+		deleteUV(_Texture_Switch)
+	else:#If Black redirect to asphalt rule.
+		Asphalt
 
 ModeReporter(Usage)-->
 	case reportingOn:
@@ -3755,17 +3772,10 @@ Pervious_Reporting-->
 		report("Vegetation.Pervious Area",geometry.area)
 		color( _ThematicRouter ("Plantings","planting_area"))#If Display Thematics==Usage, goes to usage, if not, Thematic.
 		X.
+
 Cut_And_Fill_Reporting(Text_Fill)-->
 	report("Cut/Fill.Total "+Text_Fill+" Cut/Fill Volume (m^3)", geometry.area()*Sidewalk_Height)
 	NIL
-
-Asphalt(Usage,LabelID) -->
-		tileUV(0,14,14)
-		cleanupGeometry(all, 0.001)
-		texture( LanesFolder+"/asphalt_14x14m.jpg")
-		deleteUV(_Texture_Switch)
-		color( _ThematicRouter (Usage,LabelID))#If Display Thematics==Usage, goes to usage, if not, Thematic-strings might have other purpose later. 
-		ModeReporter(Usage)
 
 
 Rumble_Strip-->
