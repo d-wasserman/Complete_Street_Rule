@@ -1276,7 +1276,7 @@ _BikeRank				=#Adapted from MTI Report 11-19 # Does not take into account Boulev
 		else:
 		 	0 #LTS 4
 _PedRank				=#Rule creator criteria-a road with low speed limits and less lanes is good OR a road with good separation between cars and pedestrians and a wider sidewalk is better
-	 	case (rint(DirLaneTotal)<=1 && Speed_Limit_in_MPH<=20 && _centerWidth<=7) || (_MaxSplitSum>=3.2 && _Maxof(sidewalkWidthLeft,sidewalkWidthRight)>=3.3 && Speed_Limit_in_MPH<=35):
+	 	case (rint(DirLaneTotal)<=1 && Speed_Limit_in_MPH<=20 && _centerWidth<=7) || (_MaxSplitSum>=2.43 && _Maxof(sidewalkWidthLeft,sidewalkWidthRight)>=3.3 && Speed_Limit_in_MPH<=35):
 	 		1 
 	 	case  (rint(DirLaneTotal)<=2 && Speed_Limit_in_MPH<=25) || (_MaxSplitSum>=2.2 && _Maxof(sidewalkWidthLeft,sidewalkWidthRight)>=2.5 && Speed_Limit_in_MPH<=35):
 	 		.8
