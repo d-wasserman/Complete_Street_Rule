@@ -212,7 +212,7 @@ attr Median_Street_Lamps						="Both"
 @Order(12)@Range(min=0,max=50) @Description("Determines the spacing between each Street Lamp. No shape is created in the sections in between objects.")@Hidden
 attr Median_Street_Lamp_Spacing				=10
 @Order(9)@Range(min=-10,max=10) @Description("Determines the offset from the initial lamp insertion between each Street Lamp.")@Hidden
-attr Median_Street_Lamp_Offset		=0
+attr Median_Street_Lamp_Offset		= -3.5
 
 @Group("MULTIMODAL LANES LAYOUT", "Bus and HOV Lanes",4)@Order(1)@Enum("None","Bus Lane","HOV Lane","Bus-Bike Lane","Light Rail Lane")@Description("The controls for the bus lane also control the HOV lane. They are grouped together because they are both considered :High Capacity Lanes:")
 attr Transit_Lane 				    ="None"
@@ -2709,7 +2709,7 @@ Lamp_Center_Asset(Side_Rotation,Shape_Edge,Dir,Offset)-->
 	center(xz)
 	s(0,0,0)				//set initital height to 5 others are based on OBJ
 	r(0,Side_Rotation,0)
-	t(0,0,Offset)
+	t(Offset,0,0)
 	report("Objects.Street Lamp Count", 1)
 	i(Street_Lamp_Object)
 	label("Street Lamp")
