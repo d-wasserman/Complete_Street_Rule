@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 02/29/2020
+ * Last Updated: 03/02/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -315,7 +315,7 @@ attr Sidewalk_Tree_1_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk
 attr Sidewalk_Tree_2_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk_Tree_2_Type))@Hidden
 Tree_Radius(Type, Height) = Tree._radius(Tree._indexFromCommonName(Type),Height)
 @Order(15) @Enum("None","Curb") @Description("This parameter determines what type of border planting boxes have in inserted locations.")
-attr Sidewalk_Planting_Border = case Not_High_LOD : "None" else :"Curb"
+attr Sidewalk_Planting_Border = case Not_Low_LOD : "Curb" else :"None"
 
 @Group("SIDEWALK LAYOUT","Sidewalk Components",10)@Order(1)
 @Order(1)@Enum("None","Both","Right","Left")@Description("Determines whether an object is placed and what side of the street or walkways relevant objects are placed.")
@@ -352,7 +352,7 @@ attr Vehicles_Per_KM 				= case Not_Very_High_LOD:0 else: 100
 @Range(min=0,max=300) @Order(2)@Description("Determines the number of buses per KM of road length loaded onto bus lanes only.")#@Hidden
 attr Bus_Lane_Buses_Per_KM			= case Not_Very_High_LOD:0 else: 25
 @Order(3) @Range(min=0,max=100)@Description("Determines the number of bicyclists per KM of road length loaded onto bike lanes only.")#@Hidden
-attr Bicycles_Per_KM				= case Not_Very_High_LOD:0 else: 60*_BikeRank
+attr Bicycles_Per_KM				= case Not_Very_High_LOD:0 else: 80*_BikeRank
 @Range(min=0,max=1) @Percent @Order(4)@Description("Determines the approximate percentage of vehicles that are buses on main throughways.")#@Hidden		
 attr Mixed_Traffic_Bus_Percentage	= Default_Mix_Bus
 @Range(min=0,max=1) @Percent @Order(5)@Description("Determines the approximate percentage of vehicles that are bikes in the curb lane of main throughways.")#@Hidden		
@@ -694,8 +694,8 @@ _HasCurbsideManagement(ParkingType) =
     case find(ParkingType,"Curbside",0)!=-1:
     	1
     else:
-    	0	
-    	
+    	0
+ 	
 _Side_Sidewalk_Planting_Width(side) =
  	case side=="Right":
  		Right_Sidewalk_Planting_Width
@@ -3210,7 +3210,7 @@ Sidewalk_Bench_Insert(Dir,geometry_Len)-->
 		NIL
 
 Sidewalk_Bench_Context_Check-->
-	case bool(Context_Aware_Queries):
+	case bool(Context_Aware_Queries) && ((_HasCurbsideManagement(Right_Parking_Type)+_HasCurbsideManagement(Left_Parking_Type))>=1):
 		case minimumDistance("inter","curbside_managed_zone")>=Max_Distance_From_CS_Manage:
 			Bench_Insert
 		else:
@@ -3234,7 +3234,7 @@ else:
 	Curbside_Context_Planting_Allocation
 
 Curbside_Context_Planting_Allocation-->
-	case bool(Context_Aware_Queries):
+	case bool(Context_Aware_Queries) && ((_HasCurbsideManagement(Right_Parking_Type)+_HasCurbsideManagement(Left_Parking_Type))>=1):
 		case minimumDistance("inter","curbside_managed_zone")>=Max_Distance_From_CS_Manage:
 			Allocate_Planting_Area
 		else:
