@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 08/27/2019
+ * Last Updated: 03/02/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -9,7 +9,7 @@
 #	ESRI Derivative work
 #	http://mappingcenter.esri.com/downloads/AttributionAndLicense_05_09_07.pdf
 #
-# Copyright 2018 David J. Wasserman
+# Copyright 2020 David J. Wasserman
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -81,8 +81,10 @@ attr Space_Management= "Best Fit"
 attr LOD_Setting	  ="Moderate"
 @Range(min=0,max=1) @Order(7)@Description("This attribute controls the transparency of the street models created by the rule.")#@Hidden
 attr Transparency	  = 0
-@Range(min=0,max=1) @Order(8) @Description("This attribute adjusts the global specularity of the street model.") #@Hidden
+@Range(min=0,max=1) @Order(8) @Description("This attribute adjusts the global specularity of the street model.") @Hidden
 attr Specularity	  = 1
+@Enum("true","false") @Order(9)@Description("This attribute controls whether or not context aware queries can be used. Default is off when using low LODs.") @Hidden
+attr Context_Aware_Queries = case Not_High_LOD : false else: true
 @Enum("true","false") @Order(9)@Description("This attribute controls whether key reporting elements are enabled. Low LOD defaults to turning reports off.") @Hidden
 attr Reporting_On = case LOD_Setting == "Low": "false" else: "true"
 
@@ -99,7 +101,7 @@ const LOD_Object_Choice   = case Not_Low_LOD:"High" else: "Low"
 
 @Order(1)@Group("ROAD LAYOUT","Basic Components",1) @Range(min=0,max=1) @Description("Represents the fraction of the lanes allocated to the *Right Lanes*. If 1 or 0, they become 1 way streets.")
 attr Lane_Distribution 			= _getInitialLaneDistribution
-@Order(2)@Range(min=2.7,max=3.9624)@Description("Determines the widths of the main travel lanes. Typically, Freeways are about 12 feet (3.6 m), Arterials 11-12 feet (3.3-3.6 m), Collectors 10-12 feet (3.0-3.6 m), and Local roads 9-12 feet (2.7-3.6 m).")
+@Order(2) @Distance @Range(min=2.7,max=3.9624)@Description("Determines the widths of the main travel lanes. Typically, Freeways are about 12 feet (3.6 m), Arterials 11-12 feet (3.3-3.6 m), Collectors 10-12 feet (3.0-3.6 m), and Local roads 9-12 feet (2.7-3.6 m).")
 attr Lane_Width					= (laneWidth - .2)
 @Order(4) @Enum("right-hand","left-hand")@Description("Orients the road for right vs. left traffic. Please note that some aspects of the rule do not *flip* when this is changed such as the median.")
 attr Traffic_Direction			= "right-hand"
@@ -113,85 +115,85 @@ attr Stop_Begin 				= _getInitialStop(connectionStart,nLanesLeft+_Lt_Transit_Lan
 attr Stop_End 					= _getInitialStop(connectionEnd, _Distribute_Right_Lanes+_Rt_Transit_Lane_Count)
 
 @Group("ROAD LAYOUT","Crosswalk Markings",3)
-@Order(1) @Enum("none","continental","ladder","transverse","dashed","solid","custom","ladder custom") @Description("NACTO-High­-visibility ladder, zebra, and continental crosswalk markings are preferable to standard parallel or dashed pavement markings. These are more visible to approaching vehicles and have been shown to improve yielding behavior.")										# TODO "solid","dashed","ladder"
+@Order(1) @Enum("none","continental","ladder","transverse","dashed","solid","custom","ladder custom","raised custom") @Description("NACTO-High­-visibility ladder, zebra, and continental crosswalk markings are preferable to standard parallel or dashed pavement markings. These are more visible to approaching vehicles and have been shown to improve yielding behavior.")										# TODO "solid","dashed","ladder"
 attr Crosswalk_Begin 			= _getInitialCrosswalk(connectionStart)
-@Order(2) @Enum("none","continental","ladder","transverse","dashed","solid","custom","ladder custom")@Description("NACTO-High­-visibility ladder, zebra, and continental crosswalk markings are preferable to standard parallel or dashed pavement markings. These are more visible to approaching vehicles and have been shown to improve yielding behavior.")									
+@Order(2) @Enum("none","continental","ladder","transverse","dashed","solid","custom","ladder custom","raised custom")@Description("NACTO-High­-visibility ladder, zebra, and continental crosswalk markings are preferable to standard parallel or dashed pavement markings. These are more visible to approaching vehicles and have been shown to improve yielding behavior.")									
 attr Crosswalk_End 				= _getInitialCrosswalk(connectionEnd)
-@Order(3) @Range(min=0,max=10) @Description("Crosswalk to Stop Bar Distance. If the Crosswalk UV is clipping geometry, adjust this to set it back more on angled streets. If used, stop and yield lines should be placed a minimum of  4 ft (1.2 m) from the Crosswalk-MUTCD. NACTO suggests a minimum of 8 ft (2.44 m) in urban areas.")
+@Order(3) @Distance @Range(min=0,max=20) @Description("Crosswalk to Stop Bar Distance. If the Crosswalk UV is clipping geometry, adjust this to set it back more on angled streets. If used, stop and yield lines should be placed a minimum of  4 ft (1.2 m) from the Crosswalk-MUTCD. NACTO suggests a minimum of 8 ft (2.44 m) in urban areas.")
 attr Begin_Crosswalk_To_Stop_Bar= _getInitialGap(connectionStart)
-@Order(4) @Range(min=0,max=10) @Description("Crosswalk to Stop Bar Distance. If the Crosswalk UV is clipping geometry, adjust this to set it back more on angled streets. If used, stop and yield lines should be placed a minimum of  4 ft (1.2 m) from the Crosswalk-MUTCD. NACTO suggests a minimum of 8 ft (2.44 m) in urban areas.")
+@Order(4) @Distance @Range(min=0,max=20) @Description("Crosswalk to Stop Bar Distance. If the Crosswalk UV is clipping geometry, adjust this to set it back more on angled streets. If used, stop and yield lines should be placed a minimum of  4 ft (1.2 m) from the Crosswalk-MUTCD. NACTO suggests a minimum of 8 ft (2.44 m) in urban areas.")
 attr End_Crosswalk_To_Stop_Bar 	= _getInitialGap(connectionEnd)
 @Order(5) @Enum("white","yellow") @Description("Determines the color of painted crosswalks.")#@Hidden
 attr Crosswalk_Color 			= "white"
 @Order(6) @File("tif","jpg","png","tiff","gif","jpeg","psp","jsl","sgi","tga","bmp","dds")@Description("Creates a 2 m by 2 m tile of the image selected on the crosswalk. Keep in mind that if another painted tile is chosen, the paint area will not appear in reporting. Defer to Crosswalk Area Reports.")
 attr Custom_Crosswalk_Texture	= SidewalkFolder+"/Paver Brick Red Basket Weave.jpg"
-@Order(7) @Range(min=0,max=10) @Description("This attribrute overrides the default Crosswalk Width. NACTO- Stripe the crosswalk as wide as or wider than the walkway it connects to.")
+@Order(7) @Distance @Range(min=0,max=10) @Description("This attribrute overrides the default Crosswalk Width. NACTO- Stripe the crosswalk as wide as or wider than the walkway it connects to.")
 attr Crosswalk_Width			= _crosswalkWidth
 
 @Group("ROAD LAYOUT","On-Street Parking",5)
 @Order(1)@Enum("None","Parallel","Angled Nose In","Angled Back In", "Parallel with Curbside Passenger Loading", "Parallel with Curbside Freight Loading","Parallel with Curbside Carshare Parking","Parallel with Curbside Bus Stop","Parallel with Curbside DoBi & Scooter Parking") @Description("Will create parking of that type with default lengths and widths. Keep in mind, adjusting the length/width will make it lock onto that value. To reset it to automatic default, set the Attribute Connection Editor back to rule-defined value.")
 attr Right_Parking_Type			= "None"
-@Order(2)@Range(min=0,max=5)@Description("Good default is 8 feet (2.4384 m) with a minimum of 7 feet (2.1336 m) for low turn over locations for parallel parking. Angled parking varies on angle, but a 30-45 degree depth suggestion is 19 feet (5.7912 m). Design guidance on width varies with conditions. ")#@Hidden
+@Order(2) @Distance @Range(min=0,max=5)@Description("Good default is 8 feet (2.4384 m) with a minimum of 7 feet (2.1336 m) for low turn over locations for parallel parking. Angled parking varies on angle, but a 30-45 degree depth suggestion is 19 feet (5.7912 m). Design guidance on width varies with conditions. ")#@Hidden
 attr Right_Parking_Width		= _ParkingWidth(Right_Parking_Type) 
-@Order(3)@Range(min=0,max=10)@Description("For Parallel Parking 6.1 to 7.5 meters long is suggested, for Angled Parking 2.4 to 3 m is suggested.")#@Hidden
+@Order(3)@Distance @Range(min=0,max=10)@Description("For Parallel Parking 6.1 to 7.5 meters long is suggested, for Angled Parking 2.4 to 3 m is suggested.")#@Hidden
 attr Right_Parking_Length		= _ParkingLength(Right_Parking_Type)
 @Order(4)@Enum("None","Parallel","Angled Nose In","Angled Back In", "Parallel with Curbside Passenger Loading", "Parallel with Curbside Freight Loading","Parallel with Curbside Carshare Parking","Parallel with Curbside Bus Stop","Parallel with Curbside DoBi & Scooter Parking")@Description("Will create parking of that type with default lengths and widths. Keep in mind, adjusting the length/width will make it lock onto that value. To reset it to automatic default, set the Attribute Connection Editor back to rule-defined value.")
 attr Left_Parking_Type			= "None"
-@Order(5)@Range(min=0,max=5) @Description("Good default is 8 feet (2.4384 m) with a minimum of 7 feet (2.1336 m) for low turn over locations for parallel parking. Angled parking varies on angle, but a 30-45 degree depth suggestion is 19 feet (5.7912 m). Design guidance on width varies with conditions.")#@Hidden
+@Order(5)@Distance @Range(min=0,max=5) @Description("Good default is 8 feet (2.4384 m) with a minimum of 7 feet (2.1336 m) for low turn over locations for parallel parking. Angled parking varies on angle, but a 30-45 degree depth suggestion is 19 feet (5.7912 m). Design guidance on width varies with conditions.")#@Hidden
 attr Left_Parking_Width			= _ParkingWidth(Left_Parking_Type) 
-@Order(6)@Range(min=0,max=10)@Description("For Parallel Parking 6.1 to 7.5 meters long is suggested, for Angled Parking 2.4 to 3 m is suggested.")#@Hidden
+@Order(6)@Distance @Range(min=0,max=10)@Description("For Parallel Parking 6.1 to 7.5 meters long is suggested, for Angled Parking 2.4 to 3 m is suggested.")#@Hidden
 attr Left_Parking_Length		= _ParkingLength(Left_Parking_Type)
-@Order(7)@Range(min=0,max=1)@Percent @Description("Will create Parklets in Parking spaces, it is best if the parking spaces are contiguous to the sidewalk. The default OBJ does not have bollards or curb stops suggested by NACTO.")
+@Order(7)@Distance @Range(min=0,max=1)@Percent @Description("Will create Parklets in Parking spaces, it is best if the parking spaces are contiguous to the sidewalk. The default OBJ does not have bollards or curb stops suggested by NACTO.")
 attr Parklet_Percentage			= 0
 @Order(9)@Enum("None","Mid-Block & End Spaces","End Spaces","Far-side","Near-side","Mid-Block") @Description("Describes where on the street reallocated street space is used in parking lanes for parallel parking with curbside management options.")#@Hidden
 attr Curbside_Management_Position = "Mid-Block & End Spaces"
 @Handle(shape=RightCurbsideAllocator^4,axis=x,type=linear,color="#FF11FF")
-@Order(10) @Range(min=0,max=50) @Description("This parameter represents the size of a curbside drop-off location on the right side of the street.")#@Hidden
+@Order(10) @Distance @Range(min=0,max=50) @Description("This parameter represents the size of a curbside drop-off location on the right side of the street.")#@Hidden
 attr Right_Curbside_Allocation_Length = case find(Right_Parking_Type,"Bus",0)!=-1: 3 * Right_Parking_Length case find(Right_Parking_Type,"Loading",0)!=-1: 2 * Right_Parking_Length else: Right_Parking_Length
 @Handle(shape=LeftCurbsideAllocator^4,axis=x,type=linear,color="#FF11FF")
-@Order(11) @Range(min=0,max=50) @Description("This parameter represents the size of a curbside drop-off location on the left side of the street.")#@Hidden
+@Order(11) @Distance @Range(min=0,max=50) @Description("This parameter represents the size of a curbside drop-off location on the left side of the street.")#@Hidden
 attr Left_Curbside_Allocation_Length = case find(Left_Parking_Type,"Bus",0)!=-1: 3 * Left_Parking_Length case find(Left_Parking_Type,"Loading",0)!=-1:2 * Left_Parking_Length else: Left_Parking_Length
-@Order(12)@Range(min=0,max=f10) @Hidden @Description("This hidden attribute controls the spacing the parking areas have before the current directions stopbar.")
+@Order(12)@Distance @Range(min=0,max=f10) @Hidden @Description("This hidden attribute controls the spacing the parking areas have before the current directions stopbar.")
 attr Front_Parking_Spacing 		= 0
-@Order(13)@Range(min=0,max=10) @Hidden @Description("This hidden attribute controls the spacing the parking areas have after the crosswalk at the start of the street in the current direction.")
+@Order(13)@Distance @Range(min=0,max=10) @Hidden @Description("This hidden attribute controls the spacing the parking areas have after the crosswalk at the start of the street in the current direction.")
 attr Rear_Parking_Spacing		= 0
 
 
 @Group("CENTER SECTION LAYOUT","Basic Attributes", 2) 
 @Order(1) @Enum("None","Yellow Centerline","Median", "Boulevard", "Barrier","Barrier & Shoulder","Center Turn Lane","Median With Turn Lane","White Stripe Centerline","White Centerline")@Description("This attribute is key to picking a center type. If none, it is a centerline, but each choice creates different center section layouts.")
 attr Center_Type						= "Yellow Centerline"
-@Order(2) @Range(min=0,max=40) @Description("Is the combined center section width regardless of type. Does nothing for the barrier selection.")
+@Order(2) @Distance @Range(min=0,max=40) @Description("Is the combined center section width regardless of type. Does nothing for the barrier selection.")
 attr Center_Width						= _getInitialCenterWidth
-@Order(3) @Range(min=0,max=4) @Description("Is the width of the walkways created by Median. They will override the planting width, and keep in mind there are two walkways for Plant:Walk:Plant.")
+@Order(3) @Distance @Range(min=0,max=4) @Description("Is the width of the walkways created by Median. They will override the planting width, and keep in mind there are two walkways for Plant:Walk:Plant.")
 attr WalkWay_Width 						= case Center_Width<=Median_Layout_Threshold: 0 else: 3+Median_Walkway_Expansion
 @Order(4) @Enum("Walk:Plant:Walk","Walk:Plant","Plant:Walk","Plant:Walk:Plant") @Description("Lays out the median/boulevard walkway configurations. In the case of Plant:Walk:Plant-the walkway rule is used twice so adjust walkway width accordingly.") 
 attr Planting_and_Walkway_Layout		="Walk:Plant:Walk"
-@Order(5) @Range(min=0,max=10)@Description("In the case of a boulevard, this is the combined width for the lanes and center between the walkways. Each lane set gets half allocated space. Keep in mind this means there is forced symmetry in lanes.")
+@Order(5) @Distance @Range(min=0,max=10)@Description("In the case of a boulevard, this is the combined width for the lanes and center between the walkways. Each lane set gets half allocated space. Keep in mind this means there is forced symmetry in lanes.")
 attr Boulevard_Inside_Width				= 7.1
 @Order(6) @Enum("Normal Lanes","Bus Lanes", "Open Space","Cycle Path") @Description("Determines the general configurations of the inside of the boulevard. Normal lanes will be equal to the general Lane_Width, and any left over is filled with drainage filler.")
 attr Boulevard_Configuration			= "Normal Lanes"
 @Order(7) @Enum("Center Line","Median","Curb Buffer","Chain Link Fence", "Gate Fence","Tubular Markers")@Description("Will create the exact center of the lanes in the boulevard. To remove it set the width ==0.")
 attr Boulevard_Center_Type				= "Center Line"
-@Order(8)@Range(min=0,max=10)@Description("Determines the width of the center of the Boulevard lanes.")
+@Order(8)@Distance @Range(min=0,max=10)@Description("Determines the width of the center of the Boulevard lanes.")
 attr Boulevard_Center_Width				= case Boulevard_Configuration=="Normal Lanes": PaintLineWidth*4 else: 0
 
 @Group("CENTER SECTION LAYOUT","Median Plantings",3)@Order(1)
 @Description("Chooses the grass texture for the planting locations within the Median.")@Enum("None","Random", "Standard Grass", "Gravel","Grate","Lawn 1", "Lawn 2", "Park", "Bermuda 1", "Bermuda 2", "Bermuda Dark", "Bluegrass 1", "Bluegrass 2", "Grass Short", "Grass Thick", "St Augustine 1", "St Augustine 2", "Light Rye","Soil Small Stones","Paver Red Octagon Tile") @Order(2)
 attr Median_Ground_Cover = "Standard Grass"
-@Order(4)@Range(min=0,max=10) @Description("Is the approximate length of the green space accomodating trees, it can be used to space out trees more without walkway spacing.")
+@Order(4)@Distance @Range(min=0,max=10) @Description("Is the approximate length of the green space accomodating trees, it can be used to space out trees more without walkway spacing.")
 attr Median_Planting_Length				= case Center_Width<=Median_Layout_Threshold: 8+Speed_Related_Expansion else: 4
-@Order(5) @Range(min=0,max=15) @Description("Creates a walkway spacing between created trees.")
+@Order(5) @Distance @Range(min=0,max=15) @Description("Creates a walkway spacing between created trees.")
 attr Median_Tree_Spacing				= case Center_Width<=Median_Layout_Threshold: 0 else: 3
 @Order(6)@Description("Determines the species of the tree/plant selected for Tree 1. Random picks from 5 common tree types and is a good default.")@Enum("Random","Alder Buckthorn","Amazon Sword Plant","American Chestnut","American Sycamore","Apricot","Australian Pine","Baldcypress","Balsam Fir","Bamboo","Banana Tree","Basswood","Bay Laurel","Black Locust","Blue Gum Eucalyptus","Boxwood","Cabbage Palm Fern","California Bay","California Incense Cedar","California Palm","California Redwood","California Walnut","Coconut Palm","Common Hawthorn","Common Whitebeam","Conker Tree","Date Palm","Desert Willow","Douglas Fir","European Beech","European Larch","Ficus","Field Elm","Flannelbush","Flowering Dogwood","Giant Sequoia","Hedgehog Agave","Japanese Angelica Tree","Lacy Tree Philodendron","Leyland Cypress","Lily of the Valley","Lodgepole Pine","Mediterranean Buckthorn","Mexican Palmetto","Mountain Mahogany","Northern Red Oak","Norway Maple","Norway Spruce","Orange Tree","Orchid","Oval-leaved Privet","Palm Lily","Palo Verde","Paper Birch","Parlour Palm","Prickly Pear Cactus","Red Alder","Red Hickory","Rhododendron Azaleas","Rose","Ruffle Palm","Saguaro Cactus","Sassafras","Scots Pine","Sea Islands Yucca","Shadbush","Snake Plant","Southern Magnolia","Spanish Broom","Strawberry Tree","Sugar Maple","Sunflower","Sweetgum","Umbrella Acacia","Western Juniper","White Ash","White Oak","White Poplar","White Willow","Witch Hazel","","_____________________________","GENERICS","","Generic Dead Tree","Generic Stump","Generic Unknown","","_____________________________","PROXIES","","Algarrobo","American Elderberry","American Pepper","American Silverberry","Athel Tamarisk","Avocado","Black Tupelo","Buttonbush","Canada Buffaloberry","Chinaberry Tree","Chinese Tallow Tree","Common Hackberry","Common Holly","Common Persimmon","Desert Bitterbrush","European Hornbeam","Giant Chinquapin","Honey Locust","Hophornbeam","Huckleberry Shrub","Japanese Hemlock","Japanese Nutmeg","Judas Tree","Lawson Cypress","Loblolly Bay","Mexican Buckeye","Necklacepod","Northern Bilberry","Northern White Cedar","Octopus Tree","Osage Orange","Paper Bark Tree","Pawpaw","Persian Silk Tree","Princess Tree","Smooth Sumac","Sourwood","Southern Wax Myrtle","Tanoak","Tree of Heaven","Turkish Hazel","Western Soapberry","White Mulberry","Yellow Poplar","Yew")
 attr Median_Tree_1_Type = "Random"
-@Order(7) @Range(min=0,max=1)@Percent @Description("Reduces the probability of Tree 1 appearing in a typical designated location.")#@Hidden
+@Order(7)@Range(min=0,max=1)@Percent @Description("Reduces the probability of Tree 1 appearing in a typical designated location.")#@Hidden
 attr Median_Tree_1_Percentage 			= 1
 @Order(8)@Description("Determines the species of the tree/plant selected for secondary tree for more variation. If this is not None, Tree 2 will appear if Tree 1 does not fire with the current percentage. This does mean that you cannot drop tree density if you alternate trees.")@Enum("None","Random","Alder Buckthorn","Amazon Sword Plant","American Chestnut","American Sycamore","Apricot","Australian Pine","Baldcypress","Balsam Fir","Bamboo","Banana Tree","Basswood","Bay Laurel","Black Locust","Blue Gum Eucalyptus","Boxwood","Cabbage Palm Fern","California Bay","California Incense Cedar","California Palm","California Redwood","California Walnut","Coconut Palm","Common Hawthorn","Common Whitebeam","Conker Tree","Date Palm","Desert Willow","Douglas Fir","European Beech","European Larch","Ficus","Field Elm","Flannelbush","Flowering Dogwood","Giant Sequoia","Hedgehog Agave","Japanese Angelica Tree","Lacy Tree Philodendron","Leyland Cypress","Lily of the Valley","Lodgepole Pine","Mediterranean Buckthorn","Mexican Palmetto","Mountain Mahogany","Northern Red Oak","Norway Maple","Norway Spruce","Orange Tree","Orchid","Oval-leaved Privet","Palm Lily","Palo Verde","Paper Birch","Parlour Palm","Prickly Pear Cactus","Red Alder","Red Hickory","Rhododendron Azaleas","Rose","Ruffle Palm","Saguaro Cactus","Sassafras","Scots Pine","Sea Islands Yucca","Shadbush","Snake Plant","Southern Magnolia","Spanish Broom","Strawberry Tree","Sugar Maple","Sunflower","Sweetgum","Umbrella Acacia","Western Juniper","White Ash","White Oak","White Poplar","White Willow","Witch Hazel","","_____________________________","GENERICS","","Generic Dead Tree","Generic Stump","Generic Unknown","","_____________________________","PROXIES","","Algarrobo","American Elderberry","American Pepper","American Silverberry","Athel Tamarisk","Avocado","Black Tupelo","Buttonbush","Canada Buffaloberry","Chinaberry Tree","Chinese Tallow Tree","Common Hackberry","Common Holly","Common Persimmon","Desert Bitterbrush","European Hornbeam","Giant Chinquapin","Honey Locust","Hophornbeam","Huckleberry Shrub","Japanese Hemlock","Japanese Nutmeg","Judas Tree","Lawson Cypress","Loblolly Bay","Mexican Buckeye","Necklacepod","Northern Bilberry","Northern White Cedar","Octopus Tree","Osage Orange","Paper Bark Tree","Pawpaw","Persian Silk Tree","Princess Tree","Smooth Sumac","Sourwood","Southern Wax Myrtle","Tanoak","Tree of Heaven","Turkish Hazel","Western Soapberry","White Mulberry","Yellow Poplar","Yew") #@Hidden
 attr Median_Tree_2_Type				= "None"
-@Order(9) @Range(min=0,max=80) @Description("This attributes controls the height of Median Trees Type 1.") #@Hidden
+@Order(9) @Distance @Range(min=0,max=80) @Description("This attributes controls the height of Median Trees Type 1.") #@Hidden
 @Handle(shape=Median_Tree_Insert_Setup_1^3,axis=y,type=linear,reference=center,color="#11FF11",skin=sphere)
 attr Median_Tree_1_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk_Tree_1_Type))
-@Order(10) @Range(min=0,max=80) @Description("This attributes controls the height of Median Trees Type 2.")@Hidden
+@Order(10) @Distance @Range(min=0,max=80) @Description("This attributes controls the height of Median Trees Type 2.")@Hidden
 @Handle(shape=Median_Tree_Insert_Setup_2^3,axis=y,type=linear,reference=center,color="#11FF11",skin=sphere)
 attr Median_Tree_2_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk_Tree_2_Type))
 @Group("CENTER SECTION LAYOUT","Basic Components", 4) 
@@ -205,39 +207,39 @@ attr Median_Bike_Rack					= "false"
 attr Median_Way_Finder					= "false"
 @Order(9)@Enum("None","Both","Right","Left") @Description("Creates benches on the edges of the walkways of the Median.")
 attr Median_Benches						="None"
-@Order(10)@Range(min=0,max=50) @Description("Determines the spacing between each Bench. No shape is created in the sections in between objects.")#@Hidden
+@Order(10)@Distance @Range(min=0,max=50) @Description("Determines the spacing between each Bench. No shape is created in the sections in between objects.")#@Hidden
 attr Median_Bench_Spacing				=10
 @Order(11)@Enum("None","Both","Right","Left")@Description("Determines whether an object is placed and what side of the street or walkways relevant objects are placed.")
 attr Median_Street_Lamps						="Both"
-@Order(12)@Range(min=0,max=50) @Description("Determines the spacing between each Street Lamp. No shape is created in the sections in between objects.")#@Hidden
+@Order(12)@Distance @Range(min=0,max=50) @Description("Determines the spacing between each Street Lamp. No shape is created in the sections in between objects.")#@Hidden
 attr Median_Street_Lamp_Spacing				=10
-@Order(9)@Range(min=-10,max=10) @Description("Determines the offset from the initial lamp insertion between each Street Lamp.")#@Hidden
-attr Median_Street_Lamp_Offset		=0
+@Order(9)@Distance @Range(min=-10,max=10) @Description("Determines the offset from the initial lamp insertion between each Street Lamp.")#@Hidden
+attr Median_Street_Lamp_Offset		= -3.5
 
 @Group("MULTIMODAL LANES LAYOUT", "Bus and HOV Lanes",4)@Order(1)@Enum("None","Bus Lane","HOV Lane","Bus-Bike Lane","Light Rail Lane")@Description("The controls for the bus lane also control the HOV lane. They are grouped together because they are both considered :High Capacity Lanes:")
 attr Transit_Lane 				    ="None"
 @Order(2)@Enum("Right", "Left", "Both")@Description("Determines side of street preferential lanes are allocated.")
 attr Transit_Lane_Sides 			=_Initital_Transit_Lane_Sides # If the street is oneway, will make initial bus lane side change accordingly
-@Order(3) @Range(min=3,max=5) @Description("Determines the lane width of transit lanes that are not Dedicated Median Bus Lanes. NACTO suggested width is 11 feet (3.3528 m) minimum for Curb side and Median bus lanes, but allows for 10 feet (3.048 m) on Off-set bus lanes.")
+@Order(3) @Distance @Range(min=3,max=5) @Description("Determines the lane width of transit lanes that are not Dedicated Median Bus Lanes. NACTO suggested width is 11 feet (3.3528 m) minimum for Curb side and Median bus lanes, but allows for 10 feet (3.048 m) on Off-set bus lanes.")
 attr Transit_Lane_Width			=  3.3528
 @Order(3)@Enum("Sidewalk Side","Right Most Lane","Left Most Lane")@Description("Inserts a transit lane at the location specified. Keep in mind this is an insertion not a lane reallocation.")
 attr Transit_Lane_Position 			="Right Most Lane"
-@Order(4)@Range(min=1,max=304.8)@Description("MUTCD- Preferential Lanes: Markings spaced as close as 80 feet(~24.5 m) apart might be appropriate on city streets, while markings spaced as far as 1,000 feet (304.8 m) apart might be appropriate for freeways.")#@Hidden
+@Order(4)@Distance @Range(min=1,max=304.8)@Description("MUTCD- Preferential Lanes: Markings spaced as close as 80 feet(~24.5 m) apart might be appropriate on city streets, while markings spaced as far as 1,000 feet (304.8 m) apart might be appropriate for freeways.")#@Hidden
 attr Transit_Symbol_Spacing 		=24.5
 @Order(6)@Enum("red","black") @Description("NACTO-Red colored paint should be applied to emphasize the lane and to deter drivers from using it. Red paint has higher installation and maintenance costs, but has been shown to deter both unauthorized driving and parking in the bus lane.")
 attr Bus_Lane_Color				="red"
 @Order(7)@Enum("Both","Right", "Left", "None")@Description("Controls the white lines on the sides of preferential lanes.")#@Hidden
 attr Transit_Paint_Line_Sides		= "Both"
 
-@Group("MULTIMODAL LANES LAYOUT", "Bike Lanes",5)@Order(1)@Range(min=0,max=6) @Description("Desirable bike lane width adjacent to a curbface is 6 feet (1.8288m), but rideable surface adjacent  to a street edge is 4 feet (1.2192m) with minimum of 3 feet (0.9144m). In areas where illegal parking is an issue, at least 5 feet (1.524m) is suggested.")
+@Group("MULTIMODAL LANES LAYOUT", "Bike Lanes",5)@Order(1)@Distance @Range(min=0,max=6) @Description("Desirable bike lane width adjacent to a curbface is 6 feet (1.8288m), but rideable surface adjacent  to a street edge is 4 feet (1.2192m) with minimum of 3 feet (0.9144m). In areas where illegal parking is an issue, at least 5 feet (1.524m) is suggested.")
 attr Right_Bike_Lane_Width 		=0
-@Order(2)@Range(min=0,max=6)@Description("Desirable bike lane width adjacent to a curbface is 6 feet (1.8288m), but rideable surface adjacent  to a street edge is 4 feet (1.2192m) with minimum of 3 feet (0.9144m). In areas where illegal parking is an issue, at least 5 feet (1.524m) is suggested.")
+@Order(2)@Distance @Range(min=0,max=6)@Description("Desirable bike lane width adjacent to a curbface is 6 feet (1.8288m), but rideable surface adjacent  to a street edge is 4 feet (1.2192m) with minimum of 3 feet (0.9144m). In areas where illegal parking is an issue, at least 5 feet (1.524m) is suggested.")
 attr Left_Bike_Lane_Width		=0
 @Order(3)@Enum("One-way","Two-way","Sharrow","Sidewalk","Two-way Sidewalk","One-way Reverse","Two-way Reverse","Sidewalk Reverse","Two-way Sidewalk Reverse")@Description("The one-way option uses the full lane width for each lane, while the two-way option will allocate half of the width to each sub-lane. Reverse will change the direction of the bike lane.")
 attr Bike_Lane_Type				="One-way"
-@Order(4)@Range(min=0,max=6)@Description("Bicycle Buffers have desired minimums of about 3 feet, but should be at least 18 inches wide because it is impractical to mark a zone narrower than that.")
+@Order(4)@Distance @Range(min=0,max=6)@Description("Bicycle Buffers have desired minimums of about 3 feet, but should be at least 18 inches wide because it is impractical to mark a zone narrower than that.")
 attr Right_Buffer_Width			= 0
-@Order(5)@Range(min=0,max=6)@Description("Bicycle Buffers have desired minimums of about 3 feet, but should be at least 18 inches wide because it is impractical to mark a zone narrower than that.")
+@Order(5)@Distance @Range(min=0,max=6)@Description("Bicycle Buffers have desired minimums of about 3 feet, but should be at least 18 inches wide because it is impractical to mark a zone narrower than that.")
 attr Left_Buffer_Width			= 0
 @Order(6)@Enum("true","false")@Description("If on/true, buffer is closer to the through lane, and bicycle lane is protected from through traffic.")
 attr Buffer_Protection			= "true"
@@ -245,11 +247,11 @@ attr Buffer_Protection			= "true"
 attr Parking_Protection 		= _IsCycleTrackBuffer
 @Order(8)@Enum("Painted Stripes","Curb Buffer","Curb Buffer with Plantings","Curb Buffer with Trees","Solid White","Cycle Track With Planters","Cycle Track With Tubular Markers","Cycle Track With Bollards","Spaced Curb Buffer","Spaced Curb Buffer with Plantings","Spaced Curb Buffer with Trees","Asphalt","Shoulder")@Description("This attribute controls the bicycle buffer type and form, but also can become plain asphalt or a shoulder.")
 attr Buffer_Type				="Painted Stripes"
-@Order(9)@Range(min=0,max=10)@Description("Controls  the buffers spacing of objects such as tubular markers, planters, and tree/plantings (Trees/Plants match Sidewalk Plantings if selected).")#@Hidden			
+@Order(9)@Distance @Range(min=0,max=10)@Description("Controls  the buffers spacing of objects such as tubular markers, planters, and tree/plantings (Trees/Plants match Sidewalk Plantings if selected).")#@Hidden			
 attr Buffer_Object_Spacing		=_Default_Buffer_Object_Spacing
-@Order(10)@Range(min=1,max=304.8)@Description("MUTCD- Preferential Lanes: Markings spaced as close as 80 feet (~24.5 m) apart might be appropriate on city streets, while markings spaced as far as 1,000 feet (304.8 m) apart might be appropriate for freeways.")#@Hidden
+@Order(10)@Distance @Range(min=1,max=304.8)@Description("MUTCD- Preferential Lanes: Markings spaced as close as 80 feet (~24.5 m) apart might be appropriate on city streets, while markings spaced as far as 1,000 feet (304.8 m) apart might be appropriate for freeways.")#@Hidden
 attr Bike_Symbol_Spacing		= 24.5
-@Order(11)@Range(min=0,max=20) @Description("Creates conflict spacing made up by asphalt gaps in the bike lane for approaching interesections.")
+@Order(11)@Distance @Range(min=0,max=20) @Description("Creates conflict spacing made up by asphalt gaps in the bike lane for approaching interesections.")
 attr Bike_Conflict_Spacing		= 0
 @Order(12)@Enum("green","black","red","blue") @Description("Determines the color of the bike lane and bike box. Paint reporting costs adjust based on color choices.")
 attr Bike_Lane_Color			= case Bike_Lane_Type=="Sharrow" &&_Maxof(Left_Bike_Lane_Width,Right_Bike_Lane_Width)==0:"green" else: "black"
@@ -263,9 +265,9 @@ attr Level_of_Blockage			="Rare"
 attr Right_Bike_Box				= "false"
 @Order(2) @Enum("true","false") @Description("Left Side Bike Box: NACTO-A bike box is a designated area at the head of a traffic lane at a signalized intersection that provides bicyclists with a safe and visible way to get ahead of queuing traffic during the red signal phase. Works best if bike lane is adjacent to sidewalk.")
 attr Left_Bike_Box				= "false"
-@Order(3)@Range(min=1,max=10) @Description("Is the best fit spacing between the bicycle symbols on the bike box. Can be increased to reduce the number of symbols created.")#@Hidden
+@Order(3)@Distance @Range(min=1,max=10) @Description("Is the best fit spacing between the bicycle symbols on the bike box. Can be increased to reduce the number of symbols created.")#@Hidden
 attr Bike_Box_Symbol_Spacing	= 5
-@Order(4)@Range(min=0,max=5.3768)@Description("NACTO-A box formed by transverse lines shall be used to hold queuing bicyclists, typically 10-16  feet deep (3.048-4.8768 M). Deeper boxes show less encroachment by motor vehicles.")#@Hidden
+@Order(4)@Distance @Range(min=0,max=5.3768)@Description("NACTO-A box formed by transverse lines shall be used to hold queuing bicyclists, typically 10-16  feet deep (3.048-4.8768 M). Deeper boxes show less encroachment by motor vehicles.")#@Hidden
 attr Bike_Box_Length			= 4.26
 @Order(12)@Enum("green","black","red","blue") @Description("By default, the Bike Box will match the color of the bike lane, but this attribute can be adjusted to override that choice. Paint reporting costs adjust based on color choices.")
 attr Bike_Box_Color_Override	= Bike_Lane_Color
@@ -277,26 +279,26 @@ attr Sidewalk_Texture 				= Default_Pavement
 attr Sidewalk_Texture_Scale 		= 1
 @Order(4) @Range(min=0,max=360)@Description("Adjust the angle of the sidewalk texture. This attribute also controls the curb buffer and median walkway textures.")
 attr Sidewalk_Texture_Rotation		= 0
-@Order(5) @Range(min=0,max=0.4)@Description("Determines the height of the sidewalk. Default is 4 inches tall.  This attribute also controls the curb buffer and median walkway textures.")
+@Order(5) @Distance @Range(min=0,max=0.4)@Description("Determines the height of the sidewalk. Default is 4 inches tall.  This attribute also controls the curb buffer and median walkway textures.")
 attr Sidewalk_Height 				= 0.102  			# height of sidewalk of curbs(4 inch is standard thickness) curb depth is 1.5 times sidewalk height
 @Group("SIDEWALK LAYOUT", "Sidewalk Plantings + Zones",8)
 @Description("Chooses the grass texture for the planting locations on the Sidewalk or Center Island. Bus Stops and trees will not generate if this is set to None.")@Enum("None","Random", "Standard Grass", "Gravel","Grate","Lawn 1", "Lawn 2", "Park", "Bermuda 1", "Bermuda 2", "Bermuda Dark", "Bluegrass 1", "Bluegrass 2", "Grass Short", "Grass Thick", "St Augustine 1", "St Augustine 2", "Light Rye","Soil Small Stones","Paver Red Octagon Tile") @Order(2)
 attr Sidewalk_Ground_Cover			= "None"
-@Order(2)@Range(min=0,max=10)@Description("Controls the width of the furniture zone (space between the planting and the curb).")
+@Order(2)@Distance @Range(min=0,max=10)@Description("Controls the width of the furniture zone (space between the planting and the curb).")
 attr Sidewalk_Furniture_Zone_Width		= CurbtoPlantingGap
-@Order(3)@Range(min=0,max=10)@Description("Controls the right width of the furniture zone (space between the planting and the curb).")@Hidden
+@Order(3)@Distance @Range(min=0,max=10)@Description("Controls the right width of the furniture zone (space between the planting and the curb).")@Hidden
 attr Right_Sidewalk_Furniture_Zone_Width= Sidewalk_Furniture_Zone_Width	 
-@Order(4)@Range(min=0,max=10)@Description("Controls the left width of the furniture zone (space between the planting and the curb).")@Hidden
+@Order(4)@Distance @Range(min=0,max=10)@Description("Controls the left width of the furniture zone (space between the planting and the curb).")@Hidden
 attr Left_Sidewalk_Furniture_Zone_Width= Sidewalk_Furniture_Zone_Width	
-@Order(5)@Range(min=0,max=10)@Description("Controls the width of sidewalk planting space, and the setback of the bus stop.")
+@Order(5)@Distance @Range(min=0,max=10)@Description("Controls the width of sidewalk planting space, and the setback of the bus stop.")
 attr Sidewalk_Planting_Width		= _PlantingWidth
-@Order(6)@Range(min=0,max=10)@Description("Controls the right sidewalk side width of sidewalk planting space, and the setback of the bus stop.")@Hidden
+@Order(6)@Distance @Range(min=0,max=10)@Description("Controls the right sidewalk side width of sidewalk planting space, and the setback of the bus stop.")@Hidden
 attr Right_Sidewalk_Planting_Width= Sidewalk_Planting_Width 
-@Order(7)@Range(min=0,max=10)@Description("Controls the left sidewalk side width of sidewalk planting space, and the setback of the bus stop.")@Hidden
+@Order(7)@Distance @Range(min=0,max=10)@Description("Controls the left sidewalk side width of sidewalk planting space, and the setback of the bus stop.")@Hidden
 attr Left_Sidewalk_Planting_Width= Sidewalk_Planting_Width 
-@Order(8)@Range(min=0,max=10)  @Description("Is the approximate length of the green space accommodating trees, it can be used to space out trees more without walkway spacing.")
+@Order(8)@Distance @Range(min=0,max=10)  @Description("Is the approximate length of the green space accommodating trees, it can be used to space out trees more without walkway spacing.")
 attr Sidewalk_Planting_Length 		= 5
-@Order(9)@Range(min=0,max=20)@Description("Creates a walkway spacing between created trees. Keep in mind that the benches are placed in this spacing and must be an appropriate size to accommodate them.")#@Hidden
+@Order(9)@Distance @Range(min=0,max=20)@Description("Creates a walkway spacing between created trees. Keep in mind that the benches are placed in this spacing and must be an appropriate size to accommodate them.")#@Hidden
 attr Sidewalk_Planting_Spacing 		= 5
 @Group("SIDEWALK LAYOUT","Sidewalk Trees",9)
 @Order(10)@Description("Determines the species of the tree/plant selected for Tree 1. Random picks from 5 common tree types and is a good default.")@Enum("Random","Alder Buckthorn","Amazon Sword Plant","American Chestnut","American Sycamore","Apricot","Australian Pine","Baldcypress","Balsam Fir","Bamboo","Banana Tree","Basswood","Bay Laurel","Black Locust","Blue Gum Eucalyptus","Boxwood","Cabbage Palm Fern","California Bay","California Incense Cedar","California Palm","California Redwood","California Walnut","Coconut Palm","Common Hawthorn","Common Whitebeam","Conker Tree","Date Palm","Desert Willow","Douglas Fir","European Beech","European Larch","Ficus","Field Elm","Flannelbush","Flowering Dogwood","Giant Sequoia","Hedgehog Agave","Japanese Angelica Tree","Lacy Tree Philodendron","Leyland Cypress","Lily of the Valley","Lodgepole Pine","Mediterranean Buckthorn","Mexican Palmetto","Mountain Mahogany","Northern Red Oak","Norway Maple","Norway Spruce","Orange Tree","Orchid","Oval-leaved Privet","Palm Lily","Palo Verde","Paper Birch","Parlour Palm","Prickly Pear Cactus","Red Alder","Red Hickory","Rhododendron Azaleas","Rose","Ruffle Palm","Saguaro Cactus","Sassafras","Scots Pine","Sea Islands Yucca","Shadbush","Snake Plant","Southern Magnolia","Spanish Broom","Strawberry Tree","Sugar Maple","Sunflower","Sweetgum","Umbrella Acacia","Western Juniper","White Ash","White Oak","White Poplar","White Willow","Witch Hazel","","_____________________________","GENERICS","","Generic Dead Tree","Generic Stump","Generic Unknown","","_____________________________","PROXIES","","Algarrobo","American Elderberry","American Pepper","American Silverberry","Athel Tamarisk","Avocado","Black Tupelo","Buttonbush","Canada Buffaloberry","Chinaberry Tree","Chinese Tallow Tree","Common Hackberry","Common Holly","Common Persimmon","Desert Bitterbrush","European Hornbeam","Giant Chinquapin","Honey Locust","Hophornbeam","Huckleberry Shrub","Japanese Hemlock","Japanese Nutmeg","Judas Tree","Lawson Cypress","Loblolly Bay","Mexican Buckeye","Necklacepod","Northern Bilberry","Northern White Cedar","Octopus Tree","Osage Orange","Paper Bark Tree","Pawpaw","Persian Silk Tree","Princess Tree","Smooth Sumac","Sourwood","Southern Wax Myrtle","Tanoak","Tree of Heaven","Turkish Hazel","Western Soapberry","White Mulberry","Yellow Poplar","Yew")
@@ -305,36 +307,36 @@ attr Sidewalk_Tree_1_Type				= "Random"
 attr Sidewalk_Tree_1_Percentage 		= 1
 @Order(12)@Description("Determines the species of the tree/plant selected for secondary tree for more variation. If this is not None, Tree 2 will appear if Tree 1 does not fire with the current percentage. This does mean that you cannot drop tree density if you alternate trees.")@Enum("None","Random","Alder Buckthorn","Amazon Sword Plant","American Chestnut","American Sycamore","Apricot","Australian Pine","Baldcypress","Balsam Fir","Bamboo","Banana Tree","Basswood","Bay Laurel","Black Locust","Blue Gum Eucalyptus","Boxwood","Cabbage Palm Fern","California Bay","California Incense Cedar","California Palm","California Redwood","California Walnut","Coconut Palm","Common Hawthorn","Common Whitebeam","Conker Tree","Date Palm","Desert Willow","Douglas Fir","European Beech","European Larch","Ficus","Field Elm","Flannelbush","Flowering Dogwood","Giant Sequoia","Hedgehog Agave","Japanese Angelica Tree","Lacy Tree Philodendron","Leyland Cypress","Lily of the Valley","Lodgepole Pine","Mediterranean Buckthorn","Mexican Palmetto","Mountain Mahogany","Northern Red Oak","Norway Maple","Norway Spruce","Orange Tree","Orchid","Oval-leaved Privet","Palm Lily","Palo Verde","Paper Birch","Parlour Palm","Prickly Pear Cactus","Red Alder","Red Hickory","Rhododendron Azaleas","Rose","Ruffle Palm","Saguaro Cactus","Sassafras","Scots Pine","Sea Islands Yucca","Shadbush","Snake Plant","Southern Magnolia","Spanish Broom","Strawberry Tree","Sugar Maple","Sunflower","Sweetgum","Umbrella Acacia","Western Juniper","White Ash","White Oak","White Poplar","White Willow","Witch Hazel","","_____________________________","GENERICS","","Generic Dead Tree","Generic Stump","Generic Unknown","","_____________________________","PROXIES","","Algarrobo","American Elderberry","American Pepper","American Silverberry","Athel Tamarisk","Avocado","Black Tupelo","Buttonbush","Canada Buffaloberry","Chinaberry Tree","Chinese Tallow Tree","Common Hackberry","Common Holly","Common Persimmon","Desert Bitterbrush","European Hornbeam","Giant Chinquapin","Honey Locust","Hophornbeam","Huckleberry Shrub","Japanese Hemlock","Japanese Nutmeg","Judas Tree","Lawson Cypress","Loblolly Bay","Mexican Buckeye","Necklacepod","Northern Bilberry","Northern White Cedar","Octopus Tree","Osage Orange","Paper Bark Tree","Pawpaw","Persian Silk Tree","Princess Tree","Smooth Sumac","Sourwood","Southern Wax Myrtle","Tanoak","Tree of Heaven","Turkish Hazel","Western Soapberry","White Mulberry","Yellow Poplar","Yew")#@Hidden
 attr Sidewalk_Tree_2_Type				= "None"
-@Order(13) @Range(min=0,max=80) @Description("This attributes controls the height of Sidewalk Trees Type 1.")
+@Order(13) @Distance @Range(min=0,max=80) @Description("This attributes controls the height of Sidewalk Trees Type 1.")
 @Handle(shape=Sidewalk_Tree_Insert_Setup_1^3,axis=y,type=linear,reference=center,color="#11FF11",skin=sphere) #@Hidden
 attr Sidewalk_Tree_1_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk_Tree_1_Type))
-@Order(14) @Range(min=0,max=80) @Description("This attributes controls the height of Sidewalk Trees Type 2.") #@Hidden
+@Order(14) @Distance @Range(min=0,max=80) @Description("This attributes controls the height of Sidewalk Trees Type 2.") #@Hidden
 @Handle(shape=Sidewalk_Tree_Insert_Setup_2^3,axis=y,type=linear,reference=center,color="#11FF11",skin=sphere)
 attr Sidewalk_Tree_2_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk_Tree_2_Type))@Hidden
 Tree_Radius(Type, Height) = Tree._radius(Tree._indexFromCommonName(Type),Height)
 @Order(15) @Enum("None","Curb") @Description("This parameter determines what type of border planting boxes have in inserted locations.")
-attr Sidewalk_Planting_Border = case Not_High_LOD : "None" else :"Curb"
+attr Sidewalk_Planting_Border = case Not_Low_LOD : "Curb" else :"None"
 
 @Group("SIDEWALK LAYOUT","Sidewalk Components",10)@Order(1)
 @Order(1)@Enum("None","Both","Right","Left")@Description("Determines whether an object is placed and what side of the street or walkways relevant objects are placed.")
 attr Sidewalk_Bus_Stop					="None"
 @Order(2) @Enum("Far-side", "Mid-Block", "Near-side")@Description("Locates bus stop in the appropriate location. Far-side is right after the last intersection, Mid-Block is in the middle of the street, and Near-side is near to the next intersection.")
 attr Sidewalk_Bus_Stop_Location			= "Far-side"
-@Order(3) @Range(min=-4,max=4)@Description("As it stands, the Bus Stop will be as far back as the Planting Width, if more adjustment is required, this attribute can be used to set back the Bus Stop further back or move it closer to the curb.")
+@Order(3) @Distance @Range(min=-4,max=4)@Description("As it stands, the Bus Stop will be as far back as the Planting Width, if more adjustment is required, this attribute can be used to set back the Bus Stop further back or move it closer to the curb.")
 attr Sidewalk_Bus_Stop_Setback			= .5
 @Order(4)@Enum("None","Both","Right","Left")@Description("Will place benches in between the spacing between Trees on the sidewalk side chosen.")
 attr Sidewalk_Benches					=case Not_High_LOD || sidewalkWidth<4: "None" else: "Both"
 @Order(5)@Enum("None","Both","Right","Left")@Description("Determines whether an object is placed and what side of the street or walkways relevant objects are placed.")
 attr Parking_Meters						="None"
-@Order(6)@Range(min=0,max=20) @Description("Determines the spacing between each parking meter. No shape is created in the sections in between objects.")#@Hidden
+@Order(6)@Distance @Range(min=0,max=20) @Description("Determines the spacing between each parking meter. No shape is created in the sections in between objects.")#@Hidden
 attr Parking_Meters_Spacing				= 6.1
-@Order(7) @Range(min=0,max=20) @Description("This attribute provides a way to adjust the starting location for parking meters so that they align with on-street parking.")#@Hidden
+@Order(7) @Distance @Range(min=0,max=20) @Description("This attribute provides a way to adjust the starting location for parking meters so that they align with on-street parking.")#@Hidden
 attr Parking_Meter_Setback				= 9 #pushes or pulls parking meters away 
 @Order(8)@Enum("None","Both","Right","Left")@Description("Determines whether an object is placed and what side of the street or walkways relevant objects are placed.")
 attr Sidewalk_Street_Lamps				= case Not_High_LOD: "None" else: "Both"
-@Order(9)@Range(min=0,max=50) @Description("Determines the spacing between each Street Lamp. No shape is created in the sections in between objects.")#@Hidden
+@Order(9)@Distance @Range(min=0,max=50) @Description("Determines the spacing between each Street Lamp. No shape is created in the sections in between objects.")#@Hidden
 attr Sidewalk_Street_Lamp_Spacing		=10
-@Order(9)@Range(min=-10,max=10) @Description("Determines the offset from the initial lamp insertion between each Street Lamp.")#@Hidden
+@Order(9)@Distance @Range(min=-10,max=10) @Description("Determines the offset from the initial lamp insertion between each Street Lamp.")#@Hidden
 attr Sidewalk_Street_Lamp_Offset		=0
 @Order(10)@Enum("None","Both","Right","Left")@Description("Determines whether an object is placed and what side of the street or walkways relevant objects are placed.")
 attr Traffic_Lights						= case Not_High_LOD: "None" else: "Both"
@@ -350,7 +352,7 @@ attr Vehicles_Per_KM 				= case Not_Very_High_LOD:0 else: 100
 @Range(min=0,max=300) @Order(2)@Description("Determines the number of buses per KM of road length loaded onto bus lanes only.")#@Hidden
 attr Bus_Lane_Buses_Per_KM			= case Not_Very_High_LOD:0 else: 25
 @Order(3) @Range(min=0,max=100)@Description("Determines the number of bicyclists per KM of road length loaded onto bike lanes only.")#@Hidden
-attr Bicycles_Per_KM				= case Not_Very_High_LOD:0 else: 60*_BikeRank
+attr Bicycles_Per_KM				= case Not_Very_High_LOD:0 else: 80*_BikeRank
 @Range(min=0,max=1) @Percent @Order(4)@Description("Determines the approximate percentage of vehicles that are buses on main throughways.")#@Hidden		
 attr Mixed_Traffic_Bus_Percentage	= Default_Mix_Bus
 @Range(min=0,max=1) @Percent @Order(5)@Description("Determines the approximate percentage of vehicles that are bikes in the curb lane of main throughways.")#@Hidden		
@@ -527,6 +529,8 @@ const Default_Parklet				= (ObjectFolder+ "/Parklet_"+LOD_Object_Choice+"_LOD.ob
 const Default_BusStop				= (ObjectFolder+ "/Bus_Stop_2.glb")
 const Default_Median_End			= (StencilFolder+ "/Median_End.obj")
 const Default_Median_Transition		= (StencilFolder+"/Median_Transition.obj")
+const Default_Wedge 				= (ObjectFolder+"/Wedge.obj")
+const Max_Distance_From_CS_Manage   = 1.5
 #Boolean Converted Constants
 const Parking_Protection_Bool		= bool(Parking_Protection)#Bool Conversion to support non-boolean database models
 const Buffer_Protection_Bool		= bool(Buffer_Protection)#Bool Conversion to support non-boolean database models
@@ -565,7 +569,7 @@ const Design_Speed					= case Speed_Limit_in_MPH>=40:Speed_Limit_in_MPH+7.5 else
 const Brake_Reaction_Dist			= 1.47*Design_Speed*Brake_Reaction_Time
 const Braking_Dist					= 1.075*((Design_Speed*Design_Speed)/Deceleration_Rate)# Time spent actually braking
 const Stopping_Sight_Dist			= Brake_Reaction_Dist+Braking_Dist
-#Unit Conversion- in terms of number of unit per meter,meter^2, or meter^3- convert by unit *conversion factor==new unit
+##Unit Conversion- in terms of number of unit per meter,meter^2, or meter^3- convert by unit *conversion factor==new unit
 const SquareFeet					=10.7639 #per meter ^2
 const Feet							=3.28084 #per meter ^1
 const Miles							=0.00062137 #per meter ^1
@@ -660,13 +664,13 @@ _ParkingWidth(ParkingType)				=
 	case find(ParkingType,"Parallel",0)!=-1:
 		2.44 #Door zone should have another 1-1.5 ft if parking is on inside
 	else:
-		6.1
+		6.7 # 22 ft
 	
 _ParkingLength(ParkingType)				=
 	case ParkingType=="None":
 		0
 	case find(ParkingType,"Parallel",0)!=-1:
-		6.1
+		6.7 # 22 ft
 	else:
 		2.6
 	
@@ -690,8 +694,8 @@ _HasCurbsideManagement(ParkingType) =
     case find(ParkingType,"Curbside",0)!=-1:
     	1
     else:
-    	0	
-    	
+    	0
+ 	
 _Side_Sidewalk_Planting_Width(side) =
  	case side=="Right":
  		Right_Sidewalk_Planting_Width
@@ -770,7 +774,7 @@ const _stopBegin 			   = case Stop_Begin =="none" || _oneWayForward: 0 else: 1
 const _stopEnd 				   = case Stop_End =="none"   || _oneWayReverse: 0 else: 1
 const _neighborBegin		   = case Stop_Begin !="none" || _hasStop(connectionStart):1 else: 0
 const _neighborEnd			   = case Stop_End !="none" || _hasStop(connectionEnd):1 else: 0
-const _crosswalkWidth		   = case _Maxof(sidewalkWidthLeft,sidewalkWidthRight)==0:3 else:(_Maxof(sidewalkWidthLeft,sidewalkWidthRight)+0.05)//changed to match width of largest sidewalk +0.05 (2 inches), if 0 default is 2. 
+const _crosswalkWidth		   = case _Maxof(sidewalkWidthLeft,sidewalkWidthRight)==0:3 else:(_Maxof(sidewalkWidthLeft,sidewalkWidthRight)+ 0.1524)//changed to match width of largest sidewalk + 0.1524 (6 inches), if 0 default is 2. 
 const _crosswalkBeginWidth	   = case Crosswalk_Begin =="none": 0 else: (Crosswalk_Width)
 const _crosswalkEndWidth 	   = case Crosswalk_End =="none"  : 0 else: (Crosswalk_Width)
 const _centerWidth	 		   = case oneWay || Center_Type=="None": 0 
@@ -1275,7 +1279,7 @@ _BikeRank				=#Adapted from MTI Report 11-19 # Does not take into account Boulev
 		else:
 		 	0 #LTS 4
 _PedRank				=#Rule creator criteria-a road with low speed limits and less lanes is good OR a road with good separation between cars and pedestrians and a wider sidewalk is better
-	 	case (rint(DirLaneTotal)<=1 && Speed_Limit_in_MPH<=20 && _centerWidth<=7) || (_MaxSplitSum>=3.2 && _Maxof(sidewalkWidthLeft,sidewalkWidthRight)>=3.3 && Speed_Limit_in_MPH<=35):
+	 	case (rint(DirLaneTotal)<=1 && Speed_Limit_in_MPH<=20 && _centerWidth<=7) || (_MaxSplitSum>=2.43 && _Maxof(sidewalkWidthLeft,sidewalkWidthRight)>=3.3 && Speed_Limit_in_MPH<=35):
 	 		1 
 	 	case  (rint(DirLaneTotal)<=2 && Speed_Limit_in_MPH<=25) || (_MaxSplitSum>=2.2 && _Maxof(sidewalkWidthLeft,sidewalkWidthRight)>=2.5 && Speed_Limit_in_MPH<=35):
 	 		.8
@@ -1966,21 +1970,28 @@ CurbsideAllocatorSide(Side,ParkingType,ParkingLength,ParkingWidth)-->
 		LeftCurbsideAllocator(Side,ParkingType,ParkingLength,ParkingWidth)
 
 RightCurbsideAllocator(Side,ParkingType,ParkingLength,ParkingWidth)-->
+	label("curbside_managed_zone")
 	Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)
 	
 LeftCurbsideAllocator(Side,ParkingType,ParkingLength,ParkingWidth)-->
+	label("curbside_managed_zone")
 	Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)
 	
 Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)-->
 	case find(ParkingType,"Freight",0)!=-1:
+		label("freight_loading_zone")
 		Freight_Loading_Allocation(Side,ParkingWidth,ParkingLength)
 	case find(ParkingType,"Passenger",0)!=-1:
+		label("passenger_loading_zone")
 		Passenger_Loading_Allocation(Side,ParkingWidth,ParkingLength)		
 	case find(ParkingType,"Bus Stop",0)!=-1:
+		label("bus_loading_zone")
 		Bus_Stop_Allocation(Side,"black",ParkingWidth)
 	case find(ParkingType,"Carshare",0)!=-1:
+		label("carshare_parking")
 		Carshare_Parking_Split(Side,"green",ParkingWidth,ParkingLength)
 	case find(ParkingType,"DoBi & Scooter",0)!=-1:
+		label("dobi_parking")
 		DoBi_Scooter_Parking(Side,ParkingWidth,ParkingLength)
 	else:
 		InformalStorageLane(Side)
@@ -2708,7 +2719,7 @@ Lamp_Center_Asset(Side_Rotation,Shape_Edge,Dir,Offset)-->
 	center(xz)
 	s(0,0,0)				//set initital height to 5 others are based on OBJ
 	r(0,Side_Rotation,0)
-	t(0,0,Offset)
+	t(Offset,0,0)
 	report("Objects.Street Lamp Count", 1)
 	i(Street_Lamp_Object)
 	label("Street Lamp")
@@ -2798,64 +2809,75 @@ randomTreeType =
 ###################################################
 # Crosswalk
 #
+
 Crosswalk(crosswalkType,uvSet) -->
+	report("Crosswalk.Crosswalk Area",geometry.area())
+	NoGeometryModeReporter("Conflict Zones")
+	color( _ThematicRouter ("Conflict Zones","crosswalk"))
+	CrosswalkDirector(crosswalkType,uvSet)
+	
+CrosswalkDirector(crosswalkType,uvSet)-->
 	case crosswalkType == "transverse"	 : CrosswalkTransverse(uvSet)
 	case crosswalkType == "dashed"    	 : CrosswalkDashed(uvSet)
 	case crosswalkType == "ladder"    	 : CrosswalkLadder(uvSet)
-	case crosswalkType == "solid"     	 : AsphaltPainted( Crosswalk_Color,"Conflict Zones","crosswalk")
+	case crosswalkType == "solid"     	 : AsphaltPainted( Crosswalk_Color)
 	case crosswalkType == "custom"	 	 : CrosswalkWalkway(true)
 	case crosswalkType == "ladder custom": CrosswalkLadderWalkway(uvSet)
-	else							  : CrosswalkContintental
+	case crosswalkType == "raised custom": CrosswalkRaised(uvSet)
+	else							     : CrosswalkContintental
 
 CrosswalkContintental -->
-	report("Crosswalk.Crosswalk Area",geometry.area())
-	split(v,uvSpace,0){ (ceil(geometry.vMin-0.01)-geometry.vMin): Asphalt("Conflict Zones","crosswalk")
+	split(v,uvSpace,0){ (ceil(geometry.vMin-0.01)-geometry.vMin): Asphalt
 					  | ~1: CrosswalkStripes(1)
-					  | geometry.vMax-floor(geometry.vMax+0.01): Asphalt("Conflict Zones","crosswalk") }
+					  | geometry.vMax-floor(geometry.vMax+0.01): Asphalt }
 
 CrosswalkLadder(uvSet) -->
-	report("Crosswalk.Crosswalk Area",geometry.area())
-	split(u,uvSpace,uvSet){ 0.17: AsphaltPainted( Crosswalk_Color,"Conflict Zones","crosswalk") 
+	split(u,uvSpace,uvSet){ 0.17: AsphaltPainted( Crosswalk_Color) 
 						  | ~1  : CrosswalkStripes(1)
-						  | 0.17: AsphaltPainted( Crosswalk_Color,"Conflict Zones","crosswalk" ) }	
+						  | 0.17: AsphaltPainted( Crosswalk_Color ) }	
 
 CrosswalkTransverse(uvSet) -->
-	report("Crosswalk.Crosswalk Area",geometry.area())
-	split(u,uvSpace,uvSet){ 0.27: AsphaltPainted( Crosswalk_Color,"Conflict Zones","crosswalk" ) 
-						  | ~1  : Asphalt("Conflict Zones","crosswalk")
-						  | 0.27: AsphaltPainted( Crosswalk_Color,"Conflict Zones","crosswalk" ) }
+	split(u,uvSpace,uvSet){ 0.27: AsphaltPainted( Crosswalk_Color ) 
+						  | ~1  : Asphalt
+						  | 0.27: AsphaltPainted( Crosswalk_Color ) }
 
 CrosswalkLadderWalkway(uvSet)-->
-	report("Crosswalk.Crosswalk Area",geometry.area())
-	split(u,uvSpace,uvSet){ 0.27: AsphaltPainted( Crosswalk_Color,"Conflict Zones","crosswalk") 
+	split(u,uvSpace,uvSet){ 0.27: AsphaltPainted( Crosswalk_Color) 
 						  | ~1  : CrosswalkWalkway(false)
-						  | 0.27: AsphaltPainted( Crosswalk_Color,"Conflict Zones","crosswalk") }	
+						  | 0.27: AsphaltPainted( Crosswalk_Color) }	
 CrosswalkDashed(uvSet) -->
-	report("Crosswalk.Crosswalk Area",geometry.area())
 	split(u,uvSpace,uvSet){ 0.17: CrosswalkStripes(0.6) 
-						  | ~1  : Asphalt("Conflict Zones","crosswalk")
+						  | ~1  : Asphalt
 						  | 0.17: CrosswalkStripes(0.6) }	
 
 CrosswalkStripes(stripeWidth) -->
-	report("Crosswalk.Crosswalk Area",geometry.area())
 	cleanupGeometry(all, 0.001) 
 	tileUV(0,0,~1) scaleUV(0,1,1/8/stripeWidth) 		# to setup the v-direction: a continental crosswalk line is 1m width, and the texture contains 8 of these.
 	texture(LanesFolder + "/crosswalk_continental_"+ Crosswalk_Color +".jpg")
 	deleteUV(_Texture_Switch)
-	color( _ThematicRouter ("Conflict Zones","crosswalk"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-	ModeReporter ("Conflict Zones")
-
+	
 CrosswalkWalkway(reporting)-->
 	case reporting:
 		tileUV(0,2,2) texture(Custom_Crosswalk_Texture)
 		deleteUV(_Texture_Switch)
-		color( _ThematicRouter ("Conflict Zones","crosswalk"))#If Display Thematics==Usage, goes to usage, if not, Thematic.
-		report("Crosswalk.Crosswalk Area",geometry.area())
 	else:
 		tileUV(0,2,2) texture(Custom_Crosswalk_Texture)
 		deleteUV(_Texture_Switch)
-		color( _ThematicRouter ("Conflict Zones","crosswalk"))#If Display Thematics==Usage, goes to usage, if not, Thematic.
+		
+CrosswalkRaised(uvSet)-->
+	split(u,uvSpace,uvSet){ 0.4: Insert_Slope(Sidewalk_Height,case uvSet==1:180 else: 0)
+						  | ~1  : extrude(Sidewalk_Height) CrosswalkWalkway(false)
+						  | 0.4: Insert_Slope(Sidewalk_Height,case uvSet==1:0 else: 180)}
 
+Insert_Slope(height,rotation)-->
+	rotateUV(0,rotation)
+    normalizeUV(0, uv, collectiveAllFaces)
+	alignScopeToAxes(y)
+	insertAlongUV(0,Default_Wedge,height)
+	setupProjection (0,scope.yz, 2, 2, 2, 2,1)
+	texture(Custom_Crosswalk_Texture)
+	projectUV(0)
+	deleteUV(_Texture_Switch)
 ###################################################
 # Other default Start Rules of the graph
 #
@@ -3078,7 +3100,7 @@ LampAsset(offset) -->
 	t( SLight_Translate_X ,0, SLight_Translate_Z )
 	r(0,90,0)
 	i(Street_Lamp_Object)
-	t(.2,0,offset)
+	t(offset,0,0)
 	label("Street Lamp")
 	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Pedestrian","lamp"))
@@ -3183,10 +3205,18 @@ Sidewalk_Bench_Insert(Dir,geometry_Len)-->
 		alignScopeToGeometry(yUp, largest, 0)
 		s(0,0,0)
 		t(geometry_Len,0,(Sidewalk_Planting_Width/10)+.25)#When geometry.du is used functionality is different (alignment issue?) passed parameter works best likely because it is before scope manipulation (rotate etc)dv. might work instead.
-		Bench_Insert
-		
+		Sidewalk_Bench_Context_Check	
 	else:
 		NIL
+
+Sidewalk_Bench_Context_Check-->
+	case bool(Context_Aware_Queries) && ((_HasCurbsideManagement(Right_Parking_Type)+_HasCurbsideManagement(Left_Parking_Type))>=1):
+		case minimumDistance("inter","curbside_managed_zone")>=Max_Distance_From_CS_Manage:
+			Bench_Insert
+		else:
+			NIL
+	else:
+		Bench_Insert
 		
 Bench_Insert-->
 	case SBench_Toggle:
@@ -3201,6 +3231,18 @@ Plant_Base-->
 case Sidewalk_Ground_Cover =="None":
 	Sidewalk_Pavement ("Plant_Space")
 else:
+	Curbside_Context_Planting_Allocation
+
+Curbside_Context_Planting_Allocation-->
+	case bool(Context_Aware_Queries) && ((_HasCurbsideManagement(Right_Parking_Type)+_HasCurbsideManagement(Left_Parking_Type))>=1):
+		case minimumDistance("inter","curbside_managed_zone")>=Max_Distance_From_CS_Manage:
+			Allocate_Planting_Area
+		else:
+			Sidewalk_Pavement("Plant_Space")
+	else:
+		Allocate_Planting_Area
+	
+Allocate_Planting_Area-->
 	Planting_Curb(Sidewalk_Planting_Spacing)
 	Sidewalk_Planting
 	Tree_Setup("Sidewalk", Sidewalk_Tree_1_Percentage , Sidewalk_Tree_1_Type, Sidewalk_Tree_2_Type, Sidewalk_Tree_1_Height, Sidewalk_Tree_2_Height )
@@ -3222,7 +3264,7 @@ Sidewalk_Planting--># THis is set up this way to support a vegetated buffer with
 Planting_Curb(Planting_Spacing)-->
 	case Sidewalk_Planting_Border == "Curb":
 		split(u,unitSpace,0){Curb_Depth*_ContiguousPlantingSwitch(Planting_Spacing):Curbs_Mass(true,Sidewalk_Height/2)|
-			~1:split(v,unitSpace,0){Curb_Depth:Curbs_Mass(false,Sidewalk_Height/2)|~1:NIL|Curb_Depth:Curbs_Mass(false,Sidewalk_Height/2)}|
+			~1:split(v,unitSpace,0){Curb_Depth*_ContiguousPlantingSwitch(Planting_Spacing):Curbs_Mass(false,Sidewalk_Height/2)|~1:NIL|Curb_Depth*_ContiguousPlantingSwitch(Planting_Spacing):Curbs_Mass(false,Sidewalk_Height/2)}|
 		Curb_Depth*_ContiguousPlantingSwitch(Planting_Spacing):Curbs_Mass(true,Sidewalk_Height/2)}
 	else:
 		NIL
@@ -3239,8 +3281,22 @@ Sign_Objects_Insert(Object_Identity,File_Extension,RotationAng,Translation,SX,SY
 		report("Objects."+Object_Identity+" Count",1)
 		deleteUV(_Texture_Switch)
 ##################################################
-#Paint Reporting	
+#Paint & Asphalt Reporting	
 #Asphalt Painted is actually retrofitted to be the paint and mode reporting aggregator, all "Paint Areas" originate here. 
+Asphalt(Usage,LabelID) -->
+		tileUV(0,14,14)
+		cleanupGeometry(all, 0.001)
+		texture( LanesFolder+"/asphalt_14x14m.jpg")
+		deleteUV(_Texture_Switch)
+		color( _ThematicRouter (Usage,LabelID))#If Display Thematics==Usage, goes to usage, if not, Thematic-strings might have other purpose later. 
+		ModeReporter(Usage)
+		
+Asphalt -->
+		tileUV(0,14,14)
+		cleanupGeometry(all, 0.001)
+		texture( LanesFolder+"/asphalt_14x14m.jpg")
+		deleteUV(_Texture_Switch)
+
 AsphaltPainted(paintColor,Usage,LabelID) -->
 	case paintColor!="black":# This makes sure that if the color is black, it is thrown into Asphalt Reporting
 		tileUV(0,7,7)
@@ -3251,6 +3307,15 @@ AsphaltPainted(paintColor,Usage,LabelID) -->
 		ModeReporter(Usage)
 	else:#If Black redirect to asphalt rule.
 		Asphalt(Usage,LabelID)
+
+AsphaltPainted(paintColor) -->
+	case paintColor!="black":# This makes sure that if the color is black, it is thrown into Asphalt Reporting
+		tileUV(0,7,7)
+		cleanupGeometry(all,0.001)
+		texture(LanesFolder+"/asphalt_painted_" + paintColor + "_7x7m.jpg")
+		deleteUV(_Texture_Switch)
+	else:#If Black redirect to asphalt rule.
+		Asphalt
 
 ModeReporter(Usage)-->
 	case reportingOn:
@@ -3306,13 +3371,13 @@ VehicleTaxiOrCar(dir) -->
 
 Bus_Vehicle(dir,type) --> 
 	case p(busProb):
-		split(u,unitSpace,0){ ~1: NIL | 0.5: alignScopeToGeometry(yUp,dir) VehicleAsset(type) | ~1: NIL }
+		split(u,unitSpace,0){ ~1: NIL | 0.5: alignScopeToGeometry(yUp,0,dir) VehicleAsset(type) | ~1: NIL }
 	else:
 		NIL	
 
 Vehicle(dir,type) --> 
 	case p(vehiclesProb):
-		split(u,unitSpace,0){ ~1: NIL | 0.5: alignScopeToGeometry(yUp,dir) VehicleAsset(type) | ~1: NIL }
+		split(u,unitSpace,0){ ~1: NIL | 0.5: alignScopeToGeometry(yUp,0,dir) VehicleAsset(type) | ~1: NIL }
 	else:
 		NIL	
 		
@@ -3359,7 +3424,7 @@ else:
 	
 Bike(dir,Bike_Lane_Width,bike_probability) --> 
 	case p(bike_probability):
-		split(u,unitSpace,0){ ~1: NIL | 0.5: alignScopeToGeometry(yUp,dir) BikeAsset(Bike_Lane_Width) | ~1: NIL }
+		split(u,unitSpace,0){ ~1: NIL | 0.5: alignScopeToGeometry(yUp,0,dir) BikeAsset(Bike_Lane_Width) | ~1: NIL }
 	else:
 		NIL	
 		
@@ -3700,11 +3765,11 @@ BridgeSolid -->
 BridgeMaterial(color_chooser) -->
 	case find(str(color_chooser),"#",0)!=-1:
 		color(color_chooser)
-		setupProjection(0,scope.xy,~12,~9,1) projectUV(0)
+		setupProjection(0,scope.xy,~12,~9,0,0,0) projectUV(0)
 		texture(Default_Pavement)
 		deleteUV(_Texture_Switch)
 	else:
-		setupProjection(0,scope.xy,~12,~9,1) projectUV(0)
+		setupProjection(0,scope.xy,~12,~9) projectUV(0)
 		texture(Default_Pavement)
 		deleteUV(_Texture_Switch)
 	
@@ -3713,7 +3778,7 @@ RailMaterial -->
 	case texturingOn:
 		set(material.specular.r, 1) set(material.specular.g, 1) set(material.specular.b, 1)
 		set(material.shininess, 20)
-		setupProjection(0,scope.xy,~12,~9,1) projectUV(0)
+		setupProjection(0,scope.xy,~12,~9,0,0,1) projectUV(0)
 		texture(SidewalkFolder+"/Concrete Rough Light.jpg")
 		RailMaterialStep2
 	else:		
@@ -3737,17 +3802,10 @@ Pervious_Reporting-->
 		report("Vegetation.Pervious Area",geometry.area)
 		color( _ThematicRouter ("Plantings","planting_area"))#If Display Thematics==Usage, goes to usage, if not, Thematic.
 		X.
+
 Cut_And_Fill_Reporting(Text_Fill)-->
 	report("Cut/Fill.Total "+Text_Fill+" Cut/Fill Volume (m^3)", geometry.area()*Sidewalk_Height)
 	NIL
-
-Asphalt(Usage,LabelID) -->
-		tileUV(0,14,14)
-		cleanupGeometry(all, 0.001)
-		texture( LanesFolder+"/asphalt_14x14m.jpg")
-		deleteUV(_Texture_Switch)
-		color( _ThematicRouter (Usage,LabelID))#If Display Thematics==Usage, goes to usage, if not, Thematic-strings might have other purpose later. 
-		ModeReporter(Usage)
 
 
 Rumble_Strip-->

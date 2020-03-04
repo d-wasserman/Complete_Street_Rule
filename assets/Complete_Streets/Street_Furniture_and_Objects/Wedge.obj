@@ -1,0 +1,27 @@
+# created with CityEngine 2019.1.5666 0730R (based on Esri Procedural Runtime 2.1.5666, build date: Tue 07/30/2019 05:06 PM)
+# creation date: Sun Sep  8 12:18:04 2019
+
+mtllib Wedge.mtl
+
+# mesh 'mesh_CityEngineMaterial' from geometry 'mesh_CityEngineMaterial'
+v -0.510 0.007 12.179
+v -0.510 0.007 -12.179
+v -0.524 -1.014 12.179
+v 0.497 -1.027 -12.179
+v -0.524 -1.014 -12.179
+v 0.497 -1.027 12.179
+# 6 vertices
+
+g CityEngineMaterial
+s off
+usemtl CityEngineMaterial
+f 1 2 3
+f 4 5 2
+f 3 5 6
+f 5 4 6
+f 1 6 2
+f 1 3 6
+f 5 3 2
+f 2 6 4
+# 8 faces
+
