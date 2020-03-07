@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 03/02/2020
+ * Last Updated: 03/07/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -146,7 +146,7 @@ attr Left_Parking_Length		= _ParkingLength(Left_Parking_Type)
 @Order(7)@Distance @Range(min=0,max=1)@Percent @Description("Will create Parklets in Parking spaces, it is best if the parking spaces are contiguous to the sidewalk. The default OBJ does not have bollards or curb stops suggested by NACTO.")
 attr Parklet_Percentage			= 0
 @Order(9)@Enum("None","Mid-Block & End Spaces","End Spaces","Far-side","Near-side","Mid-Block") @Description("Describes where on the street reallocated street space is used in parking lanes for parallel parking with curbside management options.")@Hidden
-attr Curbside_Management_Position = "Mid-Block & End Spaces"
+attr Curbside_Management_Position = case streetLength<20: "Far-side" else: "End Spaces"
 @Handle(shape=RightCurbsideAllocator^4,axis=x,type=linear,color="#FF11FF")
 @Order(10) @Distance @Range(min=0,max=50) @Description("This parameter represents the size of a curbside drop-off location on the right side of the street.")@Hidden
 attr Right_Curbside_Allocation_Length = case find(Right_Parking_Type,"Bus",0)!=-1: 3 * Right_Parking_Length case find(Right_Parking_Type,"Loading",0)!=-1: 2 * Right_Parking_Length else: Right_Parking_Length
@@ -1972,7 +1972,6 @@ CurbsideAllocatorSide(Side,ParkingType,ParkingLength,ParkingWidth)-->
 RightCurbsideAllocator(Side,ParkingType,ParkingLength,ParkingWidth)-->
 	label("curbside_managed_zone")
 	Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)
-	
 LeftCurbsideAllocator(Side,ParkingType,ParkingLength,ParkingWidth)-->
 	label("curbside_managed_zone")
 	Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)
@@ -2976,7 +2975,6 @@ Sidewalk_Generation-->
 						| ~1: Sidewalk_Setup }
 	Enclose_Shape #Enclose Shapes for Printing
 	ModeReporter("Pedestrian")
-
 
 Curbs_Mass(RotateUV)-->
 	extrude(world.y, Sidewalk_Height )
