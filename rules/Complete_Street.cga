@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 03/07/2020
+ * Last Updated: 04/10/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -196,6 +196,8 @@ attr Median_Tree_1_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk_T
 @Order(10) @Distance @Range(min=0,max=80) @Description("This attributes controls the height of Median Trees Type 2.")@Hidden
 @Handle(shape=Median_Tree_Insert_Setup_2^3,axis=y,type=linear,reference=center,color="#11FF11",skin=sphere)
 attr Median_Tree_2_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk_Tree_2_Type))
+@Order(11) @Percent @Range(min=0,max=5) @Description("This attribute controls the random deviation that applies to tree heights. As a percent of total height.")
+attr Median_Tree_Height_Deviation = case Not_Low_LOD: 0.1 else: 0 
 @Group("CENTER SECTION LAYOUT","Basic Components", 4) 
 @Order(5)@Enum("None","Both","Right","Left") @Description("Determines whether an object is placed and what side of the street or walkways relevant objects are placed.")
 attr Median_Bus_Stop					="None"
@@ -314,7 +316,9 @@ attr Sidewalk_Tree_1_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk
 @Handle(shape=Sidewalk_Tree_Insert_Setup_2^3,axis=y,type=linear,reference=center,color="#11FF11",skin=sphere)
 attr Sidewalk_Tree_2_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk_Tree_2_Type))@Hidden
 Tree_Radius(Type, Height) = Tree._radius(Tree._indexFromCommonName(Type),Height)
-@Order(15) @Enum("None","Curb") @Description("This parameter determines what type of border planting boxes have in inserted locations.")
+@Order(15) @Percent @Range(min=0,max=5) @Description("This attribute controls the random deviation that applies to tree heights. As a percent of total height.")
+attr Sidewalk_Tree_Height_Deviation = case Not_Low_LOD: 0.1 else: 0
+@Order(16) @Enum("None","Curb") @Description("This parameter determines what type of border planting boxes have in inserted locations.")
 attr Sidewalk_Planting_Border = case Not_Low_LOD : "Curb" else :"None"
 
 @Group("SIDEWALK LAYOUT","Sidewalk Components",10)@Order(1)
@@ -656,7 +660,7 @@ _PlantingWidth=
 
 _ContiguousPlantingSwitch(Spacing_Width)=
 	case Spacing_Width == 0: 0 else: 1
-	
+		
 
 _ParkingWidth(ParkingType)				=
 	case ParkingType=="None":
@@ -1099,8 +1103,9 @@ _Minof(num1,num2)= #Finds the min of two numbers
 		num1
 	else:
 		num2
-	
-		
+_DeviateValue(value,percent_deviation)= 
+    value + (value * rand(-abs(percent_deviation),abs(percent_deviation)))
+
 ################################################
 #Thematic Functions
 const SemanticSegs="car;pedestrian;bus;planting_area;bike_lane;truck;parking_lane;bike_buffer;lamp;hov_lane;centerline;median;center_turn_lane;asphalt;bicyclist;bus_lane;drive_lane;stop_bar;crosswalk;sidewalk;bus_pull_in;passenger_loading;freight_loading;bike_parking;traffic_light;vegetation;"
@@ -2761,16 +2766,16 @@ Sidewalk_Tree_Insert_Setup(Location,Percentage1,Tree_Type1,Tree_Type2,Tree_Heigh
 		NIL
 
 Median_Tree_Insert_Setup_1(Location,Tree_Type,Tree_Height)-->
-	Tree_Insert_Type(Location,Tree_Type,Tree_Height)
+	Tree_Insert_Type(Location,Tree_Type,_DeviateValue(Tree_Height,Median_Tree_Height_Deviation))
 
 Median_Tree_Insert_Setup_2(Location,Tree_Type,Tree_Height)-->
-	Tree_Insert_Type(Location,Tree_Type,Tree_Height)
+	Tree_Insert_Type(Location,Tree_Type,_DeviateValue(Tree_Height,Median_Tree_Height_Deviation))
 
 Sidewalk_Tree_Insert_Setup_1(Location,Tree_Type,Tree_Height)-->
-	Tree_Insert_Type(Location,Tree_Type,Tree_Height)
+	Tree_Insert_Type(Location,Tree_Type,_DeviateValue(Tree_Height,Sidewalk_Tree_Height_Deviation))
 	
 Sidewalk_Tree_Insert_Setup_2(Location,Tree_Type,Tree_Height)-->
-	Tree_Insert_Type(Location,Tree_Type,Tree_Height)
+	Tree_Insert_Type(Location,Tree_Type,_DeviateValue(Tree_Height,Sidewalk_Tree_Height_Deviation))
 	
 			
 Tree_Insert_Type(Location,Tree_Type1,Tree_Height1)-->
