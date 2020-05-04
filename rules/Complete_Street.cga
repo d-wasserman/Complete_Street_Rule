@@ -148,10 +148,10 @@ attr Parklet_Percentage			= 0
 @Order(9)@Enum("None","Mid-Block & End Spaces","End Spaces","Far-side","Near-side","Mid-Block") @Description("Describes where on the street reallocated street space is used in parking lanes for parallel parking with curbside management options.")#@Hidden
 attr Curbside_Management_Position = case streetLength<20: "Far-side" else: "End Spaces"
 @Handle(shape=RightCurbsideAllocator^4,axis=x,type=linear,color="#FF11FF")
-@Order(10) @Distance @Range(min=0,max=50) @Description("This parameter represents the size of a curbside drop-off location on the right side of the street.")#@Hidden
+@Order(10) @Distance @Range(min=0,max=50) @Description("This parameter represents the size of a curbside allocation on the right side of the street.")#@Hidden
 attr Right_Curbside_Allocation_Length = case find(Right_Parking_Type,"Bus",0)!=-1: 3 * Right_Parking_Length case find(Right_Parking_Type,"Loading",0)!=-1: 2 * Right_Parking_Length else: Right_Parking_Length
 @Handle(shape=LeftCurbsideAllocator^4,axis=x,type=linear,color="#FF11FF")
-@Order(11) @Distance @Range(min=0,max=50) @Description("This parameter represents the size of a curbside drop-off location on the left side of the street.")#@Hidden
+@Order(11) @Distance @Range(min=0,max=50) @Description("This parameter represents the size of a curbside allocation on the left side of the street.")#@Hidden
 attr Left_Curbside_Allocation_Length = case find(Left_Parking_Type,"Bus",0)!=-1: 3 * Left_Parking_Length case find(Left_Parking_Type,"Loading",0)!=-1:2 * Left_Parking_Length else: Left_Parking_Length
 @Order(12)@Distance @Range(min=0,max=f10) @Hidden @Description("This hidden attribute controls the spacing the parking areas have before the current directions stopbar.")
 attr Front_Parking_Spacing 		= 0
@@ -2605,10 +2605,10 @@ Bus_Objects_Insert(Object_Identity,File_Extension,RotationAng,Translation,SX,SY,
 		rotateScope(0,RotationAng,0)
 		t(Translation,0,0)
 		report("Objects."+Object_Identity+" Count",1)
-		i(File_Extension)
 		s(SX,SY,SZ)
 		center(xz)
-		deleteUV(_Texture_Switch)
+		i(File_Extension)
+		Delete_Texture
 		
 Bike_Rack_Split(RotationAng,Translation)-->
 	split(v,unitSpace,0){~1:NIL
