@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 04/10/2020
+ * Last Updated: 05/3/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -148,10 +148,10 @@ attr Parklet_Percentage			= 0
 @Order(9)@Enum("None","Mid-Block & End Spaces","End Spaces","Far-side","Near-side","Mid-Block") @Description("Describes where on the street reallocated street space is used in parking lanes for parallel parking with curbside management options.")@Hidden
 attr Curbside_Management_Position = case streetLength<20: "Far-side" else: "End Spaces"
 @Handle(shape=RightCurbsideAllocator^4,axis=x,type=linear,color="#FF11FF")
-@Order(10) @Distance @Range(min=0,max=50) @Description("This parameter represents the size of a curbside drop-off location on the right side of the street.")@Hidden
+@Order(10) @Distance @Range(min=0,max=50) @Description("This parameter represents the size of a curbside allocation on the right side of the street.")@Hidden
 attr Right_Curbside_Allocation_Length = case find(Right_Parking_Type,"Bus",0)!=-1: 3 * Right_Parking_Length case find(Right_Parking_Type,"Loading",0)!=-1: 2 * Right_Parking_Length else: Right_Parking_Length
 @Handle(shape=LeftCurbsideAllocator^4,axis=x,type=linear,color="#FF11FF")
-@Order(11) @Distance @Range(min=0,max=50) @Description("This parameter represents the size of a curbside drop-off location on the left side of the street.")@Hidden
+@Order(11) @Distance @Range(min=0,max=50) @Description("This parameter represents the size of a curbside allocation on the left side of the street.")@Hidden
 attr Left_Curbside_Allocation_Length = case find(Left_Parking_Type,"Bus",0)!=-1: 3 * Left_Parking_Length case find(Left_Parking_Type,"Loading",0)!=-1:2 * Left_Parking_Length else: Left_Parking_Length
 @Order(12)@Distance @Range(min=0,max=f10) @Hidden @Description("This hidden attribute controls the spacing the parking areas have before the current directions stopbar.")
 attr Front_Parking_Spacing 		= 0
@@ -2093,7 +2093,7 @@ Parklet_Insert(ParkingLength,Rotation)-->
  	report("Objects.Parklet Count",1)
  	i(Parklet_Object)
  	label("Parklet")
- 	deleteUV(_Texture_Switch)
+ 	Delete_Texture
  	
 AngledNoseIn(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
 	AngledParkingCar((case Side=="Right":0 else:2),ParkingType,ParkingLength, ParkingWidth,SpaceNumber)
@@ -2597,7 +2597,7 @@ Bus_Stop_Insert(Object_Identity,File_Extension,RotationAng,Translation)-->
 		t(0,0,Translation)
 		report("Objects."+Object_Identity+" Count",1)
 		i(File_Extension)
-		deleteUV(_Texture_Switch)
+		Delete_Texture
 		
 Bus_Objects_Insert(Object_Identity,File_Extension,RotationAng,Translation,SX,SY,SZ)-->#Bus Object Constructor Method
 		alignScopeToAxes(y)
@@ -2605,10 +2605,10 @@ Bus_Objects_Insert(Object_Identity,File_Extension,RotationAng,Translation,SX,SY,
 		rotateScope(0,RotationAng,0)
 		t(Translation,0,0)
 		report("Objects."+Object_Identity+" Count",1)
-		i(File_Extension)
 		s(SX,SY,SZ)
 		center(xz)
-		deleteUV(_Texture_Switch)
+		i(File_Extension)
+		Delete_Texture
 		
 Bike_Rack_Split(RotationAng,Translation)-->
 	split(v,unitSpace,0){~1:NIL
@@ -2725,10 +2725,10 @@ Lamp_Center_Asset(Side_Rotation,Shape_Edge,Dir,Offset)-->
 	r(0,Side_Rotation,0)
 	t(Offset,0,0)
 	report("Objects.Street Lamp Count", 1)
-	i(Street_Lamp_Object)
+	color( _ThematicRouter ("Pedestrian","lamp"))
 	label("Street Lamp")
-	deleteUV(_Texture_Switch)
-	color( _ThematicRouter ("Pedstrian","lamp"))
+	i(Street_Lamp_Object)
+	Delete_Texture
 	
 ##########################################
 #Tree Loader Code
@@ -3087,9 +3087,9 @@ Traffic_Light_Asset(index)-->
 	report("Objects.Traffic Lights Count", 1)
 	i(Traffic_Light_Object)
 	label("Traffic Light")
-	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Pedestrian","traffic_light"))
-
+	Delete_Texture
+	
 Sidewalk_Lamp(offset) -->
 	alignScopeToGeometry(yUp,largest,0)
 	alignScopeToAxes(y)		// place the Lamps vertically
@@ -3102,11 +3102,11 @@ Sidewalk_Lamp(offset) -->
 LampAsset(offset) -->
 	t( SLight_Translate_X ,0, SLight_Translate_Z )
 	r(0,90,0)
-	i(Street_Lamp_Object)
 	t(offset,0,0)
 	label("Street Lamp")
-	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Pedestrian","lamp"))
+	i(Street_Lamp_Object)
+	Delete_Texture
 
 Parking_Meter_Setup-->
 	case Parking_Meters=="None":
@@ -3226,7 +3226,7 @@ Bench_Insert-->
  		t( SBench_Translate_X ,0, SBench_Translate_Z )
 		i(Bench_Object)
 		label("Bench")
-		deleteUV(_Texture_Switch)
+		Delete_Texture
 	else:
 		NIL
 		
@@ -3282,7 +3282,7 @@ Sign_Objects_Insert(Object_Identity,File_Extension,RotationAng,Translation,SX,SY
 		label("Signs")
 		s(SX,SY,SZ)
 		report("Objects."+Object_Identity+" Count",1)
-		deleteUV(_Texture_Switch)
+		Delete_Texture
 ##################################################
 #Paint & Asphalt Reporting	
 #Asphalt Painted is actually retrofitted to be the paint and mode reporting aggregator, all "Paint Areas" originate here. 
@@ -3435,27 +3435,19 @@ BikeAsset(Bike_Lane_Width) -->
 	rotateScope(0,DirectionalRotation,0) 
 	t(0,0,Bike_Lane_Width/2 + rand(-Bike_Lane_Width/4,Bike_Lane_Width/4)) 
 	s(0,0,0) 
-	i(bikeAsset) 
 	r(scopeCenter,0,90,0)
+	i(bikeAsset) 
 	label("bicylist")
-	Bike_Delete_Texture_Color # will only color when textures are removed. 
-
-	
-Bike_Delete_Texture_Color-->
-	case texturingOn: 
-		X.
-	else: 
-		deleteUV(0)
-		color( _ThematicRouter ("Bikeways","bicyclist"))
-		# Our bicycle models have both textured and colored parts.
-		# So when texturing is off, we still need to change the color of the bikes.
-		#color(thematicColor)- see remove_Bike_color
+	color( _ThematicRouter ("Bikeways","bicyclist"))
+	Delete_Texture# will only color when textures are removed. 
 
 Delete_Texture-->
 	case texturingOn: 
-		X.
+		X.	
+# 		print(geometry.isInstanced())	
 	else: 
 		deleteUV(0)
+# 		print(geometry.isInstanced())
 
 # -------------------------------------------
 # People
@@ -3485,10 +3477,10 @@ Human -->
 		alignScopeToAxes(y)
 		t(0,0,'rand(0.1,0.6))
 		s(0,rand(1.7,1.9),0) r(0,dirHuman,0) 
-		i(peopleAsset)
 		label("person")
 		color( _ThematicRouter ("Pedestrian","pedestrian"))
-		deleteUV(_Texture_Switch)
+		i(peopleAsset)
+		Delete_Texture
 	else:
 		NIL
 
@@ -3770,11 +3762,11 @@ BridgeMaterial(color_chooser) -->
 		color(color_chooser)
 		setupProjection(0,scope.xy,~12,~9,0,0,0) projectUV(0)
 		texture(Default_Pavement)
-		deleteUV(_Texture_Switch)
+		Delete_Texture
 	else:
 		setupProjection(0,scope.xy,~12,~9) projectUV(0)
 		texture(Default_Pavement)
-		deleteUV(_Texture_Switch)
+		Delete_Texture
 	
 	
 RailMaterial -->
