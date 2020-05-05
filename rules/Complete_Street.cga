@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 05/3/2020
+ * Last Updated: 05/4/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -783,8 +783,7 @@ const _crosswalkBeginWidth	   = case Crosswalk_Begin =="none": 0 else: (Crosswal
 const _crosswalkEndWidth 	   = case Crosswalk_End =="none"  : 0 else: (Crosswalk_Width)
 const _centerWidth	 		   = case oneWay || Center_Type=="None": 0 
 							     case Center_Type != "None" && find(Center_Type,"Centerline",0)==-1: Center_Width
-							     else:PaintLineWidth*4
-const _Texture_Switch		   = case bool(Display_Textures): 4 else: 0 # This switch will delete the opacity map UV if texturing is on- transparencys mess with the tree transparencies anyway. If you want UVset 4 you can change the 4 to a 999 and it should work...but only through an unhandled exception					  
+							     else:PaintLineWidth*4				  
 const _Bike_Paint_Adjuster	   = case Bike_Paint_Line_Sides=="Right"||Bike_Paint_Line_Sides=="None":1 else:2
 const _EmptySpace			   = (streetWidth-(nLanesTotal* Lane_Width +_LeftSplitSum +_RightSplitSum+_centerWidth+_Transit_Lane_Widths))/2  # is Per Side-so combined is this *2
 const _AdjEmptySpace		   = (_EmptySpace*2)
@@ -1526,17 +1525,17 @@ ApproachMarkings(dir,lanenumber,lanestotal,markings) -->	# is used for textures 
 	normalizeUV(0,v,separatePerFace)
 	scaleUV(0,1,(case (lanenumber==lanestotal-1):.95 else: 1))# Scale UV in V direction slightly to remove light line on lane closer to centerline. 
 	texture(LanesFolder+"/lanes_4"+markings+"_14x14m.jpg")
-	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Auto","drive_lane"))#If Display Thematics==Usage, goes to usage, if not, Thematic.
 	ModeReporter("Auto")
+	Delete_Texture
 	#TODO-More combinations
 MainLaneMarkings(dir,lanenumber,markings)-->	
 	tileUV(0,~14,~ Lane_Width )				# the tileUV operation makes sure that one unit in u-space corresponds to approx 14 meters, the v-coord is not touched in the case of 0 as parameter
 	scaleUV(0,_uScale,1/4)				    # flip direction if needed, handle short lanes with _uScale, and scaling the v coord for the texture (e.g. a street with 2 lanes has v coords from 0 to 2, this means it has to map onto 0 to 2/8 on our texture with its 8 lanes)	
 	texture( LanesFolder+"/lanes_4"+markings+"_14x14m.jpg")
-	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Auto","drive_lane"))#If Display Thematics==Usage, goes to usage, if not, Thematic.
 	ModeReporter ("Auto")
+	Delete_Texture
 #This rule contains the reports for the lanes defined by the lanes rule, no bike/pking lanes etc. 
 LaneReporting(dir,lanestotal,lanenumber,stopType,laneType)-->
 	report("Lane Width.Actual Lane Width (ft)",geometry.dv(0,unitSpace)*Feet) #Used to provide lane widths in feet
@@ -1682,16 +1681,16 @@ Metal_Texture-->
 	setupProjection(0,scope.xz,5,5)
 	texture(MiscFolder +"/Metal_Texture.jpg")
 	projectUV(0)
-	deleteUV(_Texture_Switch)
+	Delete_Texture
 	
 Bus_Lane_Stamp(dir)-->
 	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
- 			rotateUV(0,90)
-			tileUV(0,~Transit_Lane_Width,~ Transit_Lane_Width ) 
-			texture(LanesFolder+"/BusLaneStamp"+(case Bus_Lane_Color=="black":"_black" else:"")+".jpg")#If Black change the stamp chosen, might make more elegant later. 
-	deleteUV(_Texture_Switch)
+ 	rotateUV(0,90)
+	tileUV(0,~Transit_Lane_Width,~ Transit_Lane_Width ) 
+	texture(LanesFolder+"/BusLaneStamp"+(case Bus_Lane_Color=="black":"_black" else:"")+".jpg")#If Black change the stamp chosen, might make more elegant later. 
 	color( _ThematicRouter ("Transit","bus_lane"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	ModeReporter ("Transit")
+	Delete_Texture
 	
 HOV_Lane_Texture_Rule(dir)-->
 	split(v,unitSpace,0){PaintLineWidth*2*_PaintLineControl("Right", Transit_Paint_Line_Sides ):AsphaltPainted("yellow","Shared Mobility","hov_lane")
@@ -1712,9 +1711,9 @@ HOVlaneStamp(dir)-->
  	rotateUV(0,90)
 	tileUV(0,~ Transit_Lane_Width ,~Transit_Lane_Width )#Lane width is used for texture size because it can repeat if need for large streets and because it allows the text to stay in scale with that of a Bus or car. 
 	texture(LanesFolder+"/HOV_Diamond"+".jpg")#If Black change the stamp chosen, might make more elegant later. 
-	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Shared Mobility","hov_lane"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	ModeReporter("Shared Mobility")
+	Delete_Texture
 ##############################################################
 #Non-Carlane Split Space- This is the space where 
 #parking, bike, and buffer lanes are constructed. 
@@ -1777,9 +1776,9 @@ BikeLaneStamp(Stamp_Width,FileEnd, Color)-->
 	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
 	tileUV(0,~Stamp_Width,~Stamp_Width)
 	texture(LanesFolder+"/street_1bike_"+FileEnd)
-	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Bikeways","bike_lane"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	ModeReporter ("Bikeways")
+	Delete_Texture
 
 ConflictZone(passedcolor)-->
 	split(u,unitSpace,0){~1: AsphaltPainted(passedcolor,"Conflict Zones","conflict_marking")|~1:Asphalt("Conflict Zones","conflict_marking")}*
@@ -1838,9 +1837,9 @@ Cycle_Track_ObjIns(Object_Type,Buffer_File,Width)-->
 	s(0,0,0)
 	i(ObjectFolder+Buffer_File)
 	label(Object_Type)
-	deleteUV(_Texture_Switch)
 	report("Objects."+Object_Type+ " Count",1)
 	center(xz)
+	Delete_Texture
 
 Buffer_Tree_Split-->
 	split(u,unitSpace,0) {Buffer_StartGap:NIL
@@ -1863,9 +1862,9 @@ Buffer_Top-->
 
 Buffer_Texture-->
 	tileUV(0,2,2) texture(Sidewalk_Texture)
-	deleteUV(_Texture_Switch)
 	scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
 	rotateUV(0, Sidewalk_Texture_Rotation)
+	Delete_Texture
 
 Shoulder(Dir)-->
 	case Dir==0:
@@ -1882,8 +1881,8 @@ Striped_Buffer(Buffer_Width)-->
 	rotateUV(0,90)
 	tileUV(0,~ Buffer_Width ,~Buffer_Width*1.5 )
 	texture(LanesFolder+"/street_1bike_"+"buffer2.jpg")
-	deleteUV(_Texture_Switch)
 	ModeReporter ("Bikeways")
+	Delete_Texture
 
 #Bike Box Creation Rule- controls the splits for the bike box. Works best if Bike lane is adjacent to sidewalk.
 BikeBoxCreation(dir)-->
@@ -2027,9 +2026,9 @@ DoBi_Scooter_Parking_Stamp(Side,ParkingWidth,ParkingLength)-->
 	setupProjection(0,scope.xz,'1,'1)
 	texture(LanesFolder +"/MicromobilityParking.jpg")
 	projectUV(0)
-	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Shared Mobility","bike_parking"))			
 	ModeReporter("Shared Mobility")
+	Delete_Texture
 
 Carshare_Parking_Split(Side,Color,ParkingWidth,ParkingLength)-->
 	split(u,unitSpace,0) {~ParkingLength:Carshare_Parking_Allocation(Side,Color,ParkingWidth,ParkingLength)}*
@@ -2051,9 +2050,9 @@ Carshare_Parking_Stamp(Side)-->
 	scaleUV(0,case (Side=="Right" || Lane_Distribution==1) && Lane_Distribution!=0:1 else: -1,
 	case (Side=="Right" || Lane_Distribution==1) && Lane_Distribution!=0:1 else: -1)
 	scaleUV(0,case rightHandTraffic: 1 else: -1,case rightHandTraffic: 1 else: -1)
-	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Shared Mobility","parking_lane"))
-	ModeReporter("Shared Mobility")		
+	ModeReporter("Shared Mobility")
+	Delete_Texture
 		
 Bus_Stop_Allocation(Side,Color,StampWidth)-->
 	report("Curbside Management.Bus Stop Length (m)",geometry.du(0,unitSpace))
@@ -2073,17 +2072,17 @@ Bus_Stop_Stamp(Side,Color)-->
 	projectUV(0)
 	scaleUV(0,case Side=="Right":1 else: -1,case Side=="Right":1 else: -1)
 	scaleUV(0,case rightHandTraffic: 1 else: -1,case rightHandTraffic: 1 else: -1)
-	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Transit","bus_pull_in"))
+	Delete_Texture
 	
 	
 Project_Zebra_Stripe(Color,Mode_Class,LabelID)-->
 	setupProjection(0,scope.xz,'1,'1)
 	texture(LanesFolder +"/crosswalk_zebra_"+Color+".jpg")
 	projectUV(0)
-	deleteUV(_Texture_Switch)
 	color( _ThematicRouter (Mode_Class,LabelID))
 	ModeReporter(Mode_Class)
+	Delete_Texture
 
 Parklet_Insert(ParkingLength,Rotation)-->
 	alignScopeToGeometry(yUp, largest, 1)
@@ -2106,9 +2105,9 @@ AngledNoseIn(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,Parkin
  	tileUV(0,~ParkingLength,~ParkingWidth)
 	texture(LanesFolder+"/AngledParking.jpg")
 	color( _ThematicRouter ("Storage","parking_lane"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-	deleteUV(_Texture_Switch)
 	ParkingReport(Side,case SpaceNumber==1: false else:true,false)#Don't include last spot
 	ModeReporter("Storage")
+	Delete_Texure
 	
 AngledNoseOutParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
 	AngledParkingCar((case Side=="Right":0 else:2),ParkingType,ParkingLength, ParkingWidth,SpaceNumber)
@@ -2118,10 +2117,10 @@ AngledNoseOutParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLengt
  							(case Parking_Protection_Bool :-1 else:1)))
  		tileUV(0,~ParkingLength,~ParkingWidth)
 		texture(LanesFolder+"/AngledParking.jpg")
-	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Storage","parking_lane"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	ParkingReport(Side,case SpaceNumber==1: false else:true,false) #Don't include last spot
 	ModeReporter("Storage")
+	Delete_Texture
 	
 ParallelParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
 	case SpaceNumber==TotalSpacesonSide-2:#1 from index total, 1 from additional split- Start
@@ -2165,9 +2164,8 @@ ParkingInsertCap (Rotation,Obj_Path)-->
 	tileUV(0,7,7)
 	cleanupGeometry(all,0.001)
 	texture(LanesFolder+"/asphalt_painted_white_7x7m.jpg")
-	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Storage","parking_lane"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-
+	Delete_Texture
 
 ParallelParkingTexture(Side,ParkingLength,ParkingWidth,ReportBool)-->
  	scaleUV(0,1,(case Side=="Right":
@@ -2190,8 +2188,8 @@ ParallelParkingCarStep2(dir,ParkingLength, ParkingWidth) -->
 	label("parked car")
 	t(0,0,(ParkingLength/2))#+1) 
 	center(x)
-	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Storage","car"))
+	Delete_Texture
 	
 AngledParkingCar(dir,ParkingType,ParkingLength, ParkingWidth,SpaceNumber)-->
 	case p(Parked_Car_Percentage)&& SpaceNumber!=1: #Don't include last spot
@@ -2208,7 +2206,7 @@ AngledParkingCarStep2(DirsenseFlip,NoseSenseFlip,Rotation_Angle,ParkingLength, P
 	rotateScope(0,NoseSenseFlip*-Rotation_Angle,0)
 	i(vehicleAsset("car"))
 	label("parked car")
-	deleteUV(_Texture_Switch)
+	Delete_Texture
 	
 ParkingReport(Side,Rear_Edge_Case,Delete_Geo)-->#This edge case parameter only makes sure the correct number of parking spaces is reported. 
 	case Delete_Geo:
@@ -2380,9 +2378,9 @@ CenterTurnLaneStamp(texture_choice,degree)-->
 	rotateUV(0,degree)
 	tileUV(0, '1 ,'1)
 	texture(LanesFolder+"/Center_"+texture_choice+"Lane"+".jpg")
-	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Auto","center_turn_lane"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	ModeReporter ("Auto")
+	Delete_Texture
 	
 Bike_Box_Left_Turn_Gap(street_side)--> #If Bike boxes are on for the correct side 
 	case street_side=="Begin": split (u,unitSpace,0) {PaintLineWidth:AsphaltPainted("white","Conflict Zones","bike_lane")
@@ -2397,7 +2395,8 @@ Barrier-->
 	rotateUV(0,90)
 	normalizeUV(0,u,collectiveAllFaces)
 	insertAlongUV(0,ObjectFolder+"/Jersey_Barrier.obj",1.2)
-	deleteUV(_Texture_Switch)
+	Delete_Texture
+	
 #Raised Curb and Street_Pavement-
 #This code is a fairly modular is called by several different rules. #Dir is 0 for right, 2, left, 1 middle or not assigned.
 Raised_Curb(Location,Dir)-->
@@ -2423,9 +2422,9 @@ Raised_Curb_End_Extrusion(Mode,Dir)-->
 	color( _ThematicRouter(Mode,case Mode == "Bikeways":"bike_buffer" else:"median"))
 	texture(Sidewalk_Texture)
 	projectUV(0)
-	deleteUV(_Texture_Switch)
 	scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
 	rotateUV(0, Sidewalk_Texture_Rotation)
+	Delete_Texture
 
 Raised_Curb_Forced_Ends(Location,Dir)-->
 	Cut_And_Fill_Reporting(Location)
@@ -2484,9 +2483,9 @@ General_Sidewalk_Texture(Location)-->
 		setupProjection(0,scope.zy,2,2,0,0,1)
 		texture(Sidewalk_Texture)
 		projectUV(0)
-		deleteUV(_Texture_Switch)
 		scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
 		rotateUV(0, Sidewalk_Texture_Rotation)
+		Delete_Texture
 
 Median_Top_Setup(Dir)-->
 	case Dir==0:
@@ -2627,27 +2626,26 @@ Median_Plant_Base-->
 Median_Planting-->
 	case Median_Ground_Cover =="Random":
 		tileUV(0,2,2) texture(Random_Grass)
-		deleteUV(_Texture_Switch)
 		Pervious_Reporting
+		Delete_Texture
 	else:
 		tileUV(0,2,2)texture(GrassFolder+"/"+ Median_Ground_Cover + ".jpg")
-		deleteUV(_Texture_Switch)
 		Pervious_Reporting
+		Delete_Texture
 
 OpenSpace_Planting-->
 	scatter(surface,geometry.du(0,unitSpace)/3,uniform) { Tree_Setup("Median", Median_Tree_1_Percentage , Median_Tree_1_Type,Median_Tree_2_Type, Median_Tree_1_Height, Median_Tree_2_Height ) }
 	tileUV(0,2,2) texture(Random_Grass)
-	deleteUV(_Texture_Switch)
 	Pervious_Reporting
+	Delete_Texture
 	
 WalkWay_Texture-->
 	tileUV(0,2,2) texture(Sidewalk_Texture)
-	deleteUV(_Texture_Switch)
 	scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
 	rotateUV(0, Sidewalk_Texture_Rotation)
 	color( _ThematicRouter ("Pedestrian","median"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	report("Center.Median Walkway Area (m^2)",geometry.area())
-
+	Delete_Texture
 #Object Loading Insertion
 Master_Split(Boulevard_Side,Start_Condition, Location,Dir)-->#The Bus Stop, Bike Racks, and WayFinder are put here. 
 	case Start_Condition:
@@ -2858,15 +2856,15 @@ CrosswalkStripes(stripeWidth) -->
 	cleanupGeometry(all, 0.001) 
 	tileUV(0,0,~1) scaleUV(0,1,1/8/stripeWidth) 		# to setup the v-direction: a continental crosswalk line is 1m width, and the texture contains 8 of these.
 	texture(LanesFolder + "/crosswalk_continental_"+ Crosswalk_Color +".jpg")
-	deleteUV(_Texture_Switch)
+	Delete_Texture
 	
 CrosswalkWalkway(reporting)-->
 	case reporting:
 		tileUV(0,2,2) texture(Custom_Crosswalk_Texture)
-		deleteUV(_Texture_Switch)
+		Delete_Texture
 	else:
 		tileUV(0,2,2) texture(Custom_Crosswalk_Texture)
-		deleteUV(_Texture_Switch)
+		Delete_Texture
 		
 CrosswalkRaised(uvSet)-->
 	split(u,uvSpace,uvSet){ 0.4: Insert_Slope(Sidewalk_Height,case uvSet==1:180 else: 0)
@@ -2881,7 +2879,7 @@ Insert_Slope(height,rotation)-->
 	setupProjection (0,scope.yz, 2, 2, 2, 2,1)
 	texture(Custom_Crosswalk_Texture)
 	projectUV(0)
-	deleteUV(_Texture_Switch)
+	Delete_Texture
 ###################################################
 # Other default Start Rules of the graph
 #
@@ -2949,7 +2947,7 @@ Green -->
 	translate(rel,world,0, Sidewalk_Height ,0)
 	setupProjection(0,scope.yx,2,2) projectUV(0)
 	texture(Random_Grass)
-	deleteUV(_Texture_Switch)
+	Delete_Texture
 	Pervious_Reporting
 	
 Tree_Scatter-->
@@ -2996,12 +2994,12 @@ Curbs(RotateUV) -->
   		setupProjection(0,scope.yx,~2,'1)#Notice axis choice changed. 
   		texture(SidewalkFolder+"/curbs_2m.jpg")
   		projectUV(0)
-  		deleteUV(_Texture_Switch)	
+  		Delete_Texture	
   	else:		
   		setupProjection(0,scope.xy,~2,'1)
   		texture(SidewalkFolder+"/curbs_2m.jpg")
   		projectUV(0)
-  		deleteUV(_Texture_Switch)
+  		Delete_Texture
   		
 Sidewalk_Setup-->
 	case sidewalkSide=="Right":
@@ -3136,24 +3134,24 @@ Sidewalk_Pavement (Location) -->
 		alignScopeToAxes(y)
 		tileUV(0,2,2)
 		texture(Sidewalk_Texture)
-		deleteUV(_Texture_Switch)
 		scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
 		rotateUV(0, Sidewalk_Texture_Rotation)
 		report("Sidewalk."+Location+" Area (m^2)",geometry.area())
+		Delete_Texture
 	case Location=="Building Side":
 		setupProjection(0,scope.xy,2, 2)
 		texture(Sidewalk_Texture)
 		projectUV(0)
-		deleteUV(_Texture_Switch)
 		scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
 		rotateUV(0, Sidewalk_Texture_Rotation)
+		Delete_Texture
 	else:
 		alignScopeToAxes(y)
 		tileUV(0,2,2)
 		texture(Sidewalk_Texture)
-		deleteUV(_Texture_Switch)
 		scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
 		rotateUV(0, Sidewalk_Texture_Rotation)
+		Delete_Texture
 		
 Sidewalk_WPlant_Loading_Section (Dir)-->
 	split(u,unitSpace,0){(_Sidewalk_CrossStop_Gap(Dir,"Begin")): Sidewalk_Pavement ("Cross Walk Begin Gap")
@@ -3253,16 +3251,16 @@ Allocate_Planting_Area-->
 Sidewalk_Planting--># THis is set up this way to support a vegetated buffer with no trees on sidewalk
 		case Sidewalk_Ground_Cover =="None":
 		tileUV(0,2,2) texture(Random_Grass)
-		deleteUV(_Texture_Switch)
 		Pervious_Reporting
+		Delete_Texture
 		case Sidewalk_Ground_Cover =="Random":
 		tileUV(0,2,2) texture(Random_Grass)
-		deleteUV(_Texture_Switch)
 		Pervious_Reporting
+		Delete_Texture
 		else:
 		tileUV(0,2,2)texture(GrassFolder+"/"+ Sidewalk_Ground_Cover + ".jpg")
-		deleteUV(_Texture_Switch)
 		Pervious_Reporting
+		Delete_Texture
 		
 Planting_Curb(Planting_Spacing)-->
 	case Sidewalk_Planting_Border == "Curb":
@@ -3290,24 +3288,24 @@ Asphalt(Usage,LabelID) -->
 		tileUV(0,14,14)
 		cleanupGeometry(all, 0.001)
 		texture( LanesFolder+"/asphalt_14x14m.jpg")
-		deleteUV(_Texture_Switch)
 		color( _ThematicRouter (Usage,LabelID))#If Display Thematics==Usage, goes to usage, if not, Thematic-strings might have other purpose later. 
 		ModeReporter(Usage)
+		Delete_Texture
 		
 Asphalt -->
 		tileUV(0,14,14)
 		cleanupGeometry(all, 0.001)
 		texture( LanesFolder+"/asphalt_14x14m.jpg")
-		deleteUV(_Texture_Switch)
+		Delete_Texture
 
 AsphaltPainted(paintColor,Usage,LabelID) -->
 	case paintColor!="black":# This makes sure that if the color is black, it is thrown into Asphalt Reporting
 		tileUV(0,7,7)
 		cleanupGeometry(all,0.001)
 		texture(LanesFolder+"/asphalt_painted_" + paintColor + "_7x7m.jpg")
-		deleteUV(_Texture_Switch)
 		color( _ThematicRouter (Usage,LabelID))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 		ModeReporter(Usage)
+		Delete_Texture
 	else:#If Black redirect to asphalt rule.
 		Asphalt(Usage,LabelID)
 
@@ -3316,7 +3314,7 @@ AsphaltPainted(paintColor) -->
 		tileUV(0,7,7)
 		cleanupGeometry(all,0.001)
 		texture(LanesFolder+"/asphalt_painted_" + paintColor + "_7x7m.jpg")
-		deleteUV(_Texture_Switch)
+		
 	else:#If Black redirect to asphalt rule.
 		Asphalt
 
@@ -3807,9 +3805,9 @@ Rumble_Strip-->
 	tileUV(0,~Rumble_Strip_Len,~Rumble_Strip_Wid)
 	rotateUV(0,90)
 	texture(LanesFolder+"/Rumble_Strip.jpg")
-	deleteUV(_Texture_Switch)
 	color( _ThematicRouter ("Auto"))
 	ModeReporter("Auto")
+	Delete_Texture
 	
 Drainage-->
 	case geometry.dv(0,unitSpace)> Lane_Width /3 && Space_Management=="Flag":#Will flag the drainage area as Red if it is >1/3 the laneWidth-I mean really 1/3 of a lane is drainage? Put a bike lane or something
@@ -3818,13 +3816,13 @@ Drainage-->
 		texture(LanesFolder+"/Drainage_Side.jpg")
 		color( _ThematicRouter ("Conflict Zones"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 	
 		color(.7,0,0)
-		deleteUV(_Texture_Switch)
+		Delete_Texture
 	else:
 		tileUV(0,~1,'1)
 		cleanupGeometry(all, 0.001)
 		texture(LanesFolder+"/Drainage_Side.jpg")
 		color( _ThematicRouter ("Conflict Zones"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-		deleteUV(_Texture_Switch)
+		Delete_Texture
 		
 Enclose_Shape-->
 	set(material.opacity,0)#Make it transparent
@@ -3852,17 +3850,17 @@ FenceTexture -->
 	setupProjection(0, scope.xy, ~1.2, '1)
 	projectUV(0)
 	texture(MiscFolder+"/Fence/wireTexture.png")
-	deleteUV(_Texture_Switch)
+	Delete_Texture
 	case Boulevard_Center_Type=="Gate Fence":
 	setupProjection(0, scope.xy, ~4, '1)
 	projectUV(0)
 	texture(MiscFolder+"/Fence/aluminumPerimeter.png")
-	deleteUV(_Texture_Switch)
+	Delete_Texture
 	else:
 	setupProjection(0, scope.xy, ~1.2, ~1)
 	projectUV(0)
 	texture(MiscFolder+"/Fence/wireTexture.png")
-	deleteUV(_Texture_Switch)
+	Delete_Texture
 
 FencePoles -->
 	case  Boulevard_Center_Type=="Chain Link Fence":
