@@ -2627,17 +2627,14 @@ Median_Planting-->
 	case Median_Ground_Cover =="Random":
 		tileUV(0,2,2) texture(Random_Grass)
 		Pervious_Reporting
-		Delete_Texture
 	else:
 		tileUV(0,2,2)texture(GrassFolder+"/"+ Median_Ground_Cover + ".jpg")
 		Pervious_Reporting
-		Delete_Texture
 
 OpenSpace_Planting-->
 	scatter(surface,geometry.du(0,unitSpace)/3,uniform) { Tree_Setup("Median", Median_Tree_1_Percentage , Median_Tree_1_Type,Median_Tree_2_Type, Median_Tree_1_Height, Median_Tree_2_Height ) }
 	tileUV(0,2,2) texture(Random_Grass)
 	Pervious_Reporting
-	Delete_Texture
 	
 WalkWay_Texture-->
 	tileUV(0,2,2) texture(Sidewalk_Texture)
@@ -2947,7 +2944,6 @@ Green -->
 	translate(rel,world,0, Sidewalk_Height ,0)
 	setupProjection(0,scope.yx,2,2) projectUV(0)
 	texture(Random_Grass)
-	Delete_Texture
 	Pervious_Reporting
 	
 Tree_Scatter-->
@@ -3252,15 +3248,12 @@ Sidewalk_Planting--># THis is set up this way to support a vegetated buffer with
 		case Sidewalk_Ground_Cover =="None":
 		tileUV(0,2,2) texture(Random_Grass)
 		Pervious_Reporting
-		Delete_Texture
 		case Sidewalk_Ground_Cover =="Random":
 		tileUV(0,2,2) texture(Random_Grass)
 		Pervious_Reporting
-		Delete_Texture
 		else:
 		tileUV(0,2,2)texture(GrassFolder+"/"+ Sidewalk_Ground_Cover + ".jpg")
 		Pervious_Reporting
-		Delete_Texture
 		
 Planting_Curb(Planting_Spacing)-->
 	case Sidewalk_Planting_Border == "Curb":
@@ -3800,11 +3793,12 @@ Pervious_Reporting-->
 	case peakRunoffDisplayOn:
 		report("Vegetation.Pervious Area",geometry.area)
 		color(0,0,1)
-		X.
+		Delete_Texture
+		
 	else:
 		report("Vegetation.Pervious Area",geometry.area)
 		color( _ThematicRouter ("Plantings","planting_area"))#If Display Thematics==Usage, goes to usage, if not, Thematic.
-		X.
+		Delete_Texture
 
 Cut_And_Fill_Reporting(Text_Fill)-->
 	report("Cut/Fill.Total "+Text_Fill+" Cut/Fill Volume (m^3)", geometry.area()*Sidewalk_Height)
