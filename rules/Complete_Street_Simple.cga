@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 05/4/2020
+ * Last Updated: 05/8/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -3436,8 +3436,18 @@ BikeAsset(Bike_Lane_Width) -->
 	r(scopeCenter,0,90,0)
 	i(bikeAsset) 
 	label("bicylist")
-	color( _ThematicRouter ("Bikeways","bicyclist"))
-	Delete_Texture# will only color when textures are removed. 
+	Delete_Color_Texture("Bikeways","bicyclist")
+	
+Delete_Color_Texture(Mode,label)-->
+	case thematicsOn && !texturingOn:
+		deleteUV(0)
+		color( _ThematicRouter (Mode,label))
+	case thematicsOn:
+		color( _ThematicRouter (Mode,label))
+	case !texturingOn:
+		deleteUV(0)		
+	else:
+		X.
 
 Delete_Texture-->
 	case texturingOn: 
