@@ -1107,7 +1107,7 @@ _DeviateValue(value,percent_deviation)=
 
 ################################################
 #Thematic Functions
-const SemanticSegs="car;pedestrian;bus;planting_area;bike_lane;truck;parking_lane;bike_buffer;lamp;hov_lane;centerline;median;center_turn_lane;asphalt;bicyclist;bus_lane;drive_lane;stop_bar;crosswalk;sidewalk;bus_pull_in;passenger_loading;freight_loading;bike_parking;traffic_light;vegetation;"
+const SemanticSegs="car;pedestrian;bus;planting_area;bike_lane;truck;parking_lane;bike_buffer;lamp;hov_lane;centerline;median;center_turn_lane;asphalt;bus_lane;drive_lane;stop_bar;crosswalk;sidewalk;bus_pull_in;passenger_loading;freight_loading;bike_parking;traffic_light;vegetation;bicyclist;"
 const SemanticSegsSize = listSize(SemanticSegs)
 _ThematicRouter(Usage,LabelID)	=
 	case Display_Thematics == "Semantic":
@@ -3428,7 +3428,7 @@ BikeAsset(Bike_Lane_Width) -->
 	s(0,0,0) 
 	r(scopeCenter,0,90,0)
 	i(bikeAsset) 
-	label("bicylist")
+	label("bicyclist")
 	Delete_Color_Texture("Bikeways","bicyclist")
 	
 Delete_Color_Texture(Mode,label)-->
