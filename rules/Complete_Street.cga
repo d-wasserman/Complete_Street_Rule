@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 05/8/2020
+ * Last Updated: 05/13/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -1408,7 +1408,13 @@ Street -->	#DeleteUV if texturing is off
 	case Specularity==1 && Transparency==0:
 		Short_Long_Street
 	else:
+		Short_Long_Street_Altered
+		
+Short_Long_Street_Altered-->
+	case Transparency>0 && Specularity==1:
 		set(material.opacity,1-Transparency)
+		Short_Long_Street
+	else:
 		set(material.specular.g,Specularity)
 		set(material.specular.b,Specularity)
 		set(material.specular.r,Specularity)
@@ -2958,7 +2964,13 @@ Sidewalk-->
 	case Specularity==1 && Transparency==0:
 		Sidewalk_Generation
 	else:
+		Sidewalk_Generation_Altered
+		
+Sidewalk_Generation_Altered-->		
+	case Transparency>0 && Specularity==1:
 		set(material.opacity,1-Transparency)
+		Sidewalk_Generation
+	else:
 		set(material.specular.g,Specularity)
 		set(material.specular.b,Specularity)
 		set(material.specular.r,Specularity)
