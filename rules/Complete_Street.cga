@@ -1535,7 +1535,7 @@ ApproachMarkings(dir,lanenumber,lanestotal,markings) -->	# is used for textures 
 	ModeReporter("Auto")
 	Delete_Texture
 	#TODO-More combinations
-MainLaneMarkings(dir,lanenumber,markings)-->	
+MainLaneMarkings(dir,lanenumber,markings)--> #Ground Textured Rule	
 	tileUV(0,~14,~ Lane_Width )				# the tileUV operation makes sure that one unit in u-space corresponds to approx 14 meters, the v-coord is not touched in the case of 0 as parameter
 	scaleUV(0,_uScale,1/4)				    # flip direction if needed, handle short lanes with _uScale, and scaling the v coord for the texture (e.g. a street with 2 lanes has v coords from 0 to 2, this means it has to map onto 0 to 2/8 on our texture with its 8 lanes)	
 	texture( LanesFolder+"/lanes_4"+markings+"_14x14m.jpg")
@@ -1682,14 +1682,14 @@ Rail_Inset-->
 						  Rail_Depth: extrude(-Rail_Depth) comp(f){side:Metal_Texture|top:Metal_Texture NoGeometryModeReporter("Transit")}|
 						  Rail_Depth:Metal_Texture}
 
-Metal_Texture-->
+Metal_Texture--> #Ground Textured Rule
 	normalizeUV(0,uvUniform,separatePerFace)
 	setupProjection(0,scope.xz,5,5)
 	texture(MiscFolder +"/Metal_Texture.jpg")
 	projectUV(0)
 	Delete_Texture
 	
-Bus_Lane_Stamp(dir)-->
+Bus_Lane_Stamp(dir)--> #Ground Textured Rule
 	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
  	rotateUV(0,90)
 	tileUV(0,~Transit_Lane_Width,~ Transit_Lane_Width ) 
@@ -1698,7 +1698,7 @@ Bus_Lane_Stamp(dir)-->
 	ModeReporter ("Transit")
 	Delete_Texture
 	
-HOV_Lane_Texture_Rule(dir)-->
+HOV_Lane_Texture_Rule(dir)--> #Ground Textured Rule
 	split(v,unitSpace,0){PaintLineWidth*2*_PaintLineControl("Right", Transit_Paint_Line_Sides ):AsphaltPainted("yellow","Shared Mobility","hov_lane")
 							#Level 1-First split indentation
 							|~1:split(u,unitSpace,0){2:Asphalt("Shared Mobility","hov_lane")
@@ -1712,7 +1712,7 @@ HOV_Lane_Texture_Rule(dir)-->
 							|PaintLineWidth*2*_PaintLineControl("Left", Transit_Paint_Line_Sides ):AsphaltPainted("yellow","Shared Mobility","hov_lane")}
 	MixedTrafficOnLane (dir,-999,-999)
 
-HOVlaneStamp(dir)-->
+HOVlaneStamp(dir)--> #Ground Textured Rule
 	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
  	rotateUV(0,90)
 	tileUV(0,~ Transit_Lane_Width ,~Transit_Lane_Width )#Lane width is used for texture size because it can repeat if need for large streets and because it allows the text to stay in scale with that of a Bus or car. 
@@ -1778,7 +1778,7 @@ BikeLaneLines-->
 						|Bike_Conflict_Spacing:ConflictZone("white")
 						|1:AsphaltPainted("white","Bikeways","bike_lane")}
 
-BikeLaneStamp(Stamp_Width,FileEnd, Color)-->
+BikeLaneStamp(Stamp_Width,FileEnd, Color)--> #Ground Textured Rule
 	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
 	tileUV(0,~Stamp_Width,~Stamp_Width)
 	texture(LanesFolder+"/street_1bike_"+FileEnd)
@@ -1866,7 +1866,7 @@ Buffer_Top-->
 	else:
 		Buffer_Texture
 
-Buffer_Texture-->
+Buffer_Texture--> #Ground Textured Rule
 	tileUV(0,2,2) texture(Sidewalk_Texture)
 	scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
 	rotateUV(0, Sidewalk_Texture_Rotation)
@@ -1883,7 +1883,7 @@ Shoulder(Dir)-->
 								|PaintLineWidth:AsphaltPainted("white","Auto","asphalt")}
 
 
-Striped_Buffer(Buffer_Width)-->
+Striped_Buffer(Buffer_Width)--> #Ground Textured Rule
 	rotateUV(0,90)
 	tileUV(0,~ Buffer_Width ,~Buffer_Width*1.5 )
 	texture(LanesFolder+"/street_1bike_"+"buffer2.jpg")
@@ -2026,7 +2026,7 @@ Passenger_Loading_Allocation(Side,ParkingWidth,ParkingLength)-->
 DoBi_Scooter_Parking(Side,ParkingWidth,ParkingLength)-->
 	split(u,unitSpace,0){.025:Asphalt("Shared Mobility","bike_parking")|{~.5: DoBi_Scooter_Parking_Stamp(Side,ParkingWidth,ParkingLength)|.025:Asphalt("Shared Mobility","bike_parking")}*}
 
-DoBi_Scooter_Parking_Stamp(Side,ParkingWidth,ParkingLength)-->
+DoBi_Scooter_Parking_Stamp(Side,ParkingWidth,ParkingLength)--> #Ground Textured Rule
 	report("Curbside Management.DoBi & Scooter Parking Length (m)",geometry.du(0,unitSpace))
 	alignScopeToGeometry(yUp, largest, 0)
 	setupProjection(0,scope.xz,'1,'1)
@@ -2048,7 +2048,7 @@ Carshare_Parking_Allocation(Side,Color,ParkingWidth,ParkingLength)-->
 				PaintLineWidth:AsphaltPainted("green","Shared Mobility","parking_lane")}*|
 			PaintLineWidth:AsphaltPainted("green","Shared Mobility","parking_lane")}
 			
-Carshare_Parking_Stamp(Side)-->
+Carshare_Parking_Stamp(Side)--> #Ground Textured Rule
 	alignScopeToGeometry(yUp, largest, 0)
 	setupProjection(0,scope.zx,'1,'1)
 	texture(LanesFolder +"/CarshareOnly.jpg")
@@ -2071,7 +2071,7 @@ Bus_Stop_Allocation(Side,Color,StampWidth)-->
 				PaintLineWidth:AsphaltPainted("white","Transit","bus_pull_in")}|
 			PaintLineWidth:AsphaltPainted("white","Transit","bus_pull_in")}
 
-Bus_Stop_Stamp(Side,Color)-->
+Bus_Stop_Stamp(Side,Color)--> #Ground Textured Rule
 	alignScopeToGeometry(yUp, largest, 0)
 	setupProjection(0,scope.zx,'1,'1)
 	texture(LanesFolder +"/BusStopStamp_"+Color+".jpg")
@@ -2082,7 +2082,7 @@ Bus_Stop_Stamp(Side,Color)-->
 	Delete_Texture
 	
 	
-Project_Zebra_Stripe(Color,Mode_Class,LabelID)-->
+Project_Zebra_Stripe(Color,Mode_Class,LabelID)--> #Ground Textured Rule
 	setupProjection(0,scope.xz,'1,'1)
 	texture(LanesFolder +"/crosswalk_zebra_"+Color+".jpg")
 	projectUV(0)
@@ -2162,7 +2162,7 @@ ParkingEndCap(Side,Rotation,Obj_Path)-->
 	split(v,unitSpace,0){0.6:split(u,unitSpace,0){0.6: NIL
 						|~1:NIL|0.6:ParkingInsertCap(Rotation,Obj_Path) }|~1:NIL}
 
-ParkingInsertCap (Rotation,Obj_Path)-->
+ParkingInsertCap (Rotation,Obj_Path)--> #Ground Textured Rule
 	alignScopeToGeometry(yUp,largest,0)
 	rotateScope(0,Rotation,0)
 	i(StencilFolder+Obj_Path)
@@ -2379,7 +2379,7 @@ CenterLineMarkings(line_color) -->
 					 ~PaintLineWidth:AsphaltPainted(line_color,"Auto","centerline")}
 	color( _ThematicRouter ("Auto","centerline"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 		
 	
-CenterTurnLaneStamp(texture_choice,degree)-->
+CenterTurnLaneStamp(texture_choice,degree)--> #Ground Textured Rule
 	normalizeUV(0,v,collectiveAllFaces)
 	rotateUV(0,degree)
 	tileUV(0, '1 ,'1)
@@ -2423,7 +2423,7 @@ Raised_Curb_End(Location,Dir)-->
 	Cut_And_Fill_Reporting(Location)
 	comp (f) {top:Raised_Curb_End_Extrusion(case Location == "Buffer":"Bikeways"  else:"Pedestrian",Dir)}
 	
-Raised_Curb_End_Extrusion(Mode,Dir)-->
+Raised_Curb_End_Extrusion(Mode,Dir)--> #Ground Textured Rule
 	extrude(Sidewalk_Height)
 	color( _ThematicRouter(Mode,case Mode == "Bikeways":"bike_buffer" else:"median"))
 	texture(Sidewalk_Texture)
@@ -2485,7 +2485,7 @@ Street_Pavement(Boulevard_Side,Location,Dir)-->
 		extrude(world.y, Sidewalk_Height )
 		WalkWay_Texture
 		
-General_Sidewalk_Texture(Location)-->	
+General_Sidewalk_Texture(Location)--> #Ground Textured Rule	
 		setupProjection(0,scope.zy,2,2,0,0,1)
 		texture(Sidewalk_Texture)
 		projectUV(0)
@@ -2642,7 +2642,7 @@ OpenSpace_Planting-->
 	tileUV(0,2,2) texture(Random_Grass)
 	Pervious_Reporting
 	
-WalkWay_Texture-->
+WalkWay_Texture--> #Ground Textured Rule
 	tileUV(0,2,2) texture(Sidewalk_Texture)
 	scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
 	rotateUV(0, Sidewalk_Texture_Rotation)
@@ -2855,13 +2855,13 @@ CrosswalkDashed(uvSet) -->
 						  | ~1  : Asphalt
 						  | 0.17: CrosswalkStripes(0.6) }	
 
-CrosswalkStripes(stripeWidth) -->
+CrosswalkStripes(stripeWidth) --> #Ground Textured Rule
 	cleanupGeometry(all, 0.001) 
 	tileUV(0,0,~1) scaleUV(0,1,1/8/stripeWidth) 		# to setup the v-direction: a continental crosswalk line is 1m width, and the texture contains 8 of these.
 	texture(LanesFolder + "/crosswalk_continental_"+ Crosswalk_Color +".jpg")
 	Delete_Texture
 	
-CrosswalkWalkway(reporting)-->
+CrosswalkWalkway(reporting)--> #Ground Textured Rule
 	case reporting:
 		tileUV(0,2,2) texture(Custom_Crosswalk_Texture)
 		Delete_Texture
@@ -2946,7 +2946,7 @@ IslandWithGreen -->
 	comp(f){ inside: Tree_Scatter
 		   | border: setupProjection(0,scope.xy,'1,'1) projectUV(0) Curbs_Mass(false) }
 
-Green -->
+Green --> #Ground Textured Rule
 	translate(rel,world,0, Sidewalk_Height ,0)
 	setupProjection(0,scope.yx,2,2) projectUV(0)
 	texture(Random_Grass)
@@ -2996,7 +2996,7 @@ Curbs_Mass(RotateUV,Height)--> #Overload Curbs_Mass
 	comp(f) {top:Curbs(RotateUV)|side:Curbs(false)}
 
 
-Curbs(RotateUV) --> 
+Curbs(RotateUV) --> #Ground Textured Rule 
   	case RotateUV:#Used to handle an exception where scope changes on horizontal curbs (parallel to crosswalk)
   		rotateUV(0,270) 
   		setupProjection(0,scope.yx,~2,'1)#Notice axis choice changed. 
@@ -3137,7 +3137,7 @@ Parking_Meter_Loader(Parking_Length,Dir)-->
 						 |~Parking_Meters_Spacing:NIL}*
 						 |(_Sidewalk_CrossStop_Gap(Dir,"End")):NIL}
 
-Sidewalk_Pavement (Location) -->
+Sidewalk_Pavement (Location) --> #Ground Textured Rule
 	case Location== "Through Zone" || Location=="Corners":
 		alignScopeToAxes(y)
 		tileUV(0,2,2)
@@ -3256,7 +3256,7 @@ Allocate_Planting_Area-->
 	Sidewalk_Planting
 	Tree_Setup("Sidewalk", Sidewalk_Tree_1_Percentage , Sidewalk_Tree_1_Type, Sidewalk_Tree_2_Type, Sidewalk_Tree_1_Height, Sidewalk_Tree_2_Height )
 	
-Sidewalk_Planting--># THis is set up this way to support a vegetated buffer with no trees on sidewalk
+Sidewalk_Planting--> #Ground Textured Rule# THis is set up this way to support a vegetated buffer with no trees on sidewalk
 		case Sidewalk_Ground_Cover =="None":
 		tileUV(0,2,2) texture(Random_Grass)
 		Pervious_Reporting
@@ -3289,7 +3289,7 @@ Sign_Objects_Insert(Object_Identity,File_Extension,RotationAng,Translation,SX,SY
 ##################################################
 #Paint & Asphalt Reporting	
 #Asphalt Painted is actually retrofitted to be the paint and mode reporting aggregator, all "Paint Areas" originate here. 
-Asphalt(Usage,LabelID) -->
+Asphalt(Usage,LabelID) --> #Ground Textured Rule
 		tileUV(0,14,14)
 		cleanupGeometry(all, 0.001)
 		texture( LanesFolder+"/asphalt_14x14m.jpg")
@@ -3297,13 +3297,13 @@ Asphalt(Usage,LabelID) -->
 		ModeReporter(Usage)
 		Delete_Texture
 		
-Asphalt -->
+Asphalt --> #Ground Textured Rule
 		tileUV(0,14,14)
 		cleanupGeometry(all, 0.001)
 		texture( LanesFolder+"/asphalt_14x14m.jpg")
 		Delete_Texture
 
-AsphaltPainted(paintColor,Usage,LabelID) -->
+AsphaltPainted(paintColor,Usage,LabelID) --> #Ground Textured Rule
 	case paintColor!="black":# This makes sure that if the color is black, it is thrown into Asphalt Reporting
 		tileUV(0,7,7)
 		cleanupGeometry(all,0.001)
@@ -3314,7 +3314,7 @@ AsphaltPainted(paintColor,Usage,LabelID) -->
 	else:#If Black redirect to asphalt rule.
 		Asphalt(Usage,LabelID)
 
-AsphaltPainted(paintColor) -->
+AsphaltPainted(paintColor) --> #Ground Textured Rule
 	case paintColor!="black":# This makes sure that if the color is black, it is thrown into Asphalt Reporting
 		tileUV(0,7,7)
 		cleanupGeometry(all,0.001)
@@ -3770,7 +3770,7 @@ BridgeSolid -->
 		set(material.dirtmap,LanesFolder+"/dirtmap.1.512x512.jpg")
         BridgeMaterial("No Color") }
 
-BridgeMaterial(color_chooser) -->
+BridgeMaterial(color_chooser) --> #Ground Textured Rule
 	case find(str(color_chooser),"#",0)!=-1:
 		color(color_chooser)
 		setupProjection(0,scope.xy,~12,~9,0,0,0) projectUV(0)
@@ -3782,7 +3782,7 @@ BridgeMaterial(color_chooser) -->
 		Delete_Texture
 	
 	
-RailMaterial -->
+RailMaterial --> #Ground Textured Rule
 	case texturingOn:
 		set(material.specular.r, 1) set(material.specular.g, 1) set(material.specular.b, 1)
 		set(material.shininess, 20)
@@ -3817,7 +3817,7 @@ Cut_And_Fill_Reporting(Text_Fill)-->
 	NIL
 
 
-Rumble_Strip-->
+Rumble_Strip--> #Ground Textured Rule
 	tileUV(0,~Rumble_Strip_Len,~Rumble_Strip_Wid)
 	rotateUV(0,90)
 	texture(LanesFolder+"/Rumble_Strip.jpg")
@@ -3825,7 +3825,7 @@ Rumble_Strip-->
 	ModeReporter("Auto")
 	Delete_Texture
 	
-Drainage-->
+Drainage--> #Ground Textured Rule
 	case geometry.dv(0,unitSpace)> Lane_Width /3 && Space_Management=="Flag":#Will flag the drainage area as Red if it is >1/3 the laneWidth-I mean really 1/3 of a lane is drainage? Put a bike lane or something
 		tileUV(0,~1,'1)
 		cleanupGeometry(all, 0.001)
