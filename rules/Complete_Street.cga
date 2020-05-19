@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 05/13/2020
+ * Last Updated: 05/18/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -1127,6 +1127,25 @@ _ColorByLabel(LabelID,LabelList,ListSize,colorType)=
 _SemanticClassifier(LabelID)=
 	_ColorByLabel(LabelID,SemanticSegs,SemanticSegsSize,"spectrum")
 
+_Construct_PBR_Path(color_map_path,type) = 
+	case type == "col":
+		color_map_path
+	case type == "norm":
+		replace(color_map_path,"_basecolor","_normal")
+	case type == "disp":
+		replace(color_map_path,"_basecolor.jpg","_height.png")
+	case type == "roug":
+		replace(color_map_path,"_basecolor","_roughness")
+	case type == "aocc":
+		replace(color_map_path,"_basecolor","_ambientOcculsion")
+	case type == "spec":
+		replace(color_map_path,"_basecolor","_metallic")
+	case type == "meta":
+		replace(color_map_path,"_basecolor","_specularity")
+	else:
+		print("No correct type specified for path.")
+		
+	
 		
 _ModeClassifier(Usage)	=
 	case Usage=="Shared Mobility":
@@ -2479,19 +2498,27 @@ Street_Pavement(Boulevard_Side,Location,Dir)-->
 		comp(f){top=Median_Plant_Side(0,Dir)} #Does not have all options for median, auto oriented median.
 	case Location=="Median Offset":#Extruded sidewalk texture with sides. 
 		extrude(world.y, Sidewalk_Height)
-		comp(f) {top= General_Sidewalk_Texture ("Median Offset")
-			|side= General_Sidewalk_Texture ("Median Offset")}
+		comp(f) {top= General_Sidewalk_Texture
+			|side= General_Sidewalk_Texture}
 	else:
 		extrude(world.y, Sidewalk_Height )
 		WalkWay_Texture
 		
-General_Sidewalk_Texture(Location)--> #Ground Textured Rule	
-		setupProjection(0,scope.zy,2,2,0,0,1)
-		texture(Sidewalk_Texture)
-		projectUV(0)
-		scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
-		rotateUV(0, Sidewalk_Texture_Rotation)
-		Delete_Texture
+General_Sidewalk_Texture--> #Ground Textured Rule	
+	texture(Sidewalk_Texture)
+	projectUV(0)
+	scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
+	rotateUV(0, Sidewalk_Texture_Rotation)
+	set(material.roughness,0.8)
+    set(material.metallic,1.0)
+	Delete_Texture
+	
+	#set(material.colormap,_Construct_PBR_Path(Sidewalk_Texture,"col")) 
+	#set(material.roughnessmap,_Construct_PBR_Path(Sidewalk_Texture,"roug"))
+	#set(material.normalmap, _Construct_PBR_Path(Sidewalk_Texture,"norm"))
+	#set(material.occlusionmap, _Construct_PBR_Path(Sidewalk_Texture,"aocc"))
+	#set(material.metallicmap, _Construct_PBR_Path(Sidewalk_Texture,"meta"))
+  
 
 Median_Top_Setup(Dir)-->
 	case Dir==0:
@@ -2980,6 +3007,7 @@ Sidewalk_Generation-->
 	BridgeSide
 	set(sidewalkWidth,scope.sz)
 	set(sidewalkLength,scope.sx)
+	setupProjection(0,scope.xz,2,2,0,0,1)
 	color( _ThematicRouter ("Pedestrian","sidewalk"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	report("Cut/Fill.Total Sidewalk Cut/Fill Volume (m^3)", geometry.area()*Sidewalk_Height)
 	split(v,unitSpace,0){Curb_Depth: Curbs_Mass(false) 
@@ -3139,27 +3167,11 @@ Parking_Meter_Loader(Parking_Length,Dir)-->
 
 Sidewalk_Pavement (Location) --> #Ground Textured Rule
 	case Location== "Through Zone" || Location=="Corners":
-		alignScopeToAxes(y)
-		tileUV(0,2,2)
-		texture(Sidewalk_Texture)
-		scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
-		rotateUV(0, Sidewalk_Texture_Rotation)
 		report("Sidewalk."+Location+" Area (m^2)",geometry.area())
-		Delete_Texture
-	case Location=="Building Side":
-		setupProjection(0,scope.xy,2, 2)
-		texture(Sidewalk_Texture)
-		projectUV(0)
-		scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
-		rotateUV(0, Sidewalk_Texture_Rotation)
-		Delete_Texture
+		General_Sidewalk_Texture
 	else:
-		alignScopeToAxes(y)
-		tileUV(0,2,2)
-		texture(Sidewalk_Texture)
-		scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
-		rotateUV(0, Sidewalk_Texture_Rotation)
-		Delete_Texture
+		General_Sidewalk_Texture
+	
 		
 Sidewalk_WPlant_Loading_Section (Dir)-->
 	split(u,unitSpace,0){(_Sidewalk_CrossStop_Gap(Dir,"Begin")): Sidewalk_Pavement ("Cross Walk Begin Gap")
