@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 05/18/2020
+ * Last Updated: 05/24/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -59,7 +59,7 @@
 #1 feet		==.3048  Meters
 #1/2 feet	==.1524  Meters
 #1 inch		==.0254  Meters
-version "2019.1"
+version "2020.0"
 
 
 
@@ -1424,6 +1424,10 @@ hexString(hexValue) =
 # split away the crosswalks at the beginning (if any) using the special UVSET 1
 @StartRule
 Street -->	#DeleteUV if texturing is off
+	set(material.name,"Road_Bed")
+	Initial_Street_Settings
+	
+Initial_Street_Settings-->
 	case Specularity==1 && Transparency==0:
 		Short_Long_Street
 	else:
@@ -1559,7 +1563,7 @@ MainLaneMarkings(dir,lanenumber,markings)--> #Ground Textured Rule
 	scaleUV(0,_uScale,1/4)				    # flip direction if needed, handle short lanes with _uScale, and scaling the v coord for the texture (e.g. a street with 2 lanes has v coords from 0 to 2, this means it has to map onto 0 to 2/8 on our texture with its 8 lanes)	
 	texture( LanesFolder+"/lanes_4"+markings+"_14x14m.jpg")
 	color( _ThematicRouter ("Auto","drive_lane"))#If Display Thematics==Usage, goes to usage, if not, Thematic.
-	ModeReporter ("Auto")
+	ModeReporter("Auto")
 	Delete_Texture
 #This rule contains the reports for the lanes defined by the lanes rule, no bike/pking lanes etc. 
 LaneReporting(dir,lanestotal,lanenumber,stopType,laneType)-->
@@ -1862,6 +1866,7 @@ Cycle_Track_ObjIns(Object_Type,Buffer_File,Width)-->
 	s(0,0,0)
 	i(ObjectFolder+Buffer_File)
 	label(Object_Type)
+	set(material.name,str(Object_Type))
 	report("Objects."+Object_Type+ " Count",1)
 	center(xz)
 	Delete_Texture
@@ -2116,6 +2121,7 @@ Parklet_Insert(ParkingLength,Rotation)-->
  	t(Parklet_Shift,0,0)
  	report("Objects.Parklet Count",1)
  	i(Parklet_Object)
+ 	set(material.name,"Parklet")
  	label("Parklet")
  	Delete_Texture
  	
@@ -2132,7 +2138,7 @@ AngledNoseIn(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,Parkin
 	color( _ThematicRouter ("Storage","parking_lane"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	ParkingReport(Side,case SpaceNumber==1: false else:true,false)#Don't include last spot
 	ModeReporter("Storage")
-	Delete_Texure
+	Delete_Texture
 	
 AngledNoseOutParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
 	AngledParkingCar((case Side=="Right":0 else:2),ParkingType,ParkingLength, ParkingWidth,SpaceNumber)
@@ -2211,6 +2217,7 @@ ParallelParkingCarStep2(dir,ParkingLength, ParkingWidth) -->
 	s(0,0,0)
 	i(vehicleAsset("car"))
 	label("parked car")
+	set(material.name,"parked_car")
 	t(0,0,(ParkingLength/2))#+1) 
 	center(x)
 	color( _ThematicRouter ("Storage","car"))
@@ -2629,6 +2636,7 @@ Bus_Stop_Insert(Object_Identity,File_Extension,RotationAng,Translation)-->
 		t(0,0,Translation)
 		report("Objects."+Object_Identity+" Count",1)
 		i(File_Extension)
+		set(material.name,str(Object_Identity))
 		Delete_Texture
 		
 Bus_Objects_Insert(Object_Identity,File_Extension,RotationAng,Translation,SX,SY,SZ)-->#Bus Object Constructor Method
@@ -2640,6 +2648,7 @@ Bus_Objects_Insert(Object_Identity,File_Extension,RotationAng,Translation,SX,SY,
 		s(SX,SY,SZ)
 		center(xz)
 		i(File_Extension)
+		set(material.name,str(Object_Identity))
 		Delete_Texture
 		
 Bike_Rack_Split(RotationAng,Translation)-->
@@ -2756,6 +2765,7 @@ Lamp_Center_Asset(Side_Rotation,Shape_Edge,Dir,Offset)-->
 	color( _ThematicRouter ("Pedestrian","lamp"))
 	label("Street Lamp")
 	i(Street_Lamp_Object)
+	set(material.name,str("Street_Lamp"))
 	Delete_Texture
 	
 ##########################################
@@ -2769,6 +2779,7 @@ Median_TreeSplit-->
 Tree_Setup(Location,Percentage1,Tree_Type1,Tree_Type2,Tree_Height1,Tree_Height2)-->	                     				
 		s(0,0,0)       // set scope
 		r(scopeCenter, 0,rand(0,360),0)// random rotate
+		set(material.name,"Planting")
 		alignScopeToAxes(y)
 		center(xz)
 		Tree_Location_Setup(Location,Percentage1,Tree_Type1,Tree_Type2,Tree_Height1,Tree_Height2)	
@@ -2918,18 +2929,21 @@ Insert_Slope(height,rotation)-->
 @StartRule
 Joint-->
 	set(material.opacity,1-Transparency)
+	set(material.name,"Road_Bed_Joint")
 	BridgeMain
 	report("Connection Shape Area.Joint Area",geometry.area())#Only reports given to Joints
 	Asphalt("Auto","asphalt")
 @StartRule
 Junction --> 
 	set(material.opacity,1-Transparency)
+	set(material.name,"Road_Bed_Junction")
 	BridgeMain
 	report("Connection Shape Area.Intersection Area",geometry.area())
 	Asphalt("Auto","asphalt")
 @StartRule
 Freeway -->
 	set(material.opacity,1-Transparency)
+	set(material.name,"Road_Bed_Freeway")
 	report("Connection Shape Area.Freeway Area",geometry.area())#Only reports given to freeways. 
 	set(streetWidth,geometry.dv(0,unitSpace))
 	set( Lane_Width ,streetWidth/geometry.dv(0,uvSpace))
@@ -2941,6 +2955,7 @@ Freeway -->
 @StartRule
 Crossing -->
 	set(material.opacity,1-Transparency)
+	set(material.name,"Road_Bed_Crossing")
 	BridgeMain
 	report("Connection Shape Area.Crossing Area", geometry.area())#Only reports given to crossings
 	Asphalt("Auto","asphalt")
@@ -2948,6 +2963,7 @@ Crossing -->
 @StartRule
 FreewayEntry -->
 	set(material.opacity,1-Transparency)
+	set(material.name,"Road_Bed_FreewayEntry")
 	report("Connection Shape Area.Freeway Entry Area",geometry.area())#Only reports given to freeways. 
 	set(streetWidth,geometry.dv(0,unitSpace))
 	set(Lane_Width ,streetWidth/geometry.dv(0,uvSpace))
@@ -2961,12 +2977,28 @@ FreewayEntry -->
 #
 @StartRule
 Roundabout   --> 
-	case valency>1: set(material.opacity,1-Transparency) Asphalt("Auto","asphalt") BridgeMain#split(v,unitSpace,0){ 1: MainLaneMarkings(0,split.index,"_stripes_white") }* 
-	else		  : set(material.opacity,1-Transparency) Asphalt("Auto","asphalt") BridgeMain							# cul-de-sac is Asphalt only
+	case valency>1: 
+		set(material.opacity,1-Transparency)
+		set(material.name,"Road_Bed_Roundabout")
+		Asphalt("Auto","asphalt") 
+		BridgeMain#split(v,unitSpace,0){ 1: MainLaneMarkings(0,split.index,"_stripes_white") }* 
+	else		  : 
+		set(material.opacity,1-Transparency) 
+		set(material.name,"Road_Bed_Roundabout")
+		Asphalt("Auto","asphalt") 
+		BridgeMain							# cul-de-sac is Asphalt only
 @StartRule
 RoundaboutIsland --> 
-	case Sidewalk_Ground_Cover !="None": set(material.opacity,1-Transparency) IslandWithGreen BridgeMain
-	else		  : set(material.opacity,1-Transparency) Asphalt("Auto","asphalt")	BridgeMain# cul-de-sac is Asphalt only
+	case Sidewalk_Ground_Cover !="None": 
+		set(material.opacity,1-Transparency)
+		set(material.name,"Road_Bed_Roundabout") 
+		IslandWithGreen 
+		BridgeMain
+	else		  : 
+		set(material.opacity,1-Transparency) 
+		set(material.name,"Road_Bed_Roundabout")
+		Asphalt("Auto","asphalt")	
+		BridgeMain# cul-de-sac is Asphalt only
 @StartRule
 IslandWithGreen -->
 	offset(- Sidewalk_Height )
@@ -2988,6 +3020,10 @@ Tree_Scatter-->
 #
 @StartRule
 Sidewalk-->
+	set(material.name,"Road_Bed_Sidewalk")
+	Initial_Sidewalk_Settings
+	
+Initial_Sidewalk_Settings-->
 	case Specularity==1 && Transparency==0:
 		Sidewalk_Generation
 	else:
@@ -3118,6 +3154,7 @@ Traffic_Light(index)-->
 Traffic_Light_Asset(index)-->
 	r(0,180,0)
 	t(0,0,0.1)
+	set(material.name,"Traffic_Light")
 	report("Objects.Traffic Lights Count", 1)
 	i(Traffic_Light_Object)
 	label("Traffic Light")
@@ -3137,6 +3174,7 @@ LampAsset(offset) -->
 	t( SLight_Translate_X ,0, SLight_Translate_Z )
 	r(0,90,0)
 	t(offset,0,0)
+	set(material.name,"Street_Lamp")
 	label("Street Lamp")
 	color( _ThematicRouter ("Pedestrian","lamp"))
 	i(Street_Lamp_Object)
@@ -3243,6 +3281,7 @@ Bench_Insert-->
 	case SBench_Toggle:
  		t( SBench_Translate_X ,0, SBench_Translate_Z )
 		i(Bench_Object)
+		set(material.name,"Bench")
 		label("Bench")
 		Delete_Texture
 	else:
@@ -3294,6 +3333,7 @@ Sign_Objects_Insert(Object_Identity,File_Extension,RotationAng,Translation,SX,SY
 		t(scope.sx-SX,0,0)
 		t(Translation,0,0)
 		i(File_Extension)
+		set(material.name,"Signs")
 		label("Signs")
 		s(SX,SY,SZ)
 		report("Objects."+Object_Identity+" Count",1)
@@ -3322,6 +3362,7 @@ AsphaltPainted(paintColor,Usage,LabelID) --> #Ground Textured Rule
 		texture(LanesFolder+"/asphalt_painted_" + paintColor + "_7x7m.jpg")
 		color( _ThematicRouter (Usage,LabelID))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 		ModeReporter(Usage)
+		set(material.name,str(material.name)+"_"+str(paintColor))
 		Delete_Texture
 	else:#If Black redirect to asphalt rule.
 		Asphalt(Usage,LabelID)
@@ -3406,6 +3447,7 @@ VehicleAsset(type) -->
 	r(0,DirectionalRotation,0) 
 	i(vehicleAsset(type))
 	label(type)
+	set(material.name,str(type))
 	color( _ThematicRouter (case type=="bus":"Transit" else:"Auto",case type=="bus":"bus"else:"car"))
 	Delete_Texture
 
@@ -3453,6 +3495,7 @@ BikeAsset(Bike_Lane_Width) -->
 	r(scopeCenter,0,90,0)
 	i(bikeAsset) 
 	label("bicyclist")
+	set(material.name,"Bicyclist")
 	Delete_Color_Texture("Bikeways","bicyclist")
 	
 Delete_Color_Texture(Mode,label)-->
@@ -3505,6 +3548,7 @@ Human -->
 		label("person")
 		color( _ThematicRouter ("Pedestrian","pedestrian"))
 		i(peopleAsset)
+		set(material.name,"Person")
 		Delete_Texture
 	else:
 		NIL
@@ -3815,11 +3859,13 @@ RailMaterialStep2 -->
 #
 Pervious_Reporting-->
 	case peakRunoffDisplayOn:
+		set(material.name,"Planting_Area")
 		report("Vegetation.Pervious Area",geometry.area)
 		color(0,0,1)
 		Delete_Texture
 		
 	else:
+		set(material.name,"Planting_Area")
 		report("Vegetation.Pervious Area",geometry.area)
 		color( _ThematicRouter ("Plantings","planting_area"))#If Display Thematics==Usage, goes to usage, if not, Thematic.
 		Delete_Texture
