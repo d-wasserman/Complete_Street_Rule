@@ -1,7 +1,7 @@
 /*
  * File:    Paint_Drawing_Rule.cga
  * Created: 10/25/2018 Oct
- * Last Updated:5/14/2019
+ * Last Updated:5/31/2020
  * Author:  David J. Wasserman
  * License: Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -24,37 +24,37 @@
  import cs: "rules/Complete_Street.cga"
  #Attributes
  @Group("Control Setting",1)
- @Order(1)@Range("Asphalt","Green Paint","White Paint","Yellow Paint", "Red Paint")@Description("Describes what is allocated to this one shape.")
+ @Order(1)@Enum("Asphalt","Green Paint","White Paint","Yellow Paint", "Red Paint")@Description("Describes what is allocated to this one shape.")
  @Enum("Asphalt","Green Paint","White Paint","Yellow Paint", "Red Paint")
  @Handle(shape=Main_Allocation_Start,type=selector,reference=center,slip=inside,occlusion=false,color="#FF6644")
  attr Main_Allocation = "White Paint"
- @Order(2)@Range(0,10) @Description("Height of stamp element.")
+ @Order(2)@Range(min=0,max=10) @Description("Height of stamp element.")
  @Handle(shape=Main_Allocation_Start, axis=y,reference=center,align=right,translate={.1,0,0}, slip=screen,color="#6666FF")
  attr Element_Height = cs.sharrowHeight
- @Order(3)@Range("true","false") @Description("If true, this setting will make the component dashed with asphalt every half-meter.")
+ @Order(3)@Enum("true","false") @Description("If true, this setting will make the component dashed with asphalt every half-meter.")
  @Handle(shape=Main_Allocation_Start,axis=y,reference=center,align=center,translate={-.1,0,0},slip=inside,color ="#2244FF",type=selector)@Enum("true","false")
  attr Dashed_Element = "false"
- @Order(4) @Range(0,2) @Description("If there are dashed elements, this describes the width between them.")
+ @Order(4) @Range(min=0,max=2) @Description("If there are dashed elements, this describes the width between them.")
  @Handle(shape=Main_Allocation_Rule,axis=z,reference=center,align=center,translate={-.5,-.2,0},slip=inside,color ="#2244FF",type=linear)
  attr Dashed_Width = .5
- @Order(5) @Range("true","false") @Description("Adds a white paint edge to dashed elements.")
+ @Order(5) @Enum("true","false") @Description("Adds a white paint edge to dashed elements.")
  @Handle(shape=Main_Allocation_Rule,axis=y,reference=right,align=right,translate={-.1,0,0},slip=inside,color ="#22DDFF",type=selector)@Enum("true","false")
  attr Paint_Edge_Element = "true"
- @Order(6) @Range(0,360) @Description("Rotation along Z axis for scope of painted area.")
+ @Order(6) @Range(min=0,max=360) @Description("Rotation along Z axis for scope of painted area.")
  attr Z_Rotation = 0
- @Order(7) @Range(0,10) @Description("Setback amount from outside of the shape. Gives a painted shape a white outline.")
+ @Order(7) @Range(min=0,max=10) @Description("Setback amount from outside of the shape. Gives a painted shape a white outline.")
  attr Outline_Thickness = 0
  
  
- @Group("DISPLAY OPTIONS",2) @Range("true","false")@Order(1)@Description("When true, textures are on display, when false textures are removed. If true it deletes an unused UVset (see comments for details).")
+ @Group("DISPLAY OPTIONS",2) @Enum("true","false")@Order(1)@Description("When true, textures are on display, when false textures are removed. If true it deletes an unused UVset (see comments for details).")
 attr Display_Textures = "true"
 @Order(2) @Description("Visually colors the entire street model based on the attributes of a street. Usage thematic looks best when textures are turned off.")
-@Range("Thematics Off", "Solid Color", "Peak Runoff/Permeability","Bike Preference","Pedestrian Preference","Auto Preference","Transit Preference","All Mode Preference","Usage","Transit Highlight","Bicycle Highlight","Auto Highlight","Pedestrian Highlight","Planting Highlight","Shared Mobility Highlight","Flood Scenario")
+@Enum("Thematics Off", "Solid Color", "Peak Runoff/Permeability","Bike Preference","Pedestrian Preference","Auto Preference","Transit Preference","All Mode Preference","Usage","Transit Highlight","Bicycle Highlight","Auto Highlight","Pedestrian Highlight","Planting Highlight","Shared Mobility Highlight","Flood Scenario")
 attr Display_Thematics = "Thematics Off" 
 @Order(3) @Color @Description("When the Solid Color thematic is used for highlighting certain streets or mode classes, this chooses the color that is utilized by the thematic.") #@Hidden
 attr Solid_Color = "#FFFFFF"
 @Order(4) @Description("This is the choice of Mode being represented by the chosen surface. Used in reporting and thematics.")
-@Range("Bikeways","Pedestrian","Auto","Transit","Shared Mobility","Conflict Zones")
+@Enum("Bikeways","Pedestrian","Auto","Transit","Shared Mobility","Conflict Zones")
 attr Mode_Choice = _default_mode(Main_Allocation)
 @Order(5) @Description("Texture used when texturing curbs.") @File ("tif","jpg","png","tiff","gif","jpeg","psp","jsl","sgi","tga","bmp","dds")
 attr Custom_Paint_Texture = _paint_path(_find_color(Main_Allocation))
@@ -133,9 +133,9 @@ Custom_Texture_Stamp -->
 	setupProjection(0,scope.zx,6,6,0,0,1)
 	texture(Custom_Paint_Texture)
 	projectUV(0)
-	deleteUV(cs._Texture_Switch)
 	color(cs._ThematicRouter (Mode_Choice))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	cs.ModeReporter(Mode_Choice)
+	cs.Delete_Texture
  	
 
 Painted_Asphalt(paint_color)-->
@@ -146,9 +146,9 @@ Painted_Asphalt_Stamp(paint_color)-->
 	setupProjection(0,scope.zx,6,6,0,0,1)
 	texture(_paint_path(paint_color))
 	projectUV(0)
-	deleteUV(cs._Texture_Switch)
 	color(cs._ThematicRouter (Mode_Choice))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	cs.ModeReporter(Mode_Choice)
+	cs.Delete_Texture
  	
 Asphalt(Mode)-->
 	extrude(world.up,Element_Height)
@@ -161,7 +161,7 @@ Asphalt_Stamp(Mode)-->
 	setupProjection(0,scope.zx,14,14,0,0,1)
 	texture( cs.LanesFolder+"/asphalt_14x14m.jpg")
 	projectUV(0)
-	deleteUV(cs._Texture_Switch)
 	color(cs._ThematicRouter (Mode))#If Display Thematics==Usage, goes to usage, if not, Thematic-strings might have other purpose later. 
 	cs.ModeReporter(Mode)
+	cs.Delete_Texture
  

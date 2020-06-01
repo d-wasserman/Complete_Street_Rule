@@ -1,7 +1,7 @@
 /*
  * File:    Curb_Drawing_Rule.cga
  * Created: 10/25/2018 Oct
- * Last Updated:10/26/2018
+ * Last Updated:5/31/2020
  * Author:  David J. Wasserman
  * License: Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -26,24 +26,24 @@
  import Tree : "/ESRI.lib/rules/Plants/Plant_Loader.cga" 
  #Attributes
  @Group("Control Setting",1)
- @Order(1)@Range("Rounded Curb", "Formal Curb","Curb","Planting Curb")@Description("Describes what is allocated to this one shape.")
+ @Order(1)@Enum("Rounded Curb", "Formal Curb","Curb","Planting Curb")@Description("Describes what is allocated to this one shape.")
  @Enum("Rounded Curb", "Formal Curb","Curb","Planting Curb")
  @Handle(shape=Main_Allocation_Start,type=selector,reference=center,slip=inside,occlusion=false,color="#FF6644")
  attr Main_Allocation = "Rounded Curb"
- @Order(2)@Range(0,10) @Description("Height of stamp element.")
+ @Order(2)@Range(min=0,max=10) @Description("Height of stamp element.")
  @Handle(shape=Main_Allocation_Start, axis=y,reference=center,align=right,translate={.1,0,0}, slip=screen,color="#6666FF")
  attr Element_Height = case find(Main_Allocation,"Curb",0)!=-1:cs.Sidewalk_Height else: cs.sharrowHeight
- @Order(3)@Range("true","false") @Description("If true, this setting will make the component dashed with asphalt every half-meter.")
+ @Order(3)@Enum("true","false") @Description("If true, this setting will make the component dashed with asphalt every half-meter.")
  @Handle(shape=Main_Allocation_Start,axis=y,reference=center,align=center,translate={-.1,0,0},slip=inside,color ="#2244FF",type=selector)@Enum("true","false")
  attr Dashed_Element = "false"
- @Order(4) @Range(0,2) @Description("If there are dashed elements, this describes the width between them.")
+ @Order(4) @Range(min=0,max=2) @Description("If there are dashed elements, this describes the width between them.")
  @Handle(shape=Main_Allocation_Rule,axis=z,reference=center,align=center,translate={-.5,-.2,0},slip=inside,color ="#2244FF",type=linear)
  attr Dashed_Width = 1
  
- @Group("DISPLAY OPTIONS",2) @Range("true","false")@Order(1)@Description("When true, textures are on display, when false textures are removed. If true it deletes an unused UVset (see comments for details).")
+ @Group("DISPLAY OPTIONS",2) @Enum("true","false")@Order(1)@Description("When true, textures are on display, when false textures are removed. If true it deletes an unused UVset (see comments for details).")
 attr Display_Textures = "true"
 @Order(2) @Description("Visually colors the entire street model based on the attributes of a street. Usage thematic looks best when textures are turned off.")
-@Range("Thematics Off", "Solid Color", "Peak Runoff/Permeability","Bike Preference","Pedestrian Preference","Auto Preference","Transit Preference","All Mode Preference","Usage","Transit Highlight","Bicycle Highlight","Auto Highlight","Pedestrian Highlight","Planting Highlight","Shared Mobility Highlight","Flood Scenario")
+@Enum("Thematics Off", "Solid Color", "Peak Runoff/Permeability","Bike Preference","Pedestrian Preference","Auto Preference","Transit Preference","All Mode Preference","Usage","Transit Highlight","Bicycle Highlight","Auto Highlight","Pedestrian Highlight","Planting Highlight","Shared Mobility Highlight","Flood Scenario")
 attr Display_Thematics = "Thematics Off" 
 @Order(3) @Color @Description("When the Solid Color thematic is used for highlighting certain streets or mode classes, this chooses the color that is utilized by the thematic.") #@Hidden
 attr Solid_Color = "#FFFFFF"
@@ -93,11 +93,11 @@ Formal_Curb_Edge-->
 	
 Curb(Mode)-->
 	extrude(Element_Height)
-	comp (f) {all:cs.General_Sidewalk_Texture("Curb")} 
+	comp (f) {all:cs.General_Sidewalk_Texture} 
  
 Rounded_Curb(Mode)-->
  	envelope(world.up,Element_Height,Element_Height/2,45,Element_Height/2,45,Element_Height/2,45,Element_Height/2,45)
- 	comp(f) {all:cs.General_Sidewalk_Texture("Curb")}
+ 	comp(f) {all:cs.General_Sidewalk_Texture}
 
 Planting_Area-->
 	extrude(Element_Height)
@@ -119,7 +119,6 @@ Asphalt_Stamp(Mode)-->
 	setupProjection(0,scope.zx,14,14,0,0,1)
 	texture( cs.LanesFolder+"/asphalt_14x14m.jpg")
 	projectUV(0)
-	deleteUV(cs._Texture_Switch)
 	color(cs._ThematicRouter (Mode))#If Display Thematics==Usage, goes to usage, if not, Thematic-strings might have other purpose later. 
 	cs.ModeReporter(Mode)
 
@@ -127,7 +126,6 @@ Custom_Texture(text)-->
 	setupProjection(0,scope.zy,2,2,0,0,1)
 	texture(text)
 	projectUV(0)
-	deleteUV(cs._Texture_Switch)
 	scaleUV(0, cs.Sidewalk_Texture_Scale, cs.Sidewalk_Texture_Scale)
 	rotateUV(0, cs.Sidewalk_Texture_Rotation)
 
