@@ -93,11 +93,15 @@ Formal_Curb_Edge-->
 	
 Curb(Mode)-->
 	extrude(Element_Height)
-	comp (f) {all:cs.General_Sidewalk_Texture} 
+	
+	comp (f) {all:Sidewalk_Texture} 
+Sidewalk_Texture-->
+	setupProjection(0,scope.xy,2,2,0,0,1)
+	cs.General_Sidewalk_Texture
  
 Rounded_Curb(Mode)-->
  	envelope(world.up,Element_Height,Element_Height/2,45,Element_Height/2,45,Element_Height/2,45,Element_Height/2,45)
- 	comp(f) {all:cs.General_Sidewalk_Texture}
+ 	comp(f) {all:Sidewalk_Texture}
 
 Planting_Area-->
 	extrude(Element_Height)
