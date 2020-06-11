@@ -28,7 +28,14 @@ If you are new to using CityEngine, then the instructions on this [page](Instruc
 
 * Support for Asset Replacement: The rule will label relevant objects and shapes based on their location making it easier to replace assets in platforms such as TwinMotion, Unreal Engine, or Unity. 
 
-[![](http://img.youtube.com/vi/6t4TYrB0TZ4/0.jpg)](http://www.youtube.com/watch?v=6t4TYrB0TZ4 "Complete Street Rule Scenarios in TwinMotion")
+<div align="center">
+      <a href="http://www.youtube.com/watch?v=6t4TYrB0TZ4">
+     <img 
+      src="http://img.youtube.com/vi/6t4TYrB0TZ4/0.jpg" 
+      alt="Complete Street Rule Scenarios in TwinMotion 
+      style="width:100%;">
+      </a>
+</div>
 
 # Citations
 If you use the complete street rule in academic research or as part of professional reports, please cite the rule as the following: 
