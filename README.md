@@ -26,7 +26,9 @@ If you are new to using CityEngine, then the instructions on this [page](Instruc
 
 * Support for Multiple Levels of Detail (LOD): If LOD is set to High, the street will now pick default population parameters to make the street seem occupied. LOD Settings are now Low (Asset choice changes to reduce polygon count), Moderate (high polygon assets/choices), and High/Very High (high polygon assets and populated streets).
 
-![alt tag](/images/Road_Diet_Update.jpg)
+* Support for Asset Replacement: The rule will label relevant objects and shapes based on their location making it easier to replace assets in platforms such as TwinMotion, Unreal Engine, or Unity. 
+
+[![](http://img.youtube.com/vi/6t4TYrB0TZ4/0.jpg)](http://www.youtube.com/watch?v=6t4TYrB0TZ4 "Complete Street Rule Scenarios in TwinMotion")
 
 # Citations
 If you use the complete street rule in academic research or as part of professional reports, please cite the rule as the following: 

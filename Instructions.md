@@ -43,3 +43,5 @@ If all you need is the rule for your current project:
 # Additional Resources
 
 If you want more resources additional tutorials, documentation, and community Q&A pages on the rule can be found on its [wiki page](https://github.com/d-wasserman/Complete_Street_Rule/wiki/Complete-Street-Rule-Wiki). 
+
+![alt tag](/images/Road_Diet_Update.jpg)
