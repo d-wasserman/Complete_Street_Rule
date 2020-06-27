@@ -1,0 +1,13 @@
+The textures & assets used by the Complete Street Rule come from a variety of sources. They are listed here with a few notes:
+3D Models
+1. Bicycles & Persons come from LowPolygon3D.com (now TurboSquid) and were distributed under a previous license. 
+2. Vehicles come from updated CityEngine assets that are approved for distribution from this repo by Esri. 
+3. Other 3D models were created by Esri or by David Wasserman. 
+Textures
+1. Many textures originate from Esri from their own previous rule repositories for CityEngine. Many were remixed and edited in GIMP by David Wasserman. 
+2. Enhanced PBR Textures included in this repo come from:
+   a.https://cc0textures.com/ - by Lennart Demes
+   b.https://www.sharetextures.com/ - by an Architect Group
+
+Some of these textures were edited in GIMP 2.0 by David Wasserman. 
+
