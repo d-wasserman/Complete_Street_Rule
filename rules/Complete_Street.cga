@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 6/14/2020
+ * Last Updated: 6/27/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -255,7 +255,7 @@ attr Buffer_Object_Spacing		=_Default_Buffer_Object_Spacing
 attr Bike_Symbol_Spacing		= 24.5
 @Order(11)@Distance @Range(min=0,max=20) @Description("Creates conflict spacing made up by asphalt gaps in the bike lane for approaching interesections.")
 attr Bike_Conflict_Spacing		= 0
-@Order(12)@Enum("green","black","red","blue") @Description("Determines the color of the bike lane and bike box. Paint reporting costs adjust based on color choices.")
+@Order(12)@Enum("green","black","red","blue","yellow") @Description("Determines the color of the bike lane and bike box. Paint reporting costs adjust based on color choices.")
 attr Bike_Lane_Color			= case Bike_Lane_Type=="Sharrow" &&_Maxof(Left_Bike_Lane_Width,Right_Bike_Lane_Width)==0:"green" else: "black"
 @Order(13)@Enum("Both","Right", "Left", "None")@Description("Controls the white lines on the sides of preferential lanes.")#@Hidden
 attr Bike_Paint_Line_Sides  	="Both"
@@ -472,7 +472,7 @@ const TrafficControlFolder			= ObjectFolder +"/Dir_Traffic_controls"
 const TrafficSignFolder				= ObjectFolder +"/Dir_Traffic_signs"
 const LampsFolder					= ObjectFolder+"/Dir_Lamps"
 const MiscFolder					= CompleteStreetFolder +"/Misc"
-const StencilFolder					=  ObjectFolder+ "/Stencil"
+const StencilFolder					= ObjectFolder+ "/Stencil"
 #Paint Constants
 const ThickPaintLineWidth			= 0.5
 const PaintLineWidth				= 0.1 #uvSpace 36/256-about 4 in
@@ -505,6 +505,7 @@ const sharrowHeight					=0.005
 const Buffer_StartGap				=.2
 const BikeBox_Fraction				=.75
 const Center_Tube_Marker_Dist		=.1
+const L_to_W_Ratio_Bk			= 3 # MUTCD recommends a 72 in gap and length of symbol, gap, and arrows. Assuming a 6 ft lane, this is width of lane * 3
 const _Default_Buffer_Object_Spacing= case Buffer_Type=="Curb Buffer with Trees":8 case find(Buffer_Type,"Spaced Curb",0)!=-1:6 case Buffer_Type=="Cycle Track With Planters":2.5 else:1.5
 const BikeBoxGeometryThreshold		= Lane_Width *BikeBox_Fraction+_Maxof(Street_Right_Bike_Lane_Width,Street_Left_Bike_Lane_Width)-.1
 const Street_Right_Bike_Lane_Width	=	case find(Bike_Lane_Type,"Sidewalk",0)!=-1:0 else:Right_Bike_Lane_Width
@@ -1637,8 +1638,13 @@ Sharrow(dir,lanestotal,lanenumber)-->
 		
 Sharrow_Stamp(dir,lanestotal,lanenumber)-->
 	extrude(sharrowHeight)
-	comp(f) {all:BikeLaneStamp(1.5,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)}
-	
+	comp(f) {top: Sharrow_Stamp_Top
+			|side:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")}
+						
+Sharrow_Stamp_Top-->
+	AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")
+	alignScopeToGeometry(yUp,largest,longest)
+	BikeLaneSymbolStencil(1.5)	
 		
 Transit_Lane_Reporting(dir)--> #Reports based on shape geometry and sends to allocator
 	report("Lane Width.Transit Lane Width (ft)",geometry.dv(0,unitSpace)*Feet) #Used to provide lane widths in feet
@@ -1782,13 +1788,13 @@ BikeLane(sideflip,Width)-->#Was Left,now both, fairly modular
 							#Level 1-First split indentation
 							|~1:split(u,unitSpace,0){2:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")
 								#Level 2- sub-split indentation
-								| Width :BikeLaneStamp(Width  ,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
+								| Width*L_to_W_Ratio_Bk:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane") BikeLaneStencils(Width  ,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
 								|~ Bike_Symbol_Spacing :AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")
-								|{Width  :BikeLaneStamp(Width  ,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
+								|{Width*L_to_W_Ratio_Bk:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane") BikeLaneStencils(Width  ,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
 								|~ Bike_Symbol_Spacing :AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")}*
-								| _tooShort(geometry.du(0,unitSpace)-Bike_Conflict_Spacing,Bike_Symbol_Spacing)*_hasStopSideSwitch((case sideflip==1:0 else: 2))*Width  :BikeLaneStamp(Width,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
+								| _tooShort(geometry.du(0,unitSpace)-Bike_Conflict_Spacing,Bike_Symbol_Spacing)*_hasStopSideSwitch((case sideflip==1:0 else: 2))* Width*L_to_W_Ratio_Bk:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane") BikeLaneStencils(Width  ,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
 								| Bike_Conflict_Spacing :ConflictZone(Bike_Lane_Color)
-								|1:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")} 
+								|~1:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")} 
 							|PaintLineWidth*_PaintLineControl("Right", Bike_Paint_Line_Sides):BikeLaneLines}
 
 BikeLaneLines-->
@@ -1796,14 +1802,33 @@ BikeLaneLines-->
 						|Bike_Conflict_Spacing:ConflictZone("white")
 						|1:AsphaltPainted("white","Bikeways","bike_lane")}
 
-BikeLaneStamp(Stamp_Width,FileEnd, Color)--> #Ground Textured Rule
-	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
-	tileUV(0,~Stamp_Width,~Stamp_Width)
-	texture(LanesFolder+"/street_1bike_"+FileEnd)
-	color( _ThematicRouter ("Bikeways","bike_lane"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-	ModeReporter ("Bikeways")
-	Delete_Texture
+BikeLaneStencils(Stamp_Width,FileEnd, Color)-->
+	split(v,unitSpace,0) {~Stamp_Width/10:NIL|
+						 {~Stamp_Width:split(u,unitSpace,0){~1:BikeLaneSymbolStencil(Stamp_Width)|
+											 ~1:NIL|
+											 ~1:BikeLaneArrowSetUp(Stamp_Width)}|
+						 ~Stamp_Width/10:NIL}}
+BikeLaneArrowSetUp(Stamp_Width)--> 
+	split(v,unitSpace,0) {~1:NIL|~3:BikeLaneArrowStencil(Stamp_Width)|~1:NIL}
 
+BikeLaneArrowStencil(Stamp_Width)--> 
+		scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
+		normalizeUV(0, uv, collectiveAllFaces)	
+		insertAlongUV(0, StencilFolder+"/Bike_Arrow.obj",0)
+		setupProjection(0, scope.xz, ~Stamp_Width,~Stamp_Width,Stamp_Width,Stamp_Width,Stamp_Width)
+		cleanupGeometry(all, 0.001) 
+		comp (f) {top:AsphaltPaintedStencil("Bikeways","bike_lane","white")}
+	
+
+BikeLaneSymbolStencil(Stamp_Width)--> #Ground Textured Rule
+	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
+	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0, StencilFolder+"/Bike_Symbol.obj", 0)
+	setupProjection(0, scope.xz, ~Stamp_Width,~Stamp_Width,Stamp_Width,Stamp_Width,Stamp_Width)
+	cleanupGeometry(all, 0.001) 
+	comp (f) {top:AsphaltPaintedStencil("Bikeways","bike_lane","white")}
+	
+		
 ConflictZone(passedcolor)-->
 	split(u,unitSpace,0){~1: AsphaltPainted(passedcolor,"Conflict Zones","conflict_marking")|~1:Asphalt("Conflict Zones","conflict_marking")}*
 
@@ -1933,15 +1958,18 @@ BikeBoxCreation(dir)-->
 BikeBoxSymbolAllocation(dir,symbol_spacing,allocation_width,bike_box_color)-->
 	case dir==2: #left
 		scaleUV(0,-1,1)
-		split(v,unitSpace,0) {~ symbol_spacing/2:AsphaltPainted(bike_box_color,"Bikeways","bike_lane")
-								| allocation_width *BikeBox_Fraction: BikeLaneStamp( allocation_width,bike_box_color +"_stamp_noarrow.jpg",bike_box_color)
-								|~ symbol_spacing /2:AsphaltPainted(bike_box_color,"Bikeways","bike_lane")}*
+		AsphaltPainted(bike_box_color,"Bikeways","bike_lane")
+		split(v,unitSpace,0) {~ symbol_spacing/2: NIL
+								| allocation_width *BikeBox_Fraction: BikeBoxSymbolSetup(allocation_width)
+								|~ symbol_spacing /2: NIL }*
 	else:
 		scaleUV(0,1,1) 
-		split(v,unitSpace,0) {~ symbol_spacing /2:AsphaltPainted(bike_box_color,"Bikeways","bike_lane")
-								| allocation_width*BikeBox_Fraction: BikeLaneStamp( allocation_width, bike_box_color +"_stamp_noarrow.jpg",bike_box_color)
-								|~ symbol_spacing /2:AsphaltPainted(bike_box_color,"Bikeways","bike_lane")}*
-								
+		AsphaltPainted(bike_box_color,"Bikeways","bike_lane")
+		split(v,unitSpace,0) {~ symbol_spacing/2: NIL
+								| allocation_width *BikeBox_Fraction: BikeBoxSymbolSetup(allocation_width)
+								|~ symbol_spacing /2: NIL }*
+BikeBoxSymbolSetup(Width)-->
+	split(u,unitSpace,0) {~0.2:NIL|~1:BikeLaneSymbolStencil(Width)|~0.2:NIL}							
 ########################
 #####Parking Lane Rules
 ParkingLane(Side,ParkingType,ParkingLength,ParkingWidth,CurbsideLength)-->
@@ -2176,13 +2204,7 @@ ParkingInsertCap (Rotation,Obj_Path)--> #Ground Textured Rule
 	alignScopeToGeometry(yUp,largest,0)
 	rotateScope(0,Rotation,0)
 	i(StencilFolder+Obj_Path)
-	extrude(sharrowHeight)
-	normalizeUV(0,uv, separatePerFace)
-	setupProjection(0,scope.xz,2,2,2,2,2)
-	texture(LanesFolder+"/asphalt_painted_" + "white" + "_7x7m.jpg")
-	projectUV(0)
-	color( _ThematicRouter ("Storage","parking_lane"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-	Delete_Texture
+	AsphaltPaintedStencil("Storage","parking_lane","white")
 
 ParallelParkingTexture(Side,ParkingLength,ParkingWidth,ReportBool)-->
  	scaleUV(0,1,(case Side=="Right":
@@ -3216,7 +3238,7 @@ Sidewalk_WOPlant_Loading_Section (Dir)-->
 						|(_Sidewalk_CrossStop_Gap(Dir,"End") ): Sidewalk_Pavement ("Cross Walk End Gap")People}
 
 Sidewalk_Bike_Lane_Loader(Dir)-->
-	split(u,unitSpace,0){~1:scaleUV(0,DirectionalFlip,1)BikeLaneSection(case Dir==0:1 else:-1,_Sidewalk_BikeLane_Width(Dir))}
+	split(u,unitSpace,0){~1:scaleUV(0,DirectionalFlip,1)BikeLaneSection(case Dir==0:-1 else:1,_Sidewalk_BikeLane_Width(Dir))}
 
 Sidewalk_Object_Split(RotationAng)-->
 	split(u,unitSpace,0){'_Bus_Alloc("Sidewalk"): Bus_Stop_Insert("Bus Stop",Bus_Stop_Object,RotationAng+90,Sidewalk_Bus_Stop_Setback)
@@ -3312,26 +3334,26 @@ Planting_Curb(Planting_Spacing)-->
 	else:
 		NIL
 Sign_Objects_Insert(Object_Identity,File_Extension,RotationAng,Translation,SX,SY,SZ)-->#Sidewalk Object Constructor Rule
-		alignScopeToAxes(y)
-		alignScopeToGeometry(yUp, largest, 1)
-		rotateScope(0,RotationAng,0)
-		center(xz)
-		t(scope.sx-SX,0,0)
-		t(Translation,0,0)
-		i(File_Extension)
-		set(material.name,"Signs")
-		label("Signs")
-		s(SX,SY,SZ)
-		report("Objects."+Object_Identity+" Count",1)
-		Delete_Texture
+	alignScopeToAxes(y)
+	alignScopeToGeometry(yUp, largest, 1)
+	rotateScope(0,RotationAng,0)
+	center(xz)
+	t(scope.sx-SX,0,0)
+	t(Translation,0,0)
+	i(File_Extension)
+	set(material.name,"Signs")
+	label("Signs")
+	s(SX,SY,SZ)
+	report("Objects."+Object_Identity+" Count",1)
+	Delete_Texture
 ##################################################
 #Paint & Asphalt Reporting	
 #Asphalt Painted is actually retrofitted to be the paint and mode reporting aggregator, all "Paint Areas" originate here. 
 Asphalt(Usage,LabelID) --> #Ground Textured Rule
-		tileUV(0,14,14)
-		cleanupGeometry(all, 0.001)
-		texture( LanesFolder+"/asphalt_14x14m.jpg")
-		ColorAndReport(Usage,LabelID)
+	tileUV(0,14,14)
+	cleanupGeometry(all, 0.001)
+	texture( LanesFolder+"/asphalt_14x14m.jpg")
+	ColorAndReport(Usage,LabelID)
 
 AsphaltPainted(paintColor,Usage,LabelID) --> #Ground Textured Rule
 	case paintColor!="black":# This makes sure that if the color is black, it is thrown into Asphalt Reporting
@@ -3342,6 +3364,19 @@ AsphaltPainted(paintColor,Usage,LabelID) --> #Ground Textured Rule
 		ColorAndReport(Usage,LabelID)
 	else:#If Black redirect to asphalt rule.
 		Asphalt(Usage,LabelID)
+
+AsphaltPaintedStencil(Mode,Class,paintColor)-->
+	# Stencils should have no reporting, managed by overlay shapes.
+	alignScopeToAxes(y)
+	alignScopeToGeometry(yUp,largest,longest)
+	extrude(world.up,sharrowHeight)
+	normalizeUV(0,uv, separatePerFace)
+	setupProjection(0,scope.xz,2,2,2,2,2)
+	texture(LanesFolder+"/asphalt_painted_" + paintColor + "_7x7m.jpg")
+	set(material.name,str(material.name)+"_"+str(paintColor))
+	projectUV(0)
+	color(_ThematicRouter (Mode,Class))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+	Delete_Texture
 
 ColorAndReport(Usage,LabelID)-->
 	color( _ThematicRouter (Usage,LabelID))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
