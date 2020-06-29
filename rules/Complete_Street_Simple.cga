@@ -1665,32 +1665,35 @@ Transit_Lane_Allocator(dir)--> #Allocates the texture rule based on what type of
 
 
 Bus_Lane_Texture_Rule(dir)--> 
+	
 	split(v,unitSpace,0){PaintLineWidth*_PaintLineControl("Right", Transit_Paint_Line_Sides ):AsphaltPainted("white","Transit","bus_lane")
 							#Level 1-First split indentation
-							|~1:split(u,unitSpace,0){2:AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane")
+							|~1:AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane") split(u,unitSpace,0){2:NIL
 								#Level 2- sub-split indentation
-								| Transit_Lane_Width: Bus_Lane_Stamp (dir)
-								|~ Transit_Symbol_Spacing :AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane")
-								|{ Transit_Lane_Width : Bus_Lane_Stamp (dir)
-								|~ Transit_Symbol_Spacing :AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane")}*
-								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width: Bus_Lane_Stamp (dir)
-								|2:AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane")}
+								| Transit_Lane_Width: Bus_Lane_Stencil_Setup(dir)
+								|~ Transit_Symbol_Spacing :NIL
+								|{ Transit_Lane_Width : Bus_Lane_Stencil_Setup(dir)
+								|~ Transit_Symbol_Spacing :NIL}*
+								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width: Bus_Lane_Stencil_Setup(dir)
+								|2:NIL}
 							|PaintLineWidth*_PaintLineControl("Left", Transit_Paint_Line_Sides ):AsphaltPainted("white","Transit","bus_lane")}
 	BusOnLane(dir)
 
 Bus_Bike_Lane_Texture_Rule(dir)--> 
+	
 	split(v,unitSpace,0){PaintLineWidth*_PaintLineControl("Right", Transit_Paint_Line_Sides ):AsphaltPainted("white","Transit","bus_lane")
 							#Level 1-First split indentation
-							|~1:split(u,unitSpace,0){2:AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane")
+							|~1:AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane") split(u,unitSpace,0){2:NIL
 								#Level 2- sub-split 
-								| Transit_Lane_Width*.5: BikeBoxSymbolAllocation(1,Transit_Lane_Width*.5, Transit_Lane_Width*.75,Bus_Lane_Color)
-								| Transit_Lane_Width: Bus_Lane_Stamp (dir)
-								|~ Transit_Symbol_Spacing :AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane")
-								|{ Transit_Lane_Width*.5: BikeBoxSymbolAllocation(1,Transit_Lane_Width*.5, Transit_Lane_Width*.75,Bus_Lane_Color)
-								|Transit_Lane_Width: Bus_Lane_Stamp (dir)
-								|~ Transit_Symbol_Spacing :AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane")}*
-								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width: Bus_Lane_Stamp (dir)
-								|2:AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane")}
+								| Transit_Lane_Width*.75: BikeBoxSymbolAllocation(1,Transit_Lane_Width*.5, Transit_Lane_Width*.75,Bus_Lane_Color)
+								| Transit_Lane_Width: Bus_Lane_Stencil_Setup(dir)
+								|~ Transit_Symbol_Spacing :NIL
+								|{ Transit_Lane_Width*.75: BikeBoxSymbolAllocation(1,Transit_Lane_Width*.5, Transit_Lane_Width*.75,Bus_Lane_Color)
+								|Transit_Lane_Width: Bus_Lane_Stencil_Setup(dir)
+								|~ Transit_Symbol_Spacing :NIL}*
+								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width * .75: BikeBoxSymbolAllocation(1,Transit_Lane_Width*.5, Transit_Lane_Width*.75,Bus_Lane_Color)
+								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width: Bus_Lane_Stencil_Setup(dir)
+								|2:NIL}
 							|PaintLineWidth*_PaintLineControl("Left", Transit_Paint_Line_Sides ):AsphaltPainted("white","Transit","bus_lane")}
 	BusOnLane(dir)
 	
@@ -1715,15 +1718,19 @@ Metal_Texture--> #Ground Textured Rule
 	texture(MiscFolder +"/Metal_Texture.jpg")
 	projectUV(0)
 	Delete_Texture
+
+Bus_Lane_Stencil_Setup(dir)-->
+	split(v,unitSpace,0) {'0.05: NIL|~1:Bus_Lane_Stencil(dir)|'0.05: NIL}
 	
-Bus_Lane_Stamp(dir)--> #Ground Textured Rule
+Bus_Lane_Stencil(dir)--> #Ground Textured Rule
 	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
  	rotateUV(0,90)
-	tileUV(0,~Transit_Lane_Width,~ Transit_Lane_Width ) 
-	texture(LanesFolder+"/BusLaneStamp"+(case Bus_Lane_Color=="black":"_black" else:"")+".jpg")#If Black change the stamp chosen, might make more elegant later. 
-	color( _ThematicRouter ("Transit","bus_lane"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-	ModeReporter ("Transit")
-	Delete_Texture
+ 	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0, StencilFolder+"/Bus_Only.obj",1)
+	setupProjection(0, scope.xz, ~2,~2,2,2,2)
+	cleanupGeometry(all, 0.0075)
+	reverseNormals()
+	comp (f) {top=AsphaltPaintedStencil("Transit","bus_lane","white")}
 	
 HOV_Lane_Texture_Rule(dir)--> #Ground Textured Rule
 	split(v,unitSpace,0){PaintLineWidth*2*_PaintLineControl("Right", Transit_Paint_Line_Sides ):AsphaltPainted("yellow","Shared Mobility","hov_lane")
