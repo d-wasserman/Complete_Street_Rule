@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 6/27/2020
+ * Last Updated: 6/28/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -501,7 +501,7 @@ const Dimension_Center_Hexcode		= case Boulevard_Configuration=="Bus Lanes": NAC
 									  case Boulevard_Configuration=="Open Space":NACTOPlanting
 									  else: NACTOConflictZone
 #Bike Constants
-const sharrowHeight					=0.005
+const sharrowHeight					=0.005 * ceil(abs(geometry.angle(maxSlope)+1)/10)
 const Buffer_StartGap				=.2
 const BikeBox_Fraction				=.75
 const Center_Tube_Marker_Dist		=.1
@@ -1447,6 +1447,7 @@ Short_Long_Street_Altered-->
 Short_Long_Street-->
 	case _uScale==1: #IF the Street is long enough continue normally. 
 		Long_Street
+	
  	else: #If the street is too short no stop lines, no bike boxes. 
  		Short_Street	
 
