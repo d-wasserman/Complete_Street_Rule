@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 6/28/2020
+ * Last Updated: 6/30/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -1665,7 +1665,7 @@ Transit_Lane_Allocator(dir)--> #Allocates the texture rule based on what type of
 
 
 Bus_Lane_Texture_Rule(dir)--> 
-	
+	alignScopeToAxes(y)
 	split(v,unitSpace,0){PaintLineWidth*_PaintLineControl("Right", Transit_Paint_Line_Sides ):AsphaltPainted("white","Transit","bus_lane")
 							#Level 1-First split indentation
 							|~1:AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane") split(u,unitSpace,0){2:NIL
@@ -1680,7 +1680,7 @@ Bus_Lane_Texture_Rule(dir)-->
 	BusOnLane(dir)
 
 Bus_Bike_Lane_Texture_Rule(dir)--> 
-	
+	alignScopeToAxes(y)
 	split(v,unitSpace,0){PaintLineWidth*_PaintLineControl("Right", Transit_Paint_Line_Sides ):AsphaltPainted("white","Transit","bus_lane")
 							#Level 1-First split indentation
 							|~1:AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane") split(u,unitSpace,0){2:NIL
@@ -1789,6 +1789,7 @@ BikeLaneSection (flip,Side_Width)-->
 		BikeLane(flip*Bike_Reversal_Switch,Side_Width)
 		
 BikeLane(sideflip,Width)-->#Was Left,now both, fairly modular
+	alignScopeToAxes(y)
 	Bikes((case sideflip==1:0 else: 2),(case _Twoway_Bikelane_Bool:Width/2 else: Width),bikeProb)
 	color( _ThematicRouter ("Bikeways"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	scaleUV(0,sideflip,sideflip)
@@ -1820,12 +1821,12 @@ BikeLaneArrowSetUp(Stamp_Width)-->
 	split(v,unitSpace,0) {~1:NIL|~3:BikeLaneArrowStencil(Stamp_Width)|~1:NIL}
 
 BikeLaneArrowStencil(Stamp_Width)--> 
-		scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
-		normalizeUV(0, uv, collectiveAllFaces)	
-		insertAlongUV(0, StencilFolder+"/Bike_Arrow.obj",0)
-		setupProjection(0, scope.xz, ~Stamp_Width,~Stamp_Width,Stamp_Width,Stamp_Width,Stamp_Width)
-		cleanupGeometry(all, 0.001) 
-		comp (f) {top:AsphaltPaintedStencil("Bikeways","bike_lane","white")}
+	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
+	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0, StencilFolder+"/Bike_Arrow.obj",0)
+	setupProjection(0, scope.xz, ~Stamp_Width,~Stamp_Width,Stamp_Width,Stamp_Width,Stamp_Width)
+	cleanupGeometry(all, 0.001) 
+	comp (f) {top:AsphaltPaintedStencil("Bikeways","bike_lane","white")}
 	
 
 BikeLaneSymbolStencil(Stamp_Width)--> #Ground Textured Rule
