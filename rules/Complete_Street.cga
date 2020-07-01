@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 6/30/2020
+ * Last Updated: 7/1/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -1729,9 +1729,9 @@ Bus_Lane_Stencil(dir)--> #Ground Textured Rule
  	normalizeUV(0, uv, collectiveAllFaces)	
 	insertAlongUV(0, StencilFolder+"/Bus_Only.obj",0)
 	setupProjection(0, scope.xz, ~2,~2,2,2,2)
-	cleanupGeometry(all, 0.0075)
 	reverseNormals()
-	comp (f) {top=AsphaltPaintedStencil("Transit","bus_lane","white")}
+	cleanupGeometry(all, 0.0075)
+	comp (f) {top= AsphaltPaintedStencil("Transit","bus_lane","white")}
 	
 HOV_Lane_Texture_Rule(dir)--> #Ground Textured Rule
 	
@@ -1763,13 +1763,6 @@ HOVLaneStencil(dir)-->
 	reverseNormals()
 	comp (f) {top=AsphaltPaintedStencil("Shared Mobility","hov_lane","white")}
 
-
-HOVlaneStamp(dir)--> #Ground Textured Rule
-	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
- 	rotateUV(0,90)
-	tileUV(0,~ Transit_Lane_Width ,~Transit_Lane_Width )#Lane width is used for texture size because it can repeat if need for large streets and because it allows the text to stay in scale with that of a Bus or car. 
-	texture(LanesFolder+"/HOV_Diamond"+".jpg")#If Black change the stamp chosen, might make more elegant later. 
-	ColorAndReport("Shared Mobility","hov_lane")#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 ##############################################################
 #Non-Carlane Split Space- This is the space where 
 #parking, bike, and buffer lanes are constructed. 
@@ -2021,11 +2014,11 @@ ParallelParkingLane(Side,ParkingType,ParkingLength,ParkingWidth,CurbsideLength)-
  			else:	
  				case Side=="Right":-1 else:1,1)
  	split(u,unitSpace,0) {~_Front_Parking_Spacing(ParkingType):Asphalt("Auto","parking_lane")
- 							|~CurbsideLength*_Allocate_Farside_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):CurbsideAllocatorSide(Side,ParkingType,CurbsideLength, ParkingWidth)
+ 							|~CurbsideLength*_Allocate_Farside_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):CurbsideAllocatorSide("Far-side",Side,ParkingType,CurbsideLength, ParkingWidth)
  							|{ParkingLength:ParkingSpace(Side,ParkingType,split.index,split.total,ParkingLength,ParkingWidth)}*
- 							|~CurbsideLength*_Allocate_Midpoint_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):CurbsideAllocatorSide(Side,ParkingType,CurbsideLength, ParkingWidth)
+ 							|~CurbsideLength*_Allocate_Midpoint_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):CurbsideAllocatorSide("Mid-block",Side,ParkingType,CurbsideLength, ParkingWidth)
  							|{ParkingLength:ParkingSpace(Side,ParkingType,split.index,split.total,ParkingLength,ParkingWidth)}*
- 							|~CurbsideLength*_Allocate_Nearside_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):CurbsideAllocatorSide(Side,ParkingType,CurbsideLength, ParkingWidth)
+ 							|~CurbsideLength*_Allocate_Nearside_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):CurbsideAllocatorSide("Near-side",Side,ParkingType,CurbsideLength, ParkingWidth)
  							|~_Rear_Parking_Spacing(ParkingType):Asphalt("Auto","parking_lane")} 
  		
 AngledParkingLane(Side,ParkingType,ParkingLength,ParkingWidth,CurbsideLength)-->
@@ -2047,20 +2040,20 @@ ParkingSpace(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,Parkin
  	else:
  		AngledNoseOutParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)
 
-CurbsideAllocatorSide(Side,ParkingType,ParkingLength,ParkingWidth)-->
+CurbsideAllocatorSide(Position,Side,ParkingType,ParkingLength,ParkingWidth)-->
 	case Side =="Right":
-		RightCurbsideAllocator(Side,ParkingType,ParkingLength,ParkingWidth)
+		RightCurbsideAllocator(Position,Side,ParkingType,ParkingLength,ParkingWidth)
 	else:
-		LeftCurbsideAllocator(Side,ParkingType,ParkingLength,ParkingWidth)
+		LeftCurbsideAllocator(Position,Side,ParkingType,ParkingLength,ParkingWidth)
 
-RightCurbsideAllocator(Side,ParkingType,ParkingLength,ParkingWidth)-->
+RightCurbsideAllocator(Position,Side,ParkingType,ParkingLength,ParkingWidth)-->
 	label("curbside_managed_zone")
-	Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)
-LeftCurbsideAllocator(Side,ParkingType,ParkingLength,ParkingWidth)-->
+	Curbside_Allocator(Position,Side,ParkingType,ParkingLength, ParkingWidth)
+LeftCurbsideAllocator(Position,Side,ParkingType,ParkingLength,ParkingWidth)-->
 	label("curbside_managed_zone")
-	Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)
+	Curbside_Allocator(Position,Side,ParkingType,ParkingLength, ParkingWidth)
 	
-Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)-->
+Curbside_Allocator(Position,Side,ParkingType,ParkingLength, ParkingWidth)-->
 	case find(ParkingType,"Freight",0)!=-1:
 		label("freight_loading_zone")
 		Freight_Loading_Allocation(Side,ParkingWidth,ParkingLength)
@@ -2116,40 +2109,47 @@ Carshare_Parking_Allocation(Side,Color,ParkingWidth,ParkingLength)-->
 	split(v,unitSpace,0){
 			PaintLineWidth:AsphaltPainted("green","Shared Mobility","parking_lane")|
 			~ParkingWidth:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("green","Shared Mobility","parking_lane")|	
-				~ParkingLength:Carshare_Parking_Stamp(Side)|		
+				~ParkingLength:Asphalt("Shared Mobility","parking_lane") Carshare_Parking_Stencil_Setup(Side)|		
 				PaintLineWidth:AsphaltPainted("green","Shared Mobility","parking_lane")}*|
 			PaintLineWidth:AsphaltPainted("green","Shared Mobility","parking_lane")}
-			
-Carshare_Parking_Stamp(Side)--> #Ground Textured Rule
+
+Carshare_Parking_Stencil_Setup(Side)-->
+	split(v,unitSpace,0){'0.05:NIL|~1:split(u,unitSpace,0) {'0.1:NIL|~1:Carshare_Parking_Stencil(Side,"white")|'0.1:NIL}|'0.05:NIL}
+
+Carshare_Parking_Stencil(Side,Color)--> #Ground Textured Rule
 	alignScopeToGeometry(yUp, largest, 0)
-	setupProjection(0,scope.zx,'1,'1)
-	texture(LanesFolder +"/CarshareOnly.jpg")
-	projectUV(0)
-	scaleUV(0,case (Side=="Right" || Lane_Distribution==1) && Lane_Distribution!=0:1 else: -1,
-	case (Side=="Right" || Lane_Distribution==1) && Lane_Distribution!=0:1 else: -1)
-	scaleUV(0,case rightHandTraffic: 1 else: -1,case rightHandTraffic: 1 else: -1)
-	ColorAndReport("Shared Mobility","parking_lane")
+	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
+ 	scaleUV(0,1,case (Side=="Right" || Lane_Distribution==1) && Lane_Distribution!=0:1 else: -1)
+ 	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0, StencilFolder+"/Carshare_Only.obj",0)
+	setupProjection(0, scope.xz, ~2,~2,2,2,2)
+	comp (f) {top= AsphaltPaintedStencil("Transit","bus_pull_in","white")}
 		
 Bus_Stop_Allocation(Side,Color,StampWidth)-->
 	report("Curbside Management.Bus Stop Length (m)",geometry.du(0,unitSpace))
 	split(v,unitSpace,0){
 			PaintLineWidth:AsphaltPainted("white","Transit","bus_pull_in")|
 			~1:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("white","Transit","bus_pull_in")|
-				~6:Asphalt("Transit","bus_pull_in")|
-				StampWidth:Bus_Stop_Stamp(Side,Color)|
-				~6:Asphalt("Transit","bus_pull_in")|
+				~0.25:Asphalt("Transit","bus_pull_in")|
+				StampWidth/4:Asphalt("Transit","bus_pull_in") Bus_Stop_Stencil_Setup(Side)|
+				~9:Asphalt("Transit","bus_pull_in")|
+				StampWidth/4:Asphalt("Transit","bus_pull_in") Bus_Stop_Stencil_Setup(Side)|
+				~0.25:Asphalt("Transit","bus_pull_in")|
 				PaintLineWidth:AsphaltPainted("white","Transit","bus_pull_in")}|
 			PaintLineWidth:AsphaltPainted("white","Transit","bus_pull_in")}
 
-Bus_Stop_Stamp(Side,Color)--> #Ground Textured Rule
+Bus_Stop_Stencil_Setup(Side)-->
+	split(v,unitSpace,0) {'0.2: NIL|~1:Bus_Stop_Stencil(Side)|'0.2: NIL}
+	
+Bus_Stop_Stencil(Side)--> #Ground Textured Rule
 	alignScopeToGeometry(yUp, largest, 0)
-	setupProjection(0,scope.zx,'1,'1)
-	texture(LanesFolder +"/BusStopStamp_"+Color+".jpg")
-	projectUV(0)
-	scaleUV(0,case Side=="Right":1 else: -1,case Side=="Right":1 else: -1)
-	scaleUV(0,case rightHandTraffic: 1 else: -1,case rightHandTraffic: 1 else: -1)
-	color( _ThematicRouter ("Transit","bus_pull_in"))
-	Delete_Texture
+	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
+ 	scaleUV(0,1,case (Side=="Right" || Lane_Distribution==1) && Lane_Distribution!=0:1 else: -1)
+ 	rotateUV(0,90)
+ 	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0, StencilFolder+"/Bus_Stop.obj",0)
+	setupProjection(0, scope.xz, ~2,~2,2,2,2)
+	comp (f) {top= AsphaltPaintedStencil("Transit","bus_pull_in","white")}
 	
 	
 Project_Zebra_Stripe(Color,Mode_Class,LabelID)--> #Ground Textured Rule
@@ -2879,7 +2879,7 @@ Tree_Type_Adjusted(Tree_Type) =
 
 randomTreeType = 
 	25%:	 "White Ash"
-	25%:	 "Common Hackberry"
+	25%:	 "Red Hickory"
 	25%:	 "Sweetgum"
 	else:	 "Sassafras"
 ###################################################
