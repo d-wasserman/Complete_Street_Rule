@@ -500,8 +500,9 @@ const Dimension_Center_Hexcode		= case Boulevard_Configuration=="Bus Lanes": NAC
 									  case Boulevard_Configuration=="Cycle Path":NACTOBike 
 									  case Boulevard_Configuration=="Open Space":NACTOPlanting
 									  else: NACTOConflictZone
+#Transit Lane Constants
 #Bike Constants
-const sharrowHeight					=0.005 * ceil(abs(geometry.angle(maxSlope)+1)/10)
+const sharrowHeight					=0.005 * ceil(abs(geometry.angle(maxSlope)+1)/5)
 const Buffer_StartGap				=.2
 const BikeBox_Fraction				=.75
 const Center_Tube_Marker_Dist		=.1
@@ -1726,25 +1727,42 @@ Bus_Lane_Stencil(dir)--> #Ground Textured Rule
 	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
  	rotateUV(0,90)
  	normalizeUV(0, uv, collectiveAllFaces)	
-	insertAlongUV(0, StencilFolder+"/Bus_Only.obj",1)
+	insertAlongUV(0, StencilFolder+"/Bus_Only.obj",0)
 	setupProjection(0, scope.xz, ~2,~2,2,2,2)
 	cleanupGeometry(all, 0.0075)
 	reverseNormals()
 	comp (f) {top=AsphaltPaintedStencil("Transit","bus_lane","white")}
 	
 HOV_Lane_Texture_Rule(dir)--> #Ground Textured Rule
+	
 	split(v,unitSpace,0){PaintLineWidth*2*_PaintLineControl("Right", Transit_Paint_Line_Sides ):AsphaltPainted("yellow","Shared Mobility","hov_lane")
 							#Level 1-First split indentation
-							|~1:split(u,unitSpace,0){2:Asphalt("Shared Mobility","hov_lane")
+							|~1:Asphalt("Shared Mobility","hov_lane")
+								split(u,unitSpace,0){2:NIL
 								#Level 2- sub-split indentation
-								| Transit_Lane_Width:HOVlaneStamp(dir)
-								|~ Transit_Symbol_Spacing :Asphalt("Shared Mobility","hov_lane")
-								|{ Transit_Lane_Width :HOVlaneStamp(dir)
-								|~ Transit_Symbol_Spacing :Asphalt("Shared Mobility","hov_lane")}*
-								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width :HOVlaneStamp(dir)
-								|2:Asphalt("Shared Mobility","hov_lane")}
+								| Transit_Lane_Width :HOVLaneStencilSetUp(dir)
+								|~ Transit_Symbol_Spacing :NIL
+								|{ Transit_Lane_Width:HOVLaneStencilSetUp(dir)
+								|~ Transit_Symbol_Spacing :NIL}*
+								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width  :HOVLaneStencilSetUp(dir)
+								|2:NIL}
 							|PaintLineWidth*2*_PaintLineControl("Left", Transit_Paint_Line_Sides ):AsphaltPainted("yellow","Shared Mobility","hov_lane")}
 	MixedTrafficOnLane (dir,-999,-999)
+	
+HOVLaneStencilSetUp(dir)-->
+	split(v,unitSpace,0) {'0.3:NIL|~1:HOVLaneStencil(dir)|'0.3:NIL}
+
+HOVLaneStencil(dir)-->
+	alignScopeToAxes(y)
+	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
+ 	rotateUV(0,90)
+ 	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0, StencilFolder+"/HOV_Symbol.obj",0)
+	setupProjection(0, scope.xz, ~2,~2,2,2,2)
+	cleanupGeometry(all, 0.0075)
+	reverseNormals()
+	comp (f) {top=AsphaltPaintedStencil("Shared Mobility","hov_lane","white")}
+
 
 HOVlaneStamp(dir)--> #Ground Textured Rule
 	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
