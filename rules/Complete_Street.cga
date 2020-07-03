@@ -902,9 +902,9 @@ _arrowChoice(stopCode) 								=
 		case rightHandTraffic: "_stop_word" else: "_stop_word_mirrored"			  
 	case stopCode =="right":
 		"_stop_arrows_all_1"#right
-	case stopCode =="through":
-		"_stop_arrows_all_2"#through-right
 	case stopCode =="through-right":
+		"_stop_arrows_all_2"#through-right
+	case stopCode =="through":
 		"_stop_arrows_all_3"#through
 	case stopCode =="through-left":
 		"_stop_arrows_all_4"#through-left	
@@ -2442,6 +2442,7 @@ TurnLanePocket(dir)-->
 	split(v,unitSpace,0){
 		Turn_Pocket_Curb_Width:split(u,unitSpace,0) {~1:Raised_Offset_Curb("Turn Lane Curb",1,"Auto",Turn_Pocket_Curb_Width)
 									|Turn_Pocket_Curb_Width:Asphalt("Auto","asphalt") Raised_Curb_End("Median With Turn Lane",dir)}
+						|{~Lane_Width: ApproachMarkings(dir,1,1,"right;")}*}#Right because UV is scaled at beginning
 Center_Turn_Lane-->
 	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
 						|_neighborBegin*_stopBegin*ThickPaintLineWidth:AsphaltPainted("white","Auto","stop_bar")
