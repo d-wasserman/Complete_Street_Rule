@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 7/1/2020
+ * Last Updated: 7/3/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -873,7 +873,7 @@ _Transit_Lane_Width_Switch(dir,Location)=
 		0
 
 
-#Stop Tex/Neighbor Detection Functions
+#Stop Tex/Approach/Neighbor Detection Functions
 _hasStop(neighbor) 	= neighbor=="CROSSING" || neighbor=="ROUNDABOUT" || neighbor=="JUNCTION_ENTRY"||neighbor=="JUNCTION"||neighbor=="DEAD_END"
 _hasStopSideSwitch(dir)= case dir==0: _neighborEnd else: _neighborBegin		
 _stopTex(stopType,lanenumber,lanestotal)			= #TODO: Add more lane options- D.J.Wasserman
@@ -902,7 +902,7 @@ _arrowChoice(stopCode) 								=
 		case rightHandTraffic: "_stop_word" else: "_stop_word_mirrored"			  
 	case stopCode =="right":
 		"_stop_arrows_all_1"#right
-	case stopCode =="through-right":
+	case stopCode =="through":
 		"_stop_arrows_all_2"#through-right
 	case stopCode =="through-right":
 		"_stop_arrows_all_3"#through
@@ -913,12 +913,61 @@ _arrowChoice(stopCode) 								=
 	case stopCode =="all":
 		"_stop_arrows_all_6"#all
 	case stopCode =="both":
-		"_stop_arrows_all_7"#all
+		"_stop_arrows_all_7"#both
 	else:
 		"_stop_strip"
+_dropNones(stopType,lanestotal) 								=
+	case lanestotal<listSize(stopType) && find(stopType,"none",0)!=-1:
+		_dropNones(listRemove(stopType,"none"),lanestotal)
+	else:
+		stopType	
 		
+_stopSten(stopType,lanenumber,lanestotal)			= #TODO: Add more lane options- D.J.Wasserman
+	case find(stopType,";",0)!=-1:
+  	    _stopListStencil(stopType,lanenumber)
+  	case stopType == "with stop marking"	  : 
+  		_stopListStencil("stop;",lanenumber)
+    case stopType == "arrows on all lanes"  : 
+  		_stopListStencil("right;through-right;through;through-left;left",lanenumber)
+    case stopType == "arrows on side lanes" :
+  		_stopListStencil(_dropNones("right;none;none;none;none;none;none;left",lanestotal),lanenumber)
+    case stopType == "arrows for right turn":
+  		_stopListStencil(_dropNones("right;right;none",lanestotal),lanenumber)
+    case stopType == "arrows for left turn" && lanenumber+1==lanestotal :
+  		_stopListStencil(_dropNones("none;none;none;none;none;none;none;none;left;left",lanestotal),lanenumber)
+    else: #Any time you see more case logic for the first trigger, it is a result of trying to work in the current framework
+  		 _stopListStencil("none;",lanenumber)
+
+_stopListStencil(stopType,lanenumber)		=
+	case lanenumber >= listSize(stopType):
+		_arrowStencilChoice(listLast(stopType))
+	else:
+		_arrowStencilChoice(listItem(stopType,lanenumber))
 		
-	
+_arrowStencilChoice(stopCode) 								=
+	case stopCode =="stop":
+		case rightHandTraffic: "Stop_Symbol.obj" else:"Stop_Symbol_Mirrored.obj"	  
+	case stopCode =="right":
+		"Right_Arrow.obj"#right
+	case stopCode =="through-right":
+		"Right-Through_Arrow.obj"#through-right
+	case stopCode =="through":
+		"Through_Arrow.obj"#through
+	case stopCode =="through-left":
+		"Left-Through_Arrow.obj"#through-left	
+	case stopCode =="left":
+		"Left_Arrow.obj"#left
+	case stopCode =="all":
+		"All_Arrow.obj"#all
+	case stopCode =="both":
+		"Both_Arrow.obj"#both
+	else:
+		"Nothing.obj"		
+_LastLaneSwitch(lanenumber,lanestotal)=
+	case lanenumber==lanestotal-1:
+		0
+	else:
+		1	
 
 #Paintcontrol and Bus Furniture functions
 _PaintLineControl(side,Control_String)=
@@ -1146,9 +1195,7 @@ _Construct_PBR_Path(color_map_path,type) =
 		replace(color_map_path,"_basecolor","_specularity")
 	else:
 		print("No correct type specified for path.")
-		
-	
-		
+			
 _ModeClassifier(Usage)	=
 	case Usage=="Shared Mobility":
 	_SharedMobilityThematics(FehrAndPeersUberSharedMobility)
@@ -1552,12 +1599,41 @@ Lanes(dir,stopType) -->
 	#print(geometry.dv(0,unitSpace))
 	#print(split.total)
 # prepare the uv coordinates and texture the shape
-ApproachMarkings(dir,lanenumber,lanestotal,markings) -->	# is used for textures for intersection approach (stop,turn arrows etc). 
+ApproachMarkings(dir,lanenumber,lanestotal,stopType) -->	# is used for textures for intersection approach (stop,turn arrows etc). 
+	case Not_High_LOD:
+		LowLODApproachMarkings(dir,lanenumber,lanestotal,_stopTex(stopType,lanenumber,lanestotal)) 
+	else:
+		HighLODApproachMarkings(dir,lanenumber,lanestotal,_stopSten(stopType,lanenumber,lanestotal))
+
+LowLODApproachMarkings(dir,lanenumber,lanestotal,markings) -->	# is used for textures for intersection approach (stop,turn arrows etc). 
 	tileUV(0,~14,~Lane_Width )				# the tileUV operation makes sure that one unit in u-space corresponds to approx 14 meters, the v-coord is not touched in the case of 0 as parameter
 	normalizeUV(0,v,separatePerFace)
 	scaleUV(0,1,(case (lanenumber==lanestotal-1):.95 else: 1))# Scale UV in V direction slightly to remove light line on lane closer to centerline. 
 	texture(LanesFolder+"/lanes_4"+markings+"_14x14m.jpg")
 	ColorAndReport("Auto","drive_lane")
+	
+HighLODApproachMarkings(dir,lanenumber,lanestotal,markings)-->
+	split(v,unitSpace,0) {~1:Asphalt("Auto","drive_lane") ApproachSymbolStencilsSetup(dir,lanenumber,lanestotal,markings)|
+								_LastLaneSwitch(lanenumber,lanestotal)*PaintLineWidth:AsphaltPainted("white","Auto","drive_lane")}
+	
+ApproachSymbolStencilsSetup(dir,lanenumber,lanestotal,markings)-->
+	split(v,unitSpace,0) {'0.1:NIL
+		  				 |~1:split(u,unitSpace,0){'0.5:NIL
+		  					 |~1:ApproachSymbolStencils(dir,lanenumber,lanestotal,markings)
+		  					 |'0.2:NIL}
+						  |'0.1:NIL}
+						  
+ApproachSymbolStencils(dir,lanenumber,lanestotal,markings)-->
+	case find(str(markings),"Nothing",0)!=-1:
+		NIL
+	else:
+		normalizeUV(0, uv, collectiveAllFaces)
+		rotateUV(0,90)
+		insertAlongUV(0, StencilFolder+"/"+markings, 0)
+		setupProjection(0, scope.xz, ~2,~2,2,2,2)
+		comp (f) {top:AsphaltPaintedStencil("Bikeways","bike_lane","white")}
+
+		
 
 MainLaneMarkings(dir,lanenumber,markings)--> #Ground Textured Rule	
 	tileUV(0,~14,~ Lane_Width )				# the tileUV operation makes sure that one unit in u-space corresponds to approx 14 meters, the v-coord is not touched in the case of 0 as parameter
@@ -1587,12 +1663,12 @@ ConventionalLane(dir,lanestotal,lanenumber,stopType)-->
 		Sharrow(dir,lanestotal,lanenumber)
 	case !(stopType=="none"||stopType=="line only") && (lanenumber==lanestotal-1):# Makes sure with no stop type last lane has no lane with contiguous stripes
 		split(u,unitSpace,0){ ~1: Asphalt("Auto","drive_lane")
- 							| 14: ApproachMarkings(dir,lanenumber,lanestotal,_stopTex(stopType,lanenumber,lanestotal)) }
+ 							| 14: ApproachMarkings(dir,lanenumber,lanestotal,stopType) }
  		MixedTrafficOnLane (dir,lanenumber,lanestotal)
  		Sharrow(dir,lanestotal,lanenumber)
 	else:	# Makes basic lanes that that are not next to the last lane or a bus/hov lane (if they are on).
 		split(u,unitSpace,0){ ~1: MainLaneMarkingLODChoice(dir,lanenumber,"_stripes_white")
- 							| _hasStopSideSwitch(dir)* 14: ApproachMarkings(dir,lanenumber,lanestotal,_stopTex(stopType,lanenumber,lanestotal))}
+ 							| _hasStopSideSwitch(dir)* 14: ApproachMarkings(dir,lanenumber,lanestotal,stopType)}
  		MixedTrafficOnLane (dir,lanenumber,lanestotal)
  		Sharrow(dir,lanestotal,lanenumber)
  		
@@ -1730,11 +1806,9 @@ Bus_Lane_Stencil(dir)--> #Ground Textured Rule
 	insertAlongUV(0, StencilFolder+"/Bus_Only.obj",0)
 	setupProjection(0, scope.xz, ~2,~2,2,2,2)
 	reverseNormals()
-	cleanupGeometry(all, 0.0075)
 	comp (f) {top= AsphaltPaintedStencil("Transit","bus_lane","white")}
 	
 HOV_Lane_Texture_Rule(dir)--> #Ground Textured Rule
-	
 	split(v,unitSpace,0){PaintLineWidth*2*_PaintLineControl("Right", Transit_Paint_Line_Sides ):AsphaltPainted("yellow","Shared Mobility","hov_lane")
 							#Level 1-First split indentation
 							|~1:Asphalt("Shared Mobility","hov_lane")
@@ -2368,7 +2442,6 @@ TurnLanePocket(dir)-->
 	split(v,unitSpace,0){
 		Turn_Pocket_Curb_Width:split(u,unitSpace,0) {~1:Raised_Offset_Curb("Turn Lane Curb",1,"Auto",Turn_Pocket_Curb_Width)
 									|Turn_Pocket_Curb_Width:Asphalt("Auto","asphalt") Raised_Curb_End("Median With Turn Lane",dir)}
-						|{~Lane_Width: ApproachMarkings(dir,1,1,"_stop_arrows_all_" + str(1))}*}
 Center_Turn_Lane-->
 	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
 						|_neighborBegin*_stopBegin*ThickPaintLineWidth:AsphaltPainted("white","Auto","stop_bar")
@@ -3392,7 +3465,7 @@ AsphaltPainted(paintColor,Usage,LabelID) --> #Ground Textured Rule
 	else:#If Black redirect to asphalt rule.
 		Asphalt(Usage,LabelID)
 
-AsphaltPaintedStencil(Mode,Class,paintColor)-->
+AsphaltPaintedStencil(Usage,LabelID,paintColor)-->
 	# Stencils should have no reporting, managed by overlay shapes.
 	alignScopeToAxes(y)
 	alignScopeToGeometry(yUp,largest,longest)
@@ -3402,7 +3475,7 @@ AsphaltPaintedStencil(Mode,Class,paintColor)-->
 	texture(LanesFolder+"/asphalt_painted_" + paintColor + "_7x7m.jpg")
 	set(material.name,str(material.name)+"_"+str(paintColor))
 	projectUV(0)
-	color(_ThematicRouter (Mode,Class))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+	color(_ThematicRouter (Usage,LabelID))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	Delete_Texture
 
 ColorAndReport(Usage,LabelID)-->
