@@ -2089,11 +2089,11 @@ ParallelParkingLane(Side,ParkingType,ParkingLength,ParkingWidth,CurbsideLength)-
  			else:	
  				case Side=="Right":-1 else:1,1)
  	split(u,unitSpace,0) {~_Front_Parking_Spacing(ParkingType):Asphalt("Auto","parking_lane")
- 							|~CurbsideLength*_Allocate_Farside_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):CurbsideAllocatorSide("Far-side",Side,ParkingType,CurbsideLength, ParkingWidth)
+ 							|~CurbsideLength*_Allocate_Farside_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):CurbsideAllocatorSide("Far-side",Side,ParkingType,ParkingLength, ParkingWidth)
  							|{ParkingLength:ParkingSpace(Side,ParkingType,split.index,split.total,ParkingLength,ParkingWidth)}*
- 							|~CurbsideLength*_Allocate_Midpoint_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):CurbsideAllocatorSide("Mid-block",Side,ParkingType,CurbsideLength, ParkingWidth)
+ 							|~CurbsideLength*_Allocate_Midpoint_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):CurbsideAllocatorSide("Mid-block",Side,ParkingType,ParkingLength, ParkingWidth)
  							|{ParkingLength:ParkingSpace(Side,ParkingType,split.index,split.total,ParkingLength,ParkingWidth)}*
- 							|~CurbsideLength*_Allocate_Nearside_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):CurbsideAllocatorSide("Near-side",Side,ParkingType,CurbsideLength, ParkingWidth)
+ 							|~CurbsideLength*_Allocate_Nearside_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):CurbsideAllocatorSide("Near-side",Side,ParkingType,ParkingLength, ParkingWidth)
  							|~_Rear_Parking_Spacing(ParkingType):Asphalt("Auto","parking_lane")} 
  		
 AngledParkingLane(Side,ParkingType,ParkingLength,ParkingWidth,CurbsideLength)-->
@@ -2161,7 +2161,7 @@ Passenger_Loading_Allocation(Side,ParkingWidth,ParkingLength)-->
 	split(v,unitSpace,0){
 	PaintLineWidth:AsphaltPainted("white","Shared Mobility","passenger_loading")|
 	~1:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("white","Shared Mobility","passenger_loading")|
-		~1:ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth) Project_Zebra_Stripe("white","Shared Mobility","passenger_loading")|
+		~1:ParallelParkingCar(_ParParkedFacing(Side),scope.sx, ParkingWidth) Project_Zebra_Stripe("white","Shared Mobility","passenger_loading")|
 		PaintLineWidth:AsphaltPainted("white","Shared Mobility","passenger_loading")}|
 	PaintLineWidth:AsphaltPainted("white","Shared Mobility","passenger_loading")}
 		
@@ -2177,6 +2177,7 @@ DoBi_Scooter_Parking_Stamp(Side,ParkingWidth,ParkingLength)--> #Ground Textured 
 	ColorAndReport("Shared Mobility","bike_parking")
 
 Carshare_Parking_Split(Side,Color,ParkingWidth,ParkingLength)-->
+	print(ParkingLength)
 	split(u,unitSpace,0) {~ParkingLength:Carshare_Parking_Allocation(Side,Color,ParkingWidth,ParkingLength)}*
 	
 Carshare_Parking_Allocation(Side,Color,ParkingWidth,ParkingLength)-->
