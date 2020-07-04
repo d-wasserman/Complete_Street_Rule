@@ -478,6 +478,7 @@ const ThickPaintLineWidth			= 0.5
 const PaintLineWidth				= 0.1 #uvSpace 36/256-about 4 in
 const Rumble_Strip_Len				= 1.5 #FWHA 7 in wide per bump with 5 in ashpalt spacing
 const Rumble_Strip_Wid				= .355 #FWHA-typically 12-16 in wide
+const Stencil_Color 				= "white"
 #SideWalk and Median Constants
 const Centerline_Color				= case Center_Type == "White Centerline":"white" else: "yellow"
 const Median_Layout_Threshold		= case find(Center_Type,"Turn Lane",0)!=-1:Lane_Width*3 else: Lane_Width*2
@@ -1631,9 +1632,9 @@ ApproachSymbolStencils(dir,lanenumber,lanestotal,markings)-->
 		rotateUV(0,90)
 		insertAlongUV(0, StencilFolder+"/"+markings, 0)
 		setupProjection(0, scope.xz, ~2,~2,2,2,2)
-		comp (f) {top:AsphaltPaintedStencil("Bikeways","bike_lane","white")}
+		comp (f) {top:AsphaltPaintedStencil(Stencil_Color ,"Bikeways","bike_lane")}
 
-		
+		Ste
 
 MainLaneMarkings(dir,lanenumber,markings)--> #Ground Textured Rule	
 	tileUV(0,~14,~ Lane_Width )				# the tileUV operation makes sure that one unit in u-space corresponds to approx 14 meters, the v-coord is not touched in the case of 0 as parameter
@@ -1806,7 +1807,7 @@ Bus_Lane_Stencil(dir)--> #Ground Textured Rule
 	insertAlongUV(0, StencilFolder+"/Bus_Only.obj",0)
 	setupProjection(0, scope.xz, ~2,~2,2,2,2)
 	reverseNormals()
-	comp (f) {top= AsphaltPaintedStencil("Transit","bus_lane","white")}
+	comp (f) {top= AsphaltPaintedStencil(Stencil_Color ,"Transit","bus_lane")}
 	
 HOV_Lane_Texture_Rule(dir)--> #Ground Textured Rule
 	split(v,unitSpace,0){PaintLineWidth*2*_PaintLineControl("Right", Transit_Paint_Line_Sides ):AsphaltPainted("yellow","Shared Mobility","hov_lane")
@@ -1835,7 +1836,7 @@ HOVLaneStencil(dir)-->
 	setupProjection(0, scope.xz, ~2,~2,2,2,2)
 	cleanupGeometry(all, 0.0075)
 	reverseNormals()
-	comp (f) {top=AsphaltPaintedStencil("Shared Mobility","hov_lane","white")}
+	comp (f) {top=AsphaltPaintedStencil(Stencil_Color ,"Shared Mobility","hov_lane")}
 
 ##############################################################
 #Non-Carlane Split Space- This is the space where 
@@ -1911,7 +1912,7 @@ BikeLaneArrowStencil(Stamp_Width)-->
 	insertAlongUV(0, StencilFolder+"/Bike_Arrow.obj",0)
 	setupProjection(0, scope.xz, ~Stamp_Width,~Stamp_Width,Stamp_Width,Stamp_Width,Stamp_Width)
 	cleanupGeometry(all, 0.001) 
-	comp (f) {top:AsphaltPaintedStencil("Bikeways","bike_lane","white")}
+	comp (f) {top:AsphaltPaintedStencil(Stencil_Color ,"Bikeways","bike_lane")}
 	
 
 BikeLaneSymbolStencil(Stamp_Width)--> #Ground Textured Rule
@@ -1920,7 +1921,7 @@ BikeLaneSymbolStencil(Stamp_Width)--> #Ground Textured Rule
 	insertAlongUV(0, StencilFolder+"/Bike_Symbol.obj", 0)
 	setupProjection(0, scope.xz, ~Stamp_Width,~Stamp_Width,Stamp_Width,Stamp_Width,Stamp_Width)
 	cleanupGeometry(all, 0.001) 
-	comp (f) {top:AsphaltPaintedStencil("Bikeways","bike_lane","white")}
+	comp (f) {top:AsphaltPaintedStencil(Stencil_Color,"Bikeways","bike_lane")}
 	
 		
 ConflictZone(passedcolor)-->
@@ -2188,16 +2189,16 @@ Carshare_Parking_Allocation(Side,Color,ParkingWidth,ParkingLength)-->
 			PaintLineWidth:AsphaltPainted("green","Shared Mobility","parking_lane")}
 
 Carshare_Parking_Stencil_Setup(Side)-->
-	split(v,unitSpace,0){'0.05:NIL|~1:split(u,unitSpace,0) {'0.1:NIL|~1:Carshare_Parking_Stencil(Side,"white")|'0.1:NIL}|'0.05:NIL}
+	split(v,unitSpace,0){'0.05:NIL|~1:split(u,unitSpace,0) {'0.1:NIL|~1:Carshare_Parking_Stencil(Side)|'0.1:NIL}|'0.05:NIL}
 
-Carshare_Parking_Stencil(Side,Color)--> #Ground Textured Rule
+Carshare_Parking_Stencil(Side)--> #Ground Textured Rule
 	alignScopeToGeometry(yUp, largest, 0)
 	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
  	scaleUV(0,1,case (Side=="Right" || Lane_Distribution==1) && Lane_Distribution!=0:1 else: -1)
  	normalizeUV(0, uv, collectiveAllFaces)	
 	insertAlongUV(0, StencilFolder+"/Carshare_Only.obj",0)
 	setupProjection(0, scope.xz, ~2,~2,2,2,2)
-	comp (f) {top= AsphaltPaintedStencil("Transit","bus_pull_in","white")}
+	comp (f) {top= AsphaltPaintedStencil(Stencil_Color ,"Transit","bus_pull_in")}
 		
 Bus_Stop_Allocation(Side,Color,StampWidth)-->
 	report("Curbside Management.Bus Stop Length (m)",geometry.du(0,unitSpace))
@@ -2223,7 +2224,7 @@ Bus_Stop_Stencil(Side)--> #Ground Textured Rule
  	normalizeUV(0, uv, collectiveAllFaces)	
 	insertAlongUV(0, StencilFolder+"/Bus_Stop.obj",0)
 	setupProjection(0, scope.xz, ~2,~2,2,2,2)
-	comp (f) {top= AsphaltPaintedStencil("Transit","bus_pull_in","white")}
+	comp (f) {top= AsphaltPaintedStencil(Stencil_Color ,"Transit","bus_pull_in")}
 	
 	
 Project_Zebra_Stripe(Color,Mode_Class,LabelID)--> #Ground Textured Rule
@@ -2305,7 +2306,7 @@ ParkingInsertCap (Rotation,Obj_Path)--> #Ground Textured Rule
 	alignScopeToGeometry(yUp,largest,0)
 	rotateScope(0,Rotation,0)
 	i(StencilFolder+Obj_Path)
-	AsphaltPaintedStencil("Storage","parking_lane","white")
+	AsphaltPaintedStencil(Stencil_Color,"Storage","parking_lane")
 
 ParallelParkingTexture(Side,ParkingLength,ParkingWidth,ReportBool)-->
  	scaleUV(0,1,(case Side=="Right":
@@ -3466,7 +3467,7 @@ AsphaltPainted(paintColor,Usage,LabelID) --> #Ground Textured Rule
 	else:#If Black redirect to asphalt rule.
 		Asphalt(Usage,LabelID)
 
-AsphaltPaintedStencil(Usage,LabelID,paintColor)-->
+AsphaltPaintedStencil(paintColor,Usage,LabelID)-->
 	# Stencils should have no reporting, managed by overlay shapes.
 	alignScopeToAxes(y)
 	alignScopeToGeometry(yUp,largest,longest)
