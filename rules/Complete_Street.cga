@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 7/3/2020
+ * Last Updated: 7/5/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -2229,10 +2229,16 @@ Bus_Stop_Stencil(Side)--> #Ground Textured Rule
 	
 	
 Project_Zebra_Stripe(Color,Mode_Class,LabelID)--> #Ground Textured Rule
-	setupProjection(0,scope.xz,'1,'1)
-	texture(LanesFolder +"/crosswalk_zebra_"+Color+".jpg")
-	projectUV(0)
-	ColorAndReport(Mode_Class,LabelID)
+	case Not_High_LOD:
+		setupProjection(0,scope.xz,'1,'1)
+		texture(LanesFolder +"/crosswalk_zebra_"+Color+".jpg")
+		projectUV(0)
+		ColorAndReport(Mode_Class,LabelID)
+	else:
+		cleanupGeometry(all, 0.001)
+		split(u,unitSpace,0) {ThickPaintLineWidth:Asphalt(Mode_Class,LabelID)|
+		                     {ThickPaintLineWidth:AsphaltPainted(Color,Mode_Class,LabelID)|
+							ThickPaintLineWidth:Asphalt(Mode_Class,LabelID)}*}
 
 Parklet_Insert(ParkingLength,Rotation)-->
 	alignScopeToGeometry(yUp, largest, 1)
@@ -3073,10 +3079,17 @@ CrosswalkDashed(uvSet) -->
 						  | 0.17: CrosswalkStripes(0.6) }	
 
 CrosswalkStripes(stripeWidth) --> #Ground Textured Rule
-	cleanupGeometry(all, 0.001) 
-	tileUV(0,0,~1) scaleUV(0,1,1/8/stripeWidth) 		# to setup the v-direction: a continental crosswalk line is 1m width, and the texture contains 8 of these.
-	texture(LanesFolder + "/crosswalk_continental_"+ Crosswalk_Color +".jpg")
-	Delete_Texture
+	case Not_High_LOD:
+		cleanupGeometry(all, 0.001) 
+		tileUV(0,0,~1) scaleUV(0,1,1/8/stripeWidth) 		# to setup the v-direction: a continental crosswalk line is 1m width, and the texture contains 8 of these.
+		texture(LanesFolder + "/crosswalk_continental_"+ Crosswalk_Color +".jpg")
+		Delete_Texture
+	else:
+		cleanupGeometry(all, 0.001) 
+		split(v,unitSpace,0) {ThickPaintLineWidth:Asphalt("Conflict Zones","crosswalk")|
+		                     {ThickPaintLineWidth:AsphaltPainted( Crosswalk_Color,"Conflict Zones","crosswalk")|
+							ThickPaintLineWidth:Asphalt("Conflict Zones","crosswalk")}*}
+
 	
 CrosswalkWalkway(reporting)--> #Ground Textured Rule
 	case reporting:
