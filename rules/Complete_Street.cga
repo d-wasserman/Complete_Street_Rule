@@ -475,7 +475,8 @@ const MiscFolder					= CompleteStreetFolder +"/Misc"
 const StencilFolder					= ObjectFolder+ "/Stencil"
 #Paint Constants
 const ThickPaintLineWidth			= 0.5
-const PaintLineWidth				= 0.1 #uvSpace 36/256-about 4 in
+const ModeratePaintLineWidth		= 0.17
+const PaintLineWidth				= 0.11 #uvSpace 36/256-about 4 in
 const Rumble_Strip_Len				= 1.5 #FWHA 7 in wide per bump with 5 in ashpalt spacing
 const Rumble_Strip_Wid				= .355 #FWHA-typically 12-16 in wide
 const Stencil_Color 				= "white"
@@ -494,7 +495,7 @@ const Parklet_Shift					= case _Actual_Space_Management== "Best Fit" || (Parking
 const Max_Sidewalk_Gap				= 5.4 #change this if you want a smaller or larger gap between first tree splits and crosswalks
 const Median_Turn_Transition_Depth  = Center_Width*(2*Speed_Limit_in_MPH/30)
 const Minimum_Turn_Curb_Width		= 1.5/Feet
-const Turn_Pocket_Curb_Width		=_Maxof(Minimum_Turn_Curb_Width,Center_Width/10)
+const Turn_Pocket_Curb_Width		= _Maxof(Minimum_Turn_Curb_Width,Center_Width/10)
 const Split_Divider_Width			= case LOD_Setting=="Low":3/Feet case LOD_Setting=="High":1/Feet else: 1.5/Feet
 const Dimension_Center_Hexcode		= case Boulevard_Configuration=="Bus Lanes": NACTOTransit 
 									  case Boulevard_Configuration=="Normal Lanes": NACTOAuto 
@@ -1634,7 +1635,6 @@ ApproachSymbolStencils(dir,lanenumber,lanestotal,markings)-->
 		setupProjection(0, scope.xz, ~2,~2,2,2,2)
 		comp (f) {top:AsphaltPaintedStencil(Stencil_Color ,"Bikeways","bike_lane")}
 
-		Ste
 
 MainLaneMarkings(dir,lanenumber,markings)--> #Ground Textured Rule	
 	tileUV(0,~14,~ Lane_Width )				# the tileUV operation makes sure that one unit in u-space corresponds to approx 14 meters, the v-coord is not touched in the case of 0 as parameter
@@ -1677,13 +1677,13 @@ MainLaneMarkingLODChoice(dir,lanenumber,marking)-->
 	case Not_High_LOD:
 		MainLaneMarkings(dir,lanenumber,"_stripes_white")
 	else:
-		HighLODLaneMarking(dir,lanenumber,"Auto")
+		HighLODLaneMarking(dir,lanenumber,"Auto","drive_lane")
 		
-HighLODLaneMarking(dir,lanenumber,mode)-->
-	split(v,unitSpace,0) {~1:Asphalt(mode,"drive_lane")|PaintLineWidth:Repeated_Lane_Dash(mode)}
+HighLODLaneMarking(dir,lanenumber,Mode,LabelID)-->
+	split(v,unitSpace,0) {~1:Asphalt(Mode,LabelID)|PaintLineWidth:Repeated_Lane_Dash("white",Mode,LabelID)}
 
-Repeated_Lane_Dash(mode)-->
-	split(u,unitSpace,0) {~4:AsphaltPainted("white",mode,"drive_lane")|~4:Asphalt(mode,"drive_lane")}*	
+Repeated_Lane_Dash(Color,Mode,LabelID)-->
+	split(u,unitSpace,0) {~4:Asphalt(Mode,LabelID)|{~4:AsphaltPainted(Color,Mode,LabelID)|~4:Asphalt(Mode,LabelID)}*}	
 
 						
 #######################################################
@@ -2398,12 +2398,12 @@ CenterSpace -->
 	case Center_Type == "White Stripe Centerline":
 		Striped_Centerline
 	else:
-		CenterLineMarkings(Centerline_Color)
+		CenterLineMarkings(Centerline_Color,"Auto","centerline")
 
 Striped_Centerline-->
-	split(u,unitSpace,0){ _stopBegin*21: CenterLineMarkings("white")
+	split(u,unitSpace,0){ _stopBegin*21: CenterLineMarkings("white","Auto","centerline")
 						| ~1		   : split(u,unitSpace,0){~5: CenterLineMarkings("white")|~5:Asphalt("Auto","asphalt")}*
-						| _stopEnd*21  : CenterLineMarkings("white") }
+						| _stopEnd*21  : CenterLineMarkings("white","Auto","centerline") }
 
 
 
@@ -2417,35 +2417,37 @@ MedianWTurnLane-->
 						|(_Bike_Box_Gap("End")): Bike_Box_Left_Turn_Gap("End")}
 
 MedianTurnPocket(Location,dir)-->
-	case dir==0:
-		scaleUV(0,-1,1)
-		split(u,unitSpace,0){Median_Turn_Transition_Depth:TransitionSpace(Location,dir)
-		|~1:TurnLanePocket(dir)}
-	else:
-		scaleUV(0,1,-1)
-		split(u,unitSpace,0){Median_Turn_Transition_Depth:TransitionSpace(Location,dir)
-		|~1:TurnLanePocket(dir)}
-		
-TransitionSpace(Location,dir)-->
-	split(v,unitSpace,0){Turn_Pocket_Curb_Width:Raised_Offset_Curb("Turn Lane Curb",1,"Auto",Turn_Pocket_Curb_Width)
-						|~1: AngledSplitTransition(Location,dir)}			
+	scaleUV(0,case dir==0:-1 else: 1,case dir==0:1 else: -1)
+	split(u,unitSpace,0){Median_Turn_Transition_Depth:MedianTransitionSpace(Location,dir)
+	|~1:RaisedTurnLanePocket(dir)}
 
-AngledSplitTransition(Location,dir)-->
-	TransitionInsert(Location,dir)
+		
+MedianTransitionSpace(Location,dir)-->
+	split(v,unitSpace,0){Turn_Pocket_Curb_Width:Raised_Offset_Curb("Turn Lane Curb",1,"Auto",Turn_Pocket_Curb_Width)
+						|~1: RaisedAngledSplitTransition(Location,dir)}			
+
+RaisedAngledSplitTransition(Location,dir)-->
+	RaisedTransitionInsert(Location,dir)
 	Asphalt("Auto","asphalt")
 
-TransitionInsert(Location,dir)-->
+RaisedTransitionInsert(Location,dir)-->
 	normalizeUV(0, uv, collectiveAllFaces)	
 	setupProjection(0, scope.xz, 2,2,2,2,2)
 	insertAlongUV(0,Default_Median_Transition,0)
 	comp (f) {top:Raised_Curb_End_Extrusion("Auto",dir)}
 	
-TurnLanePocket(dir)-->
+RaisedTurnLanePocket(dir)-->
 	split(v,unitSpace,0){
 		Turn_Pocket_Curb_Width:split(u,unitSpace,0) {~1:Raised_Offset_Curb("Turn Lane Curb",1,"Auto",Turn_Pocket_Curb_Width)
 									|Turn_Pocket_Curb_Width:Asphalt("Auto","asphalt") Raised_Curb_End("Median With Turn Lane",dir)}
 						|{~Lane_Width: ApproachMarkings(dir,1,1,"right;")}*}#Right because UV is scaled at beginning
 Center_Turn_Lane-->
+	case Not_High_LOD:
+		Center_Turn_Lane_Low_LOD
+	else:
+		Center_Turn_Lane_High_LOD
+
+Center_Turn_Lane_Low_LOD-->
 	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
 						|_neighborBegin*_stopBegin*ThickPaintLineWidth:AsphaltPainted("white","Auto","stop_bar")
 						|(_tooShort(geometry.du(0,unitSpace),18+ThickPaintLineWidth))*_neighborBegin*_stopBegin*18:CenterTurnLaneStamp("Transition_",180)
@@ -2457,7 +2459,74 @@ Center_Turn_Lane-->
 						|(_tooShort(geometry.du(0,unitSpace),18+ThickPaintLineWidth))*_neighborEnd*_stopEnd*18:CenterTurnLaneStamp("Transition_",0)
 						|_neighborEnd*_stopEnd*ThickPaintLineWidth:AsphaltPainted("white","Auto","stop_bar")
 						|(_Bike_Box_Gap("End")): Bike_Box_Left_Turn_Gap("End")}
-						
+
+Center_Turn_Lane_High_LOD-->
+	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
+						|_neighborBegin*_stopBegin*ThickPaintLineWidth:AsphaltPainted("white","Auto","stop_bar")
+						|(_tooShort(geometry.du(0,unitSpace),16+Median_Turn_Transition_Depth+ThickPaintLineWidth))*_neighborBegin*_stopBegin*(14+Median_Turn_Transition_Depth):CenterTurnLaneTurnPocket("Center Turn Lane",0)
+						| ~1:CenterTurnLanePattern
+						|(_tooShort(geometry.du(0,unitSpace),16+Median_Turn_Transition_Depth+ThickPaintLineWidth))*_neighborBegin*_stopBegin*(14+Median_Turn_Transition_Depth):CenterTurnLaneTurnPocket("Center Turn Lane",2)
+						|_neighborEnd*_stopEnd*ThickPaintLineWidth:AsphaltPainted("white","Auto","stop_bar")
+						|(_Bike_Box_Gap("End")): Bike_Box_Left_Turn_Gap("End")}
+
+CenterTurnLanePattern-->
+	split(v,unitSpace,0){ModeratePaintLineWidth:AsphaltPainted("yellow","Auto","center_turn_lane")
+						|ModeratePaintLineWidth:Asphalt("Auto","center_turn_lane")
+						|~1:split(u,unitSpace,0){~Lane_Width:CenterTurnLaneStencilSections("black")
+											|{~Lane_Width:CenterTurnLaneStencilSections("yellow")
+											|~Lane_Width:CenterTurnLaneStencilSections("black")}*}
+						|ModeratePaintLineWidth:Asphalt("Auto","center_turn_lane")
+						|ModeratePaintLineWidth:AsphaltPainted("yellow","Auto","center_turn_lane")}
+
+CenterTurnLaneStencilSections(EdgeColor)-->						
+	split(v,unitSpace,0) {ModeratePaintLineWidth:AsphaltPainted(EdgeColor,"Auto","center_turn_lane")
+						 |~1:Asphalt("Auto","center_turn_lane") CenterTurnLaneArrowSetup(EdgeColor,"Auto","center_turn_lane")
+						 |ModeratePaintLineWidth:AsphaltPainted(EdgeColor,"Auto","center_turn_lane")}
+
+CenterTurnLaneArrowSetup(EdgeColor,Mode,LabelID)-->
+	case EdgeColor == "black":
+		NIL
+	else:
+		split(v,unitSpace,0) {'0.25:NIL|
+							 ~1:split(u,unitSpace,0) {'0.4:ApproachSymbolStencils(0,0,1,"Left_Arrow.obj")
+								 |'0.2:NIL
+								 |'0.4:scaleUV(0,-1,1) ApproachSymbolStencils(0,0,1,"Right_Arrow.obj")}	
+						     |'0.25:NIL}
+						     
+CenterTurnLaneTurnPocket(Location,dir)-->
+	scaleUV(0,case dir==0:-1 else: 1,case dir==0:1 else: -1)
+	split(u,unitSpace,0){Median_Turn_Transition_Depth:PaintedTransitionSpace(Location,dir)
+	|~1:PaintedTurnLanePocket(dir)}
+
+		
+PaintedTransitionSpace(Location,dir)-->
+	split(v,unitSpace,0){ModeratePaintLineWidth*3:CenterLineMarkings("yellow","Auto","center_turn_lane")
+						|~1: PaintedAngledSplitTransition(Location,dir)}			
+
+PaintedAngledSplitTransition(Location,dir)-->
+	PaintedTransitionInsert(Location,dir)
+	Asphalt("Auto","asphalt")
+
+PaintedTransitionInsert(Location,dir)-->
+	alignScopeToGeometry(yUp,largest,0)
+	normalizeUV(0, uv, collectiveAllFaces)	
+	setupProjection(0, scope.xz, 2,2,2,2,2)
+	insertAlongUV(0,Default_Median_Transition,0)
+	comp (f) {top=PaintedShell(ModeratePaintLineWidth,"yellow","Auto","center_turn_lane")}
+
+PaintedShell(Thickness, Color,Mode,LabelID)-->
+	normalizeUV(0, uv, collectiveAllFaces)
+	setback(Thickness,0){all=AsphaltPaintedStencil( Color,Mode,LabelID)|
+						remainder:split(x){Thickness:NIL
+													  |Thickness:AsphaltPaintedStencil( Color,Mode,LabelID)
+													  |Thickness:NIL}*}
+	
+PaintedTurnLanePocket(dir)-->
+	split(v,unitSpace,0){ModeratePaintLineWidth*3:CenterLineMarkings("yellow","Auto","center_turn_lane")
+		|{~Lane_Width: ApproachMarkings(dir,1,1,"right;")}*}#Right because UV is scaled at beginning	
+						     
+					 				
+
 Boulevard-->
 	case Boulevard_Configuration=="Open Space": #If open space send to different split set up. 
 	split(v,unitSpace,0){~(case WalkWay_Width==0:1 else:WalkWay_Width):Raised_Curb("Boulevard",0)
@@ -2488,7 +2557,7 @@ Boulevard_StopBars(dir)-->
 			split(u,unitSpace,0) {_stopBegin*ThickPaintLineWidth:AsphaltPainted("white","Auto","stop_bar")|~1:BikeLane(-1,geometry.dv(0,unitSpace))}
 Boulevard_Center-->
 	case Boulevard_Center_Type=="Center Line":
-		CenterLineMarkings(Centerline_Color)
+		CenterLineMarkings(Centerline_Color,"Auto","centerline")
 	case Boulevard_Center_Type=="Median":
 		Raised_Curb("Boulevard Center",1) #HAS no bus stop
 	case Boulevard_Center_Type=="Curb Buffer":
@@ -2503,19 +2572,18 @@ Boulevard_Center-->
 		split(u,unitSpace,0) {.3:NIL|~1:Fence("Boulevard Center")|.3:NIL}#The split only makes it so the fence poles are not put in the curb.
 		Raised_Curb("Boulevard Center",1)
 	else:
-		CenterLineMarkings(Centerline_Color)
+		CenterLineMarkings(Centerline_Color,"Auto","centerline")
 
 Center_Normal_Lanes(dir)-->
 	 split(v,unitSpace,0) {~1:Drainage
 	 					  |{ Lane_Width :MainLaneMarkings(0,split.index,"_stripes_white") MixedTrafficOnLane (dir,-999,-999)}*
 	 					  | Lane_Width :Asphalt("Auto","asphalt") MixedTrafficOnLane (dir,-999,-999)}
 
-CenterLineMarkings(line_color) --> 
-	split(v,unitSpace,0) {~PaintLineWidth:AsphaltPainted(line_color,"Auto","centerline")|
-					 ~PaintLineWidth:Asphalt("Auto","asphalt")|
-					 ~PaintLineWidth:AsphaltPainted(line_color,"Auto","centerline")}
-	color( _ThematicRouter ("Auto","centerline"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 		
-	
+CenterLineMarkings(line_color,Mode,LabelID) --> 
+	split(v,unitSpace,0) {~PaintLineWidth:AsphaltPainted(line_color,Mode,LabelID)|
+					 ~PaintLineWidth:Asphalt(Mode,LabelID)|
+					 ~PaintLineWidth:AsphaltPainted(line_color,Mode,LabelID)}
+
 CenterTurnLaneStamp(texture_choice,degree)--> #Ground Textured Rule
 	normalizeUV(0,v,collectiveAllFaces)
 	rotateUV(0,degree)
