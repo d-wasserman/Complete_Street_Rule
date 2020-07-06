@@ -404,7 +404,6 @@ attr Bridge_Starts_At = 3
 attr Bridge_Thickness = 1
 @Group("BRIDGES") @Order(40) @Description("Determines the distance between Piers.")@Hidden
 attr Pier_Distance = 23
-@Group("BRIDGES") @Order(50) @Description("Determines the width of the Piers.")@Hidden
 attr Pier_Width = 2.3
 
 
@@ -2408,7 +2407,7 @@ CenterSpace -->
 
 Striped_Centerline-->
 	split(u,unitSpace,0){ _stopBegin*21: CenterLineMarkings("white","Auto","centerline")
-						| ~1		   : split(u,unitSpace,0){~5: CenterLineMarkings("white")|~5:Asphalt("Auto","asphalt")}*
+						| ~1		   : split(u,unitSpace,0){~5: CenterLineMarkings("white","Auto","centerline")|~5:Asphalt("Auto","asphalt")}*
 						| _stopEnd*21  : CenterLineMarkings("white","Auto","centerline") }
 
 
@@ -2521,11 +2520,12 @@ PaintedTransitionInsert(Location,dir)-->
 	comp (f) {top=PaintedShell(ModeratePaintLineWidth,"yellow","Auto","center_turn_lane")}
 
 PaintedShell(Thickness, Color,Mode,LabelID)-->
+	alignScopeToGeometry(yUp,largest,0)
 	normalizeUV(0, uv, collectiveAllFaces)
-	setback(Thickness,0){all=AsphaltPaintedStencil( Color,Mode,LabelID)|
+	setback(Thickness,0){all=AsphaltPaintedStencil(Color,Mode,LabelID)|
 						remainder:split(x){Thickness:NIL
-													  |Thickness:AsphaltPaintedStencil( Color,Mode,LabelID)
-													  |Thickness:NIL}*}
+										  |Thickness:AsphaltPaintedStencil( Color,Mode,LabelID)
+										  |Thickness:NIL}*}
 	
 PaintedTurnLanePocket(dir)-->
 	split(v,unitSpace,0){ModeratePaintLineWidth*3:CenterLineMarkings("yellow","Auto","center_turn_lane")
@@ -3555,7 +3555,7 @@ AsphaltPaintedStencil(paintColor,Usage,LabelID)-->
 	alignScopeToGeometry(yUp,largest,longest)
 	extrude(world.up,sharrowHeight)
 	normalizeUV(0,uv, separatePerFace)
-	setupProjection(0,scope.xz,2,2,2,2,2)
+	setupProjection(0,scope.xz,7,7,7,7,2)
 	texture(LanesFolder+"/asphalt_painted_" + paintColor + "_7x7m.jpg")
 	set(material.name,str(material.name)+"_"+str(paintColor))
 	projectUV(0)
