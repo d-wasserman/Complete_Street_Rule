@@ -404,6 +404,7 @@ attr Bridge_Starts_At = 3
 attr Bridge_Thickness = 1
 @Group("BRIDGES") @Order(40) @Description("Determines the distance between Piers.")@Hidden
 attr Pier_Distance = 23
+@Group("BRIDGES") @Order(50) @Description("Determines the width of the Piers.")@Hidden
 attr Pier_Width = 2.3
 
 
@@ -495,7 +496,6 @@ const Max_Sidewalk_Gap				= 5.4 #change this if you want a smaller or larger gap
 const Median_Turn_Transition_Depth  = Center_Width*(2*Speed_Limit_in_MPH/30)
 const Minimum_Turn_Curb_Width		= 1.5/Feet
 const Turn_Pocket_Curb_Width		= _Maxof(Minimum_Turn_Curb_Width,Center_Width/10)
-const Split_Divider_Width			= case LOD_Setting=="Low":3/Feet case LOD_Setting=="High":1/Feet else: 1.5/Feet
 const Dimension_Center_Hexcode		= case Boulevard_Configuration=="Bus Lanes": NACTOTransit 
 									  case Boulevard_Configuration=="Normal Lanes": NACTOAuto 
 									  case Boulevard_Configuration=="Cycle Path":NACTOBike 
@@ -578,10 +578,10 @@ const Braking_Dist					= 1.075*((Design_Speed*Design_Speed)/Deceleration_Rate)# 
 const Stopping_Sight_Dist			= Brake_Reaction_Dist+Braking_Dist
 ##Unit Conversion- in terms of number of unit per meter,meter^2, or meter^3- convert by unit *conversion factor==new unit
 const Feet							=3.28084 #per meter ^1
-const SquareFeet					=10.7639 #per meter ^2
-const Miles							=0.00062137 #per meter ^1
-const Inches						=39.3701 #per meter ^1
-const CubicFeet						=35.3147 #per meter ^3
+# const SquareFeet					=10.7639 #per meter ^2
+# const Miles							=0.00062137 #per meter ^1
+# const Inches						=39.3701 #per meter ^1
+# const CubicFeet						=35.3147 #per meter ^3
 #Thematic Constants
 const Brightness="#d7d7d7"
 const NACTOPedestrian="#FFFFFF"
@@ -1631,7 +1631,6 @@ ApproachSymbolStencils(dir,lanenumber,lanestotal,markings)-->
 		normalizeUV(0, uv, collectiveAllFaces)
 		rotateUV(0,90)
 		insertAlongUV(0, StencilFolder+"/"+markings, 0)
-		setupProjection(0, scope.xz, ~2,~2,2,2,2)
 		comp (f) {top:AsphaltPaintedStencil(Stencil_Color ,"Bikeways","bike_lane")}
 
 
@@ -1722,7 +1721,7 @@ Sharrow_Stamp(dir,lanestotal,lanenumber)-->
 Sharrow_Stamp_Top-->
 	AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")
 	alignScopeToGeometry(yUp,largest,longest)
-	BikeLaneSymbolStencil(1.5)	
+	BikeLaneSymbolStencil	
 		
 Transit_Lane_Reporting(dir)--> #Reports based on shape geometry and sends to allocator
 	report("Lane Width.Transit Lane Width (ft)",geometry.dv(0,unitSpace)*Feet) #Used to provide lane widths in feet
@@ -1882,11 +1881,11 @@ BikeLane(sideflip,Width)-->#Was Left,now both, fairly modular
 							#Level 1-First split indentation
 							|~1:split(u,unitSpace,0){2:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")
 								#Level 2- sub-split indentation
-								| Width*L_to_W_Ratio_Bk:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane") BikeLaneStencils(Width  ,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
+								| Width*L_to_W_Ratio_Bk:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane") BikeLaneStencils(Width)
 								|~ Bike_Symbol_Spacing :AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")
-								|{Width*L_to_W_Ratio_Bk:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane") BikeLaneStencils(Width  ,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
+								|{Width*L_to_W_Ratio_Bk:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane") BikeLaneStencils(Width)
 								|~ Bike_Symbol_Spacing :AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")}*
-								| _tooShort(geometry.du(0,unitSpace)-Bike_Conflict_Spacing,Bike_Symbol_Spacing)*_hasStopSideSwitch((case sideflip==1:0 else: 2))* Width*L_to_W_Ratio_Bk:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane") BikeLaneStencils(Width  ,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
+								| _tooShort(geometry.du(0,unitSpace)-Bike_Conflict_Spacing,Bike_Symbol_Spacing)*_hasStopSideSwitch((case sideflip==1:0 else: 2))* Width*L_to_W_Ratio_Bk:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane") BikeLaneStencils(Width)
 								| Bike_Conflict_Spacing :ConflictZone(Bike_Lane_Color)
 								|~1:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")} 
 							|PaintLineWidth*_PaintLineControl("Right", Bike_Paint_Line_Sides):BikeLaneLines}
@@ -1896,29 +1895,27 @@ BikeLaneLines-->
 						|Bike_Conflict_Spacing:ConflictZone("white")
 						|1:AsphaltPainted("white","Bikeways","bike_lane")}
 
-BikeLaneStencils(Stamp_Width,FileEnd, Color)-->
+BikeLaneStencils(Stamp_Width)-->
 	split(v,unitSpace,0) {~Stamp_Width/10:NIL|
-						 {~Stamp_Width:split(u,unitSpace,0){~1:BikeLaneSymbolStencil(Stamp_Width)|
+						 {~Stamp_Width:split(u,unitSpace,0){~1:BikeLaneSymbolStencil|
 											 ~1:NIL|
-											 ~1:BikeLaneArrowSetUp(Stamp_Width)}|
+											 ~1:BikeLaneArrowSetUp}|
 						 ~Stamp_Width/10:NIL}}
-BikeLaneArrowSetUp(Stamp_Width)--> 
-	split(v,unitSpace,0) {~1:NIL|~3:BikeLaneArrowStencil(Stamp_Width)|~1:NIL}
+BikeLaneArrowSetUp--> 
+	split(v,unitSpace,0) {~1:NIL|~3:BikeLaneArrowStencil|~1:NIL}
 
-BikeLaneArrowStencil(Stamp_Width)--> 
+BikeLaneArrowStencil--> 
 	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
 	normalizeUV(0, uv, collectiveAllFaces)	
 	insertAlongUV(0, StencilFolder+"/Bike_Arrow.obj",0)
-	setupProjection(0, scope.xz, ~Stamp_Width,~Stamp_Width,Stamp_Width,Stamp_Width,Stamp_Width)
 	cleanupGeometry(all, 0.001) 
 	comp (f) {top:AsphaltPaintedStencil(Stencil_Color ,"Bikeways","bike_lane")}
 	
 
-BikeLaneSymbolStencil(Stamp_Width)--> #Ground Textured Rule
+BikeLaneSymbolStencil--> #Ground Textured Rule
 	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
 	normalizeUV(0, uv, collectiveAllFaces)	
 	insertAlongUV(0, StencilFolder+"/Bike_Symbol.obj", 0)
-	setupProjection(0, scope.xz, ~Stamp_Width,~Stamp_Width,Stamp_Width,Stamp_Width,Stamp_Width)
 	cleanupGeometry(all, 0.001) 
 	comp (f) {top:AsphaltPaintedStencil(Stencil_Color,"Bikeways","bike_lane")}
 	
@@ -2020,13 +2017,15 @@ Shoulder(Dir)-->
 								|Rumble_Strip_Wid:Rumble_Strip
 								|PaintLineWidth:AsphaltPainted("white","Auto","asphalt")}
 
-
-Striped_Buffer(Buffer_Width)--> #Ground Textured Rule
-	rotateUV(0,90)
-	tileUV(0,~ Buffer_Width ,~Buffer_Width*1.5 )
-	texture(LanesFolder+"/street_1bike_"+"buffer2.jpg")
-	ModeReporter ("Bikeways")
-	Delete_Texture
+Striped_Buffer(Buffer_Width)-->
+	split(u,unitSpace,0) {~Buffer_Width*1.5:Asphalt("Bikeways","bike_buffer") Bike_Buffer_Stencil("Bikeways","bike_buffer")}*
+	
+Bike_Buffer_Stencil(Mode,LabelID)-->
+	alignScopeToAxes(y)
+	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0, StencilFolder+"/Bike_Buffer_Center.obj", 0)
+	cleanupGeometry(all, 0.001) 
+	comp (f) {top:AsphaltPaintedStencil(Stencil_Color,Mode,LabelID)}
 
 #Bike Box Creation Rule- controls the splits for the bike box. Works best if Bike lane is adjacent to sidewalk.
 BikeBoxCreation(dir)-->
@@ -2063,7 +2062,7 @@ BikeBoxSymbolAllocation(dir,symbol_spacing,allocation_width,bike_box_color)-->
 								| allocation_width *BikeBox_Fraction: BikeBoxSymbolSetup(allocation_width)
 								|~ symbol_spacing /2: NIL }*
 BikeBoxSymbolSetup(Width)-->
-	split(u,unitSpace,0) {~0.2:NIL|~1:BikeLaneSymbolStencil(Width)|~0.2:NIL}							
+	split(u,unitSpace,0) {~0.2:NIL|~Width:BikeLaneSymbolStencil|~0.2:NIL}							
 ########################
 #####Parking Lane Rules
 ParkingLane(Side,ParkingType,ParkingLength,ParkingWidth,CurbsideLength)-->
@@ -2197,7 +2196,6 @@ Carshare_Parking_Stencil(Side)--> #Ground Textured Rule
  	scaleUV(0,1,case (Side=="Right" || Lane_Distribution==1) && Lane_Distribution!=0:1 else: -1)
  	normalizeUV(0, uv, collectiveAllFaces)	
 	insertAlongUV(0, StencilFolder+"/Carshare_Only.obj",0)
-	setupProjection(0, scope.xz, ~2,~2,2,2,2)
 	comp (f) {top= AsphaltPaintedStencil(Stencil_Color ,"Transit","bus_pull_in")}
 		
 Bus_Stop_Allocation(Side,Color,StampWidth)-->
@@ -2223,7 +2221,6 @@ Bus_Stop_Stencil(Side)--> #Ground Textured Rule
  	rotateUV(0,90)
  	normalizeUV(0, uv, collectiveAllFaces)	
 	insertAlongUV(0, StencilFolder+"/Bus_Stop.obj",0)
-	setupProjection(0, scope.xz, ~2,~2,2,2,2)
 	comp (f) {top= AsphaltPaintedStencil(Stencil_Color ,"Transit","bus_pull_in")}
 	
 	
