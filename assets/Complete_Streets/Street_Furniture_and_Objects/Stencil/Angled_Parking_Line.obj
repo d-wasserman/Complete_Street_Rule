@@ -1,0 +1,20 @@
+# Alias OBJ Model File
+# OBJ Export
+# File units = inches
+
+mtllib Angled_Parking_Line.mtl
+
+g Mesh1 Model
+
+usemtl FrontColor
+v 129.725 0 -126.495
+vt -129.725 126.495
+vn 0 -1 -0
+v 1.78259 0 1.44718
+vt -1.78259 -1.44718
+v -1.75294 0 -2.08835
+vt 1.75294 2.08835
+v 126.189 0 -130.03
+vt -126.189 130.03
+f 1/1/1 2/2/1 3/3/1 4/4/1 
+
