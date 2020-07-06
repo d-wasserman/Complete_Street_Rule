@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 7/5/2020
+ * Last Updated: 7/6/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -3552,7 +3552,7 @@ AsphaltPaintedStencil(paintColor,Usage,LabelID)-->
 	alignScopeToGeometry(yUp,largest,longest)
 	extrude(world.up,sharrowHeight)
 	normalizeUV(0,uv, separatePerFace)
-	setupProjection(0,scope.xz,7,7,7,7,2)
+	setupProjection(0,scope.xz,7,7,7,7,1)
 	texture(LanesFolder+"/asphalt_painted_" + paintColor + "_7x7m.jpg")
 	set(material.name,str(material.name)+"_"+str(paintColor))
 	projectUV(0)
