@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 7/6/2020
+ * Last Updated: 7/11/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: ESRI Attribution License and Apache License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -536,6 +536,7 @@ const Default_Parklet				= (ObjectFolder+ "/Parklet_"+LOD_Object_Choice+"_LOD.ob
 const Default_BusStop				= (ObjectFolder+ "/Bus_Stop_2.glb")
 const Default_Median_End			= (StencilFolder+ "/Median_End.obj")
 const Default_Median_Transition		= (StencilFolder+"/Median_Transition.obj")
+const Default_TWLTL_Transition      = (StencilFolder+"/Center_Turn_Lane_Transition.obj")
 const Default_Wedge 				= (ObjectFolder+"/Wedge.obj")
 const Max_Distance_From_CS_Manage   = 1.5
 #Boolean Converted Constants
@@ -2497,32 +2498,17 @@ CenterTurnLaneArrowSetup(EdgeColor,Mode,LabelID)-->
 						     
 CenterTurnLaneTurnPocket(Location,dir)-->
 	scaleUV(0,case dir==0:-1 else: 1,case dir==0:1 else: -1)
-	split(u,unitSpace,0){Median_Turn_Transition_Depth:PaintedTransitionSpace(Location,dir)
-	|~1:PaintedTurnLanePocket(dir)}
-
-		
-PaintedTransitionSpace(Location,dir)-->
-	split(v,unitSpace,0){ModeratePaintLineWidth*3:CenterLineMarkings("yellow","Auto","center_turn_lane")
-						|~1: PaintedAngledSplitTransition(Location,dir)}			
-
-PaintedAngledSplitTransition(Location,dir)-->
 	PaintedTransitionInsert(Location,dir)
-	Asphalt("Auto","asphalt")
+	split(u,unitSpace,0){Median_Turn_Transition_Depth:Asphalt("Auto","asphalt")
+	|~1: ApproachMarkings(dir,1,1,"right;")}
+
 
 PaintedTransitionInsert(Location,dir)-->
 	alignScopeToGeometry(yUp,largest,0)
 	normalizeUV(0, uv, collectiveAllFaces)	
 	setupProjection(0, scope.xz, 2,2,2,2,2)
-	insertAlongUV(0,Default_Median_Transition,0)
-	comp (f) {top=PaintedShell(ModeratePaintLineWidth,"yellow","Auto","center_turn_lane")}
-
-PaintedShell(Thickness, Color,Mode,LabelID)-->
-	alignScopeToGeometry(yUp,largest,0)
-	normalizeUV(0, uv, collectiveAllFaces)
-	setback(Thickness,0){all=AsphaltPaintedStencil(Color,Mode,LabelID)|
-						remainder:split(x){Thickness:NIL
-										  |Thickness:AsphaltPaintedStencil( Color,Mode,LabelID)
-										  |Thickness:NIL}*}
+	insertAlongUV(0,Default_TWLTL_Transition,0)
+	comp (f) {top=AsphaltPaintedStencil("yellow","Auto","center_turn_lane")}
 	
 PaintedTurnLanePocket(dir)-->
 	split(v,unitSpace,0){ModeratePaintLineWidth*3:CenterLineMarkings("yellow","Auto","center_turn_lane")
