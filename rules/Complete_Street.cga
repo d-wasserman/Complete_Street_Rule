@@ -1,9 +1,9 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 7/11/2020
+ * Last Updated: 7/12/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
- * License: ESRI Attribution License and Apache License.
+ * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
 # ESRI Attribution License:
 #	ESRI Derivative work
@@ -493,7 +493,11 @@ const Curb_Depth					= 0.1574
 const BusStop_Length				= 16.0
 const Parklet_Shift					= case _Actual_Space_Management== "Best Fit" || (Parking_Protection_Bool && _Minof(Left_Buffer_Width+Street_Left_Bike_Lane_Width,Right_Buffer_Width+Street_Right_Bike_Lane_Width)>0):0 else:-_EmptySpace #if parking protection is on a shift will lead to geometric collision, but it will choose to collide if oneside does not have a bikelane/buffer (check later).   
 const Max_Sidewalk_Gap				= 5.4 #change this if you want a smaller or larger gap between first tree splits and crosswalks
-const Median_Turn_Transition_Depth  = Center_Width*(2*Speed_Limit_in_MPH/30)
+const Median_Turn_Transition_Depth  = Center_Width*(3*Speed_Limit_in_MPH/30)
+const TWLTL_Turn_Pocket_Depth		= 13.75
+const Total_Median_Turn_Depth 		= Median_Turn_Pocket_Depth + Median_Turn_Transition_Depth + ThickPaintLineWidth
+const Total_TWLTL_Turn_Depth		= TWLTL_Turn_Pocket_Depth + Median_Turn_Transition_Depth + ThickPaintLineWidth
+const Median_Turn_Pocket_Depth		= 14
 const Minimum_Turn_Curb_Width		= 1.5/Feet
 const Turn_Pocket_Curb_Width		= _Maxof(Minimum_Turn_Curb_Width,Center_Width/10)
 const Dimension_Center_Hexcode		= case Boulevard_Configuration=="Bus Lanes": NACTOTransit 
@@ -2413,9 +2417,9 @@ Striped_Centerline-->
 MedianWTurnLane-->
 	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
 						|_neighborBegin*_stopBegin*ThickPaintLineWidth:AsphaltPainted("white","Auto","stop_bar")
-						|(_tooShort(geometry.du(0,unitSpace),16+Median_Turn_Transition_Depth+ThickPaintLineWidth))*_neighborBegin*_stopBegin*(14+Median_Turn_Transition_Depth):MedianTurnPocket("Median",0)
+						|(_tooShort(geometry.du(0,unitSpace),Total_Median_Turn_Depth ))*_neighborBegin*_stopBegin*(Total_Median_Turn_Depth ):MedianTurnPocket("Median",0)
 						|~1:Raised_Offset_Curb("Median",1,"Auto",Center_Width/4)
-						|(_tooShort(geometry.du(0,unitSpace),16+Median_Turn_Transition_Depth+ThickPaintLineWidth))*_neighborEnd*_stopEnd*(14+Median_Turn_Transition_Depth):MedianTurnPocket("Median",2)
+						|(_tooShort(geometry.du(0,unitSpace),Total_Median_Turn_Depth ))*_neighborEnd*_stopEnd*(Total_Median_Turn_Depth ):MedianTurnPocket("Median",2)
 						|_neighborEnd*_stopEnd*ThickPaintLineWidth:AsphaltPainted("white","Auto","stop_bar")
 						|(_Bike_Box_Gap("End")): Bike_Box_Left_Turn_Gap("End")}
 
@@ -2466,9 +2470,9 @@ Center_Turn_Lane_Low_LOD-->
 Center_Turn_Lane_High_LOD-->
 	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
 						|_neighborBegin*_stopBegin*ThickPaintLineWidth:AsphaltPainted("white","Auto","stop_bar")
-						|(_tooShort(geometry.du(0,unitSpace),16+Median_Turn_Transition_Depth+ThickPaintLineWidth))*_neighborBegin*_stopBegin*(14+Median_Turn_Transition_Depth):CenterTurnLaneTurnPocket("Center Turn Lane",0)
+						|(_tooShort(geometry.du(0,unitSpace),Total_TWLTL_Turn_Depth))*_neighborBegin*_stopBegin*(Total_TWLTL_Turn_Depth ):CenterTurnLaneTurnPocket("Center Turn Lane",0)
 						| ~1:CenterTurnLanePattern
-						|(_tooShort(geometry.du(0,unitSpace),16+Median_Turn_Transition_Depth+ThickPaintLineWidth))*_neighborBegin*_stopBegin*(14+Median_Turn_Transition_Depth):CenterTurnLaneTurnPocket("Center Turn Lane",2)
+						|(_tooShort(geometry.du(0,unitSpace),Total_TWLTL_Turn_Depth))*_neighborBegin*_stopBegin*(Total_TWLTL_Turn_Depth ):CenterTurnLaneTurnPocket("Center Turn Lane",2)
 						|_neighborEnd*_stopEnd*ThickPaintLineWidth:AsphaltPainted("white","Auto","stop_bar")
 						|(_Bike_Box_Gap("End")): Bike_Box_Left_Turn_Gap("End")}
 
@@ -2500,7 +2504,7 @@ CenterTurnLaneTurnPocket(Location,dir)-->
 	scaleUV(0,case dir==0:-1 else: 1,case dir==0:1 else: -1)
 	PaintedTransitionInsert(Location,dir)
 	split(u,unitSpace,0){Median_Turn_Transition_Depth:Asphalt("Auto","asphalt")
-	|~1: ApproachMarkings(dir,1,1,"right;")}
+	|~1: split(v,unitSpace,0) {'0.05:Asphalt("Auto","asphalt")|~1:ApproachMarkings(dir,1,1,"right;")}}
 
 
 PaintedTransitionInsert(Location,dir)-->
