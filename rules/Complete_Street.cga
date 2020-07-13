@@ -727,9 +727,9 @@ _Car_Angle(ParkingType)				=
 	case find(ParkingType,"Parallel",0)!=-1:
 		0
 	case leftHandTraffic:
-		300
+		295
 	else:
-		240
+		245
 _Front_Parking_Spacing(Parking_Type) = 
 case Front_Parking_Spacing!=0:
 	Front_Parking_Spacing
@@ -2254,27 +2254,35 @@ Parklet_Insert(ParkingLength,Rotation)-->
  	
 AngledNoseIn(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
 	AngledParkingCar((case Side=="Right":0 else:2),ParkingType,ParkingLength, ParkingWidth,SpaceNumber)
+	Asphalt("Storage","parking_lane")
 	scaleUV(0,-1,
  		(case Side=="Right":
  						(case Parking_Protection_Bool :1 else:-1)
  					 else:
  						(case Parking_Protection_Bool :-1 else:1)))
- 						
- 	tileUV(0,~ParkingLength,~ParkingWidth)
-	texture(LanesFolder+"/AngledParking.jpg")
-	ParkingReport(Side,case SpaceNumber==1: false else:true,false)#Don't include last spot
-	ColorAndReport("Storage","parking_lane")
+ 	split(v,unitSpace,0){'0.24:NIL|~1:AngledParkingStencil(Side,ParkingLength,ParkingWidth)}
+ 	ParkingReport(Side,case SpaceNumber==1: false else:true,true)#Don't include last spot
 
 AngledNoseOutParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
+	Asphalt("Storage","parking_lane")
 	AngledParkingCar((case Side=="Right":0 else:2),ParkingType,ParkingLength, ParkingWidth,SpaceNumber)
 	scaleUV(0,1,(case Side=="Right":
  							(case Parking_Protection_Bool :1 else:-1)
  						 else:
  							(case Parking_Protection_Bool :-1 else:1)))
- 		tileUV(0,~ParkingLength,~ParkingWidth)
-		texture(LanesFolder+"/AngledParking.jpg")
-	ParkingReport(Side,case SpaceNumber==1: false else:true,false) #Don't include last spot
-	ColorAndReport("Storage","parking_lane")
+ 	split(v,unitSpace,0){'0.24:NIL|~1:AngledParkingStencil(Side,ParkingLength,ParkingWidth)}
+	ParkingReport(Side,case SpaceNumber==1: false else:true,true) #Don't include last spot
+	
+
+
+AngledParkingStencil(Side,ParkingLength,ParkingWidth)-->
+	alignScopeToGeometry(yUp,largest,0)
+	normalizeUV(0, uv, collectiveAllFaces)
+	reverseNormals()	
+	setupProjection(0, scope.xz, 2,2,2,2,2)
+	insertAlongUV(0,StencilFolder+"/Angled_Parking_Line.obj",0)
+	t(0,0,-.2)
+	comp (f) {top=AsphaltPaintedStencil("white","Storage","parking_lane")}
 	
 ParallelParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
 	case SpaceNumber==TotalSpacesonSide-2:#1 from index total, 1 from additional split- Start
