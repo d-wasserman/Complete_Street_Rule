@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 7/12/2020
+ * Last Updated: 7/14/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -9,7 +9,7 @@
 #	ESRI Derivative work
 #	http://mappingcenter.esri.com/downloads/AttributionAndLicense_05_09_07.pdf
 #
-# Copyright 2020 David J. Wasserman
+# Copyright 2020 David J. Wassermagn
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -2174,13 +2174,14 @@ DoBi_Scooter_Parking(Side,ParkingWidth,ParkingLength)-->
 DoBi_Scooter_Parking_Stamp(Side,ParkingWidth,ParkingLength)--> #Ground Textured Rule
 	report("Curbside Management.DoBi & Scooter Parking Length (m)",geometry.du(0,unitSpace))
 	alignScopeToGeometry(yUp, largest, 0)
-	setupProjection(0,scope.xz,'1,'1)
-	texture(LanesFolder +"/MicromobilityParking.jpg")
-	projectUV(0)
-	ColorAndReport("Shared Mobility","bike_parking")
+	split(v,unitSpace,0){PaintLineWidth:AsphaltPainted("white","Shared Mobility", "bike_parking")
+						|~1: split(u,unitSpace,0) {
+								PaintLineWidth:AsphaltPainted("white","Shared Mobility","bike_parking")
+								|~1:Asphalt("Shared Mobility","bike_parking")
+								|PaintLineWidth:AsphaltPainted("white","Shared Mobility","bike_parking")}
+						|PaintLineWidth:AsphaltPainted("white","Shared Mobility", "bike_parking")}					
 
 Carshare_Parking_Split(Side,Color,ParkingWidth,ParkingLength)-->
-	print(ParkingLength)
 	split(u,unitSpace,0) {~ParkingLength:Carshare_Parking_Allocation(Side,Color,ParkingWidth,ParkingLength)}*
 	
 Carshare_Parking_Allocation(Side,Color,ParkingWidth,ParkingLength)-->
