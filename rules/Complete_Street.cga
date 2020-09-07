@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 8/28/2020
+ * Last Updated: 9/6/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -9,7 +9,7 @@
 #	ESRI Derivative work
 #	http://mappingcenter.esri.com/downloads/AttributionAndLicense_05_09_07.pdf
 #
-# Copyright 2020 David J. Wassermagn
+# Copyright 2020 David J. Wasserman
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -3263,15 +3263,15 @@ Curbs(RotateUV) --> #Ground Textured Rule
 Sidewalk_Setup-->
 	case sidewalkSide=="Right":
 		extrude(world.y, Sidewalk_Height )
-		comp(f){top=SidewalkTop(sidewalkSide)|side: SidewalK_Pavement("Building Side") }
+		comp(f){top=SidewalkTop(sidewalkSide)|side: Sidewalk_Pavement("Building Side") }
 	case sidewalkSide=="Left":
 		scaleUV(0,1,1)
 		extrude(world.y, Sidewalk_Height ) 
-		comp(f){top=SidewalkTop(sidewalkSide)|side: SidewalK_Pavement("Building Side") }
+		comp(f){top=SidewalkTop(sidewalkSide)|side: Sidewalk_Pavement("Building Side") }
 	else:
 		print("Error: two right sidewalks as default- please map this attribute.") 
 		extrude(world.y, Sidewalk_Height ) 
-		comp(f){top=SidewalkTop(sidewalkSide)|side: SidewalK_Pavement("Building Side") }
+		comp(f){top=SidewalkTop(sidewalkSide)|side: Sidewalk_Pavement("Building Side") }
 
 SidewalkTop(side)-->
 	case valency>1:
@@ -3280,15 +3280,15 @@ SidewalkTop(side)-->
 		split(v,unitSpace,0) {_Side_Sidewalk_Furniture_Zone_Width(side):Sign_Loader(side)
 							|_Side_Sidewalk_Planting_Width(side):Sidewalk_WOPlant_Loading_Section (case side=="Right":0 else:2)# Uses a different loading section rule
 							|_Sidewalk_BikeLane_Width(case side=="Right":0 else: 2)	:Sidewalk_Bike_Lane_Loader(case side=="Right":0 else: 2)
-							|~1: SidewalK_Pavement("Through Zone") People}
+							|~1: Sidewalk_Pavement("Through Zone") People}
 	else:
 		split(v,unitSpace,0){_Side_Sidewalk_Furniture_Zone_Width(side):Sign_Loader(side)
 							|_Side_Sidewalk_Planting_Width(side): Sidewalk_WPlant_Loading_Section (case side=="Right":0 else:2)
 							|_Sidewalk_BikeLane_Width(case side=="Right":0 else: 2)	:Sidewalk_Bike_Lane_Loader(case side=="Right":0 else: 2)
-							|~1: SidewalK_Pavement("Through Zone") People}
+							|~1: Sidewalk_Pavement("Through Zone") People}
 
 Sign_Loader(side)-->
-	SidewalK_Pavement("Sign Gap")
+	Sidewalk_Pavement("Sign Gap")
 	Traffic_Light_Setup
 	Parking_Meter_Setup
 	Sidewalk_Lamp_Setup
@@ -3390,7 +3390,7 @@ Parking_Meter_Loader(Parking_Length,Dir)-->
 						 |~Parking_Meters_Spacing:NIL}*
 						 |(_Sidewalk_CrossStop_Gap(Dir,"End")):NIL}
 
-SidewalK_Pavement(Location) --> #Ground Textured Rule
+Sidewalk_Pavement(Location) --> #Ground Textured Rule
 	case Location== "Through Zone" || Location=="Corners":
 		report("Sidewalk."+Location+" Area (m^2)",geometry.area())
 		General_Sidewalk_Texture
@@ -3399,22 +3399,22 @@ SidewalK_Pavement(Location) --> #Ground Textured Rule
 	
 		
 Sidewalk_WPlant_Loading_Section (Dir)-->
-	split(u,unitSpace,0){(_Sidewalk_CrossStop_Gap(Dir,"Begin")): Sidewalk_K_Pavement("Cross Walk Begin Gap")
+	split(u,unitSpace,0){(_Sidewalk_CrossStop_Gap(Dir,"Begin")): Sidewalk_Pavement("Cross Walk Begin Gap")
 						|~_Bus_Sidewalk_Base("Near-side"):Bus_Stop_Base("Sidewalk",0)
 						|~geometry.du(0,unitSpace)/2:Sidewalk_Plant_Side("Begin")
 						|~_Bus_Sidewalk_Base("Mid-Block"):Bus_Stop_Base("Sidewalk",0)
 						|~geometry.du(0,unitSpace)/2:Sidewalk_Plant_Side("End")
 						|~_Bus_Sidewalk_Base("Far-side"):Bus_Stop_Base("Sidewalk",0)
-						|(_Sidewalk_CrossStop_Gap(Dir,"End") ): SidewalK_Pavement("Cross Walk End Gap")}
+						|(_Sidewalk_CrossStop_Gap(Dir,"End") ): Sidewalk_Pavement("Cross Walk End Gap")}
 
 Sidewalk_WOPlant_Loading_Section (Dir)-->
-	split(u,unitSpace,0){(_Sidewalk_CrossStop_Gap(Dir,"Begin")): SidewalK_Pavement("Cross Walk Begin Gap")People
+	split(u,unitSpace,0){(_Sidewalk_CrossStop_Gap(Dir,"Begin")): Sidewalk_Pavement("Cross Walk Begin Gap")People
 						|~_Bus_Sidewalk_Base("Near-side"):Bus_Stop_Base("Sidewalk",0)
-						|~geometry.du(0,unitSpace)/2: SidewalK_Pavement("Through Zone")People
+						|~geometry.du(0,unitSpace)/2: Sidewalk_Pavement("Through Zone")People
 						|~_Bus_Sidewalk_Base("Mid-Block"):Bus_Stop_Base("Sidewalk",0)
-						|~geometry.du(0,unitSpace)/2: SidewalK_Pavement("Through Zone") People
+						|~geometry.du(0,unitSpace)/2: Sidewalk_Pavement("Through Zone") People
 						|~_Bus_Sidewalk_Base("Far-side"):Bus_Stop_Base("Sidewalk",0)
-						|(_Sidewalk_CrossStop_Gap(Dir,"End") ): SidewalK_Pavement("Cross Walk End Gap")People}
+						|(_Sidewalk_CrossStop_Gap(Dir,"End") ): Sidewalk_Pavement("Cross Walk End Gap")People}
 
 Sidewalk_Bike_Lane_Loader(Dir)-->
 	split(u,unitSpace,0){~1:scaleUV(0,DirectionalFlip,1)BikeLaneSection(case Dir==0:-1 else:1,_Sidewalk_BikeLane_Width(Dir))}
@@ -3425,9 +3425,9 @@ Sidewalk_Object_Split(RotationAng)-->
 						|'_WayFinder_Alloc("Sidewalk"):Bus_Objects_Insert("Wayfinder",Wayfinder_Object,RotationAng,-.5,.3,3,0.5)}
 
 Sidewalk_Plant_Side(Plant_Side_Base_Switch)-->
-	split(u,unitSpace,0){~Sidewalk_Planting_Spacing /2: SidewalK_Pavement("Before Planting")
+	split(u,unitSpace,0){~Sidewalk_Planting_Spacing /2: Sidewalk_Pavement("Before Planting")
 						|~Sidewalk_Planting_Length:Plant_Base 
-						|~Sidewalk_Planting_Spacing/2: SidewalK_Pavement("After Planting") Sidewalk_Bench_Loader(split.index,split.total,Plant_Side_Base_Switch)}*	
+						|~Sidewalk_Planting_Spacing/2: Sidewalk_Pavement("After Planting") Sidewalk_Bench_Loader(split.index,split.total,Plant_Side_Base_Switch)}*	
 
 Sidewalk_Bench_Loader(splitNum,splitTotal,Plant_Side_Base_Switch)-->
 		case Sidewalk_Benches =="None":
@@ -3476,7 +3476,7 @@ Bench_Insert-->
 		
 Plant_Base-->
 case Sidewalk_Ground_Cover =="None":
-	SidewalK_Pavement("Plant_Space")
+	Sidewalk_Pavement("Plant_Space")
 else:
 	Curbside_Context_Planting_Allocation
 
