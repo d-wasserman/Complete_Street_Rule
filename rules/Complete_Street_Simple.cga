@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 9/6/2020
+ * Last Updated: 9/24/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -3534,20 +3534,25 @@ Asphalt(Usage,LabelID) --> #Ground Textured Rule
 	texture( LanesFolder+"/"+Asphalt_Base)
 	ColorAndReport(Usage,LabelID)
 	ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Asphalt_Tile_Size,Asphalt_Tile_Size)
-
+	
+	
 ProjectPBRTextures(path,width,height)-->
-	setupProjection(5,scope.xz,width,height,0,0,1)
-	setupProjection(7,scope.xz,width,height,0,0,1)
-	setupProjection(8,scope.xz,width,height,0,0,1)
-	ApplyPBRTextures(path)
+	case Not_Low_LOD:
+		setupProjection(5,scope.xz,width,height,0,0,1)
+		setupProjection(7,scope.xz,width,height,0,0,1)
+		setupProjection(8,scope.xz,width,height,0,0,1)
+		ApplyPBRTextures(path)
+	else:
+		NIL
 	
 ApplyPBRTextures(path)-->
 	case Not_Low_LOD:
+		set(material.shader,"CityEnginePBRShader")
 		set(material.normalmap,_Construct_PBR_Path(path,"norm"))
 		projectUV(5)
-		set(material.roughnessmap,_Construct_PBR_Path(Sidewalk_Texture,"roug"))
+		set(material.roughnessmap,_Construct_PBR_Path(path,"roug"))
 		projectUV(8)
-		set(material.occlusionmap, _Construct_PBR_Path(Sidewalk_Texture,"aocc"))
+		set(material.occlusionmap, _Construct_PBR_Path(path,"aocc"))
 		projectUV(7)
 	else:
 		NIL
