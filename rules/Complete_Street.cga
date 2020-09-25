@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 9/24/2020
+ * Last Updated: 9/25/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -474,7 +474,8 @@ const LampsFolder					= ObjectFolder+"/Dir_Lamps"
 const MiscFolder					= CompleteStreetFolder +"/Misc"
 const StencilFolder					= ObjectFolder+ "/Stencil"
 #Paint Constants
-const Asphalt_Tile_Size				= 4
+const Asphalt_Tile_Size				= 2.5
+const Sidewalk_Tile_Size			= 2
 const ThickPaintLineWidth			= 0.5
 const ModeratePaintLineWidth		= 0.17
 const PaintLineWidth				= 0.11 #uvSpace 36/256-about 4 in
@@ -978,6 +979,11 @@ _LastLaneSwitch(lanenumber,lanestotal)=
 		1	
 
 #Paintcontrol and Bus Furniture functions
+
+_TextureDimensionByUsage(Usage)=
+	case Usage =="Auto":Asphalt_Tile_Size
+	else: Sidewalk_Tile_Size
+	
 _PaintLineControl(side,Control_String)=
 	case side=="Left":
 		case Control_String=="Both":	1
@@ -2009,7 +2015,7 @@ Buffer_Top-->
 		Buffer_Texture
 
 Buffer_Texture--> #Ground Textured Rule
-	tileUV(0,2,2) texture(Sidewalk_Texture)
+	tileUV(0,Sidewalk_Tile_Size,Sidewalk_Tile_Size) texture(Sidewalk_Texture)
 	scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
 	rotateUV(0, Sidewalk_Texture_Rotation)
 	Delete_Texture
@@ -2855,7 +2861,7 @@ OpenSpace_Planting-->
 	Pervious_Reporting
 	
 WalkWay_Texture--> #Ground Textured Rule
-	tileUV(0,2,2) texture(Sidewalk_Texture)
+	tileUV(0,Sidewalk_Tile_Size,Sidewalk_Tile_Size) texture(Sidewalk_Texture)
 	scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
 	rotateUV(0, Sidewalk_Texture_Rotation)
 	color( _ThematicRouter ("Pedestrian","median"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
@@ -3084,10 +3090,10 @@ CrosswalkStripes(stripeWidth) --> #Ground Textured Rule
 	
 CrosswalkWalkway(reporting)--> #Ground Textured Rule
 	case reporting:
-		tileUV(0,2,2) texture(Custom_Crosswalk_Texture)
+		tileUV(0,Sidewalk_Tile_Size,Sidewalk_Tile_Size) texture(Custom_Crosswalk_Texture)
 		Delete_Texture
 	else:
-		tileUV(0,2,2) texture(Custom_Crosswalk_Texture)
+		tileUV(0,Sidewalk_Tile_Size,Sidewalk_Tile_Size) texture(Custom_Crosswalk_Texture)
 		Delete_Texture
 		
 CrosswalkRaised(uvSet)-->
@@ -3532,20 +3538,21 @@ Asphalt(Usage,LabelID) --> #Ground Textured Rule
 	tileUV(0,Asphalt_Tile_Size,Asphalt_Tile_Size)
 	cleanupGeometry(all, 0.001)
 	texture( LanesFolder+"/"+Asphalt_Base)
-	ColorAndReport(Usage,LabelID)
-	ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Asphalt_Tile_Size,Asphalt_Tile_Size)
+	ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Usage,LabelID)
 	
 	
-ProjectPBRTextures(path,width,height)-->
+ProjectPBRTextures(path,Usage,LabelID)-->
 	case Not_Low_LOD:
-		setupProjection(5,scope.xz,width,height,0,0,1)
-		setupProjection(7,scope.xz,width,height,0,0,1)
-		setupProjection(8,scope.xz,width,height,0,0,1)
-		ApplyPBRTextures(path)
+		setupProjection(5,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
+		setupProjection(7,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
+		setupProjection(8,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
+		ApplyPBRTextures(path,Usage,LabelID)
 	else:
-		NIL
+		ColorAndReport(Usage,LabelID)
+
+
 	
-ApplyPBRTextures(path)-->
+ApplyPBRTextures(path,Usage,LabelID)-->
 	case Not_Low_LOD:
 		set(material.shader,"CityEnginePBRShader")
 		set(material.normalmap,_Construct_PBR_Path(path,"norm"))
@@ -3554,6 +3561,7 @@ ApplyPBRTextures(path)-->
 		projectUV(8)
 		set(material.occlusionmap, _Construct_PBR_Path(path,"aocc"))
 		projectUV(7)
+		ColorAndReport(Usage,LabelID)
 	else:
 		NIL
 
@@ -3563,7 +3571,7 @@ AsphaltPainted(paintColor,Usage,LabelID) --> #Ground Textured Rule
 		cleanupGeometry(all,0.001)
 		texture(LanesFolder+"/Asphalt003_2K_" + paintColor + "_Color.jpg")
 		set(material.name,str(material.name)+"_"+str(paintColor))
-		ColorAndReport(Usage,LabelID)
+		ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Usage,LabelID)
 	else:#If Black redirect to asphalt rule.
 		Asphalt(Usage,LabelID)
 
@@ -3577,6 +3585,7 @@ AsphaltPaintedStencil(paintColor,Usage,LabelID)-->
 	texture(LanesFolder+"/Asphalt003_2K_" + paintColor + "_Color.jpg")
 	set(material.name,str(material.name)+"_"+str(paintColor))
 	projectUV(0)
+# 	ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Usage,LabelID) # TODO - Drop reporting
 	color(_ThematicRouter (Usage,LabelID))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	Delete_Texture
 
@@ -3589,7 +3598,7 @@ ModeReporter(Usage)-->
 	case reportingOn:
 		report("Mode Area (m^2)."+str(Usage),geometry.area)
 	else:
-		X.
+		NIL
 NoGeometryModeReporter(Usage)-->
 	case reportingOn:
 		report("Mode Area (m^2)."+str(Usage),geometry.area)
