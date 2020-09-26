@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 9/25/2020
+ * Last Updated: 9/26/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -3538,21 +3538,20 @@ Asphalt(Usage,LabelID) --> #Ground Textured Rule
 	tileUV(0,Asphalt_Tile_Size,Asphalt_Tile_Size)
 	cleanupGeometry(all, 0.001)
 	texture( LanesFolder+"/"+Asphalt_Base)
-	ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Usage,LabelID)
+	ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Usage,LabelID,true)
 	
 	
-ProjectPBRTextures(path,Usage,LabelID)-->
+ProjectPBRTextures(path,Usage,LabelID,Report)-->
 	case Not_Low_LOD:
 		setupProjection(5,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
 		setupProjection(7,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
 		setupProjection(8,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
-		ApplyPBRTextures(path,Usage,LabelID)
+		ApplyPBRTextures(path,Usage,LabelID,Report)
 	else:
-		ColorAndReport(Usage,LabelID)
-
+		ReportManager(Usage,LabelID,Report)
 
 	
-ApplyPBRTextures(path,Usage,LabelID)-->
+ApplyPBRTextures(path,Usage,LabelID,Report)-->
 	case Not_Low_LOD:
 		set(material.shader,"CityEnginePBRShader")
 		set(material.normalmap,_Construct_PBR_Path(path,"norm"))
@@ -3561,7 +3560,7 @@ ApplyPBRTextures(path,Usage,LabelID)-->
 		projectUV(8)
 		set(material.occlusionmap, _Construct_PBR_Path(path,"aocc"))
 		projectUV(7)
-		ColorAndReport(Usage,LabelID)
+		ReportManager(Usage,LabelID,Report)
 	else:
 		NIL
 
@@ -3571,7 +3570,7 @@ AsphaltPainted(paintColor,Usage,LabelID) --> #Ground Textured Rule
 		cleanupGeometry(all,0.001)
 		texture(LanesFolder+"/Asphalt003_2K_" + paintColor + "_Color.jpg")
 		set(material.name,str(material.name)+"_"+str(paintColor))
-		ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Usage,LabelID)
+		ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Usage,LabelID,true)
 	else:#If Black redirect to asphalt rule.
 		Asphalt(Usage,LabelID)
 
@@ -3585,9 +3584,14 @@ AsphaltPaintedStencil(paintColor,Usage,LabelID)-->
 	texture(LanesFolder+"/Asphalt003_2K_" + paintColor + "_Color.jpg")
 	set(material.name,str(material.name)+"_"+str(paintColor))
 	projectUV(0)
-# 	ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Usage,LabelID) # TODO - Drop reporting
-	color(_ThematicRouter (Usage,LabelID))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-	Delete_Texture
+	ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Usage,LabelID,false)
+	
+ReportManager(Usage,LabelID,Report)-->
+	case Report:
+		ColorAndReport(Usage,LabelID)
+	else:
+		color( _ThematicRouter (Usage,LabelID))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+		Delete_Texture
 
 ColorAndReport(Usage,LabelID)-->
 	color( _ThematicRouter (Usage,LabelID))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
@@ -3599,6 +3603,7 @@ ModeReporter(Usage)-->
 		report("Mode Area (m^2)."+str(Usage),geometry.area)
 	else:
 		NIL
+		
 NoGeometryModeReporter(Usage)-->
 	case reportingOn:
 		report("Mode Area (m^2)."+str(Usage),geometry.area)
@@ -4101,18 +4106,10 @@ Rumble_Strip--> #Ground Textured Rule
 	
 Drainage--> #Ground Textured Rule
 	case geometry.dv(0,unitSpace)> Lane_Width /3 && Space_Management=="Flag":#Will flag the drainage area as Red if it is >1/3 the laneWidth-I mean really 1/3 of a lane is drainage? Put a bike lane or something
-		tileUV(0,~1,'1)
-		cleanupGeometry(all, 0.001)
-		texture(LanesFolder+"/Drainage_Side.jpg")
-		color( _ThematicRouter ("Conflict Zones"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 	
-		color(.7,0,0)
-		Delete_Texture
+		AsphaltPainted("red","Conflict Zones","asphalt")
+		color(.7,0,0)	 	
 	else:
-		tileUV(0,~1,'1)
-		cleanupGeometry(all, 0.001)
-		texture(LanesFolder+"/Drainage_Side.jpg")
-		color( _ThematicRouter ("Conflict Zones"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-		Delete_Texture
+		Asphalt("Conflict Zones","asphalt") 
 		
 Enclose_Shape-->
 	set(material.opacity,0)#Make it transparent
