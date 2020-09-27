@@ -4069,7 +4069,7 @@ RailMaterial --> #Ground Textured Rule
 		set(material.specular.r, 1) set(material.specular.g, 1) set(material.specular.b, 1)
 		set(material.shininess, 20)
 		setupProjection(0,scope.xy,~12,~9,0,0,1) projectUV(0)
-		texture(SidewalkFolder+"/Concrete Rough Light.jpg")
+		texture(SidewalkFolder+"/Concrete020_2K_Color.jpg")
 		RailMaterialStep2
 	else:		
 		RailMaterialStep2
