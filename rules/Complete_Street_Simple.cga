@@ -2866,6 +2866,7 @@ WalkWay_Texture--> #Ground Textured Rule
 	rotateUV(0, Sidewalk_Texture_Rotation)
 	color( _ThematicRouter ("Pedestrian","median"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	report("Center.Median Walkway Area (m^2)",geometry.area())
+	set(material.metallic,1.0)
 	Delete_Texture
 #Object Loading Insertion
 Master_Split(Boulevard_Side,Start_Condition, Location,Dir)-->#The Bus Stop, Bike Racks, and WayFinder are put here. 
@@ -3564,7 +3565,7 @@ ApplyPBRTextures(path,Usage,LabelID,Report)-->
 		projectUV(7)
 		ReportManager(Usage,LabelID,Report)
 	else:
-		NIL
+		X.
 
 
 AsphaltPainted(paintColor,Usage,LabelID) --> #Ground Textured Rule
