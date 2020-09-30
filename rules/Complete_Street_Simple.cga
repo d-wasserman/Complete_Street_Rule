@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 9/26/2020
+ * Last Updated: 9/29/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -2706,7 +2706,7 @@ General_Sidewalk_Texture--> #Ground Textured Rule
 	scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
 	rotateUV(0, Sidewalk_Texture_Rotation)
     set(material.metallic,1.0)
-	ApplyPBRTextures(Sidewalk_Texture,"Pedestrian","Sidewalk",true)
+	ApplyPBRTextures(Sidewalk_Texture,"Pedestrian","sidewalk",true)
 	
 
 Median_Top_Setup(Dir)-->
@@ -2796,7 +2796,7 @@ Bus_Stop_Base(Location,RotationAng)-->
 		Boulevard_Object_Split(RotationAng)
 		
 	else:
-		WalkWay_Texture
+		General_Sidewalk_Texture
 		Sidewalk_Object_Split(RotationAng)
 		
 Median_Object_Split(RotationAng)-->
@@ -2867,7 +2867,8 @@ WalkWay_Texture--> #Ground Textured Rule
 	color( _ThematicRouter ("Pedestrian","median"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	report("Center.Median Walkway Area (m^2)",geometry.area())
 	set(material.metallic,1.0)
-	Delete_Texture
+ 	Delete_Texture
+	
 #Object Loading Insertion
 Master_Split(Boulevard_Side,Start_Condition, Location,Dir)-->#The Bus Stop, Bike Racks, and WayFinder are put here. 
 	case Start_Condition:
