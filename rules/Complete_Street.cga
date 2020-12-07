@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 9/29/2020
+ * Last Updated: 9/26/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -126,7 +126,7 @@ attr End_Crosswalk_To_Stop_Bar 	= _getInitialGap(connectionEnd)
 @Order(5) @Enum("white","yellow") @Description("Determines the color of painted crosswalks.")#@Hidden
 attr Crosswalk_Color 			= "white"
 @Order(6) @File("tif","jpg","png","tiff","gif","jpeg","psp","jsl","sgi","tga","bmp","dds")@Description("Creates a 2 m by 2 m tile of the image selected on the crosswalk. Keep in mind that if another painted tile is chosen, the paint area will not appear in reporting. Defer to Crosswalk Area Reports.")
-attr Custom_Crosswalk_Texture	= SidewalkFolder+"/Bricks031_2K_Color.jpg"
+attr Custom_Crosswalk_Texture	= SidewalkFolder+"/Paver Brick Red Basket Weave.jpg"
 @Order(7) @Distance @Range(min=0,max=10) @Description("This attribrute overrides the default Crosswalk Width. NACTO- Stripe the crosswalk as wide as or wider than the walkway it connects to.")
 attr Crosswalk_Width			= _crosswalkWidth
 
@@ -490,7 +490,7 @@ const Median_Walkway_Expansion		= ln(abs((Center_Width-Median_Layout_Threshold)/
 const Speed_Related_Expansion		= ln(abs(Speed_Limit_in_MPH/5))
 const Bench_Threshold_Width			= .9
 const Bench_Adjuster				= 1
-const Default_Pavement				= SidewalkFolder+"/Concrete020_2K_Color.jpg"
+const Default_Pavement				= SidewalkFolder+"/Concrete Clean Light.jpg"
 const CurbtoPlantingGap				=.15
 const Curb_Depth					= 0.1574
 const BusStop_Length				= 16.0
@@ -2706,7 +2706,7 @@ General_Sidewalk_Texture--> #Ground Textured Rule
 	scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
 	rotateUV(0, Sidewalk_Texture_Rotation)
     set(material.metallic,1.0)
-	ApplyPBRTextures(Sidewalk_Texture,"Pedestrian","sidewalk",true)
+	Delete_Texture
 	
 
 Median_Top_Setup(Dir)-->
@@ -2796,7 +2796,7 @@ Bus_Stop_Base(Location,RotationAng)-->
 		Boulevard_Object_Split(RotationAng)
 		
 	else:
-		General_Sidewalk_Texture
+		WalkWay_Texture
 		Sidewalk_Object_Split(RotationAng)
 		
 Median_Object_Split(RotationAng)-->
@@ -2866,9 +2866,7 @@ WalkWay_Texture--> #Ground Textured Rule
 	rotateUV(0, Sidewalk_Texture_Rotation)
 	color( _ThematicRouter ("Pedestrian","median"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	report("Center.Median Walkway Area (m^2)",geometry.area())
-	set(material.metallic,1.0)
- 	Delete_Texture
-	
+	Delete_Texture
 #Object Loading Insertion
 Master_Split(Boulevard_Side,Start_Condition, Location,Dir)-->#The Bus Stop, Bike Racks, and WayFinder are put here. 
 	case Start_Condition:
@@ -3091,15 +3089,13 @@ CrosswalkStripes(stripeWidth) --> #Ground Textured Rule
 
 	
 CrosswalkWalkway(reporting)--> #Ground Textured Rule
-	tileUV(0,Sidewalk_Tile_Size,Sidewalk_Tile_Size)tileUV(7,Sidewalk_Tile_Size,Sidewalk_Tile_Size)
-	tileUV(5,Sidewalk_Tile_Size,Sidewalk_Tile_Size)tileUV(8,Sidewalk_Tile_Size,Sidewalk_Tile_Size)
-	texture(Custom_Crosswalk_Texture)
-	set(material.shader,"CityEnginePBRShader")
-	set(material.normalmap,_Construct_PBR_Path(Custom_Crosswalk_Texture,"norm"))
-	set(material.roughnessmap,_Construct_PBR_Path(Custom_Crosswalk_Texture,"roug"))
-	set(material.occlusionmap, _Construct_PBR_Path(Custom_Crosswalk_Texture,"aocc"))
-	ReportManager("Conflict Zones","crosswalk",false)
-
+	case reporting:
+		tileUV(0,Sidewalk_Tile_Size,Sidewalk_Tile_Size) texture(Custom_Crosswalk_Texture)
+		Delete_Texture
+	else:
+		tileUV(0,Sidewalk_Tile_Size,Sidewalk_Tile_Size) texture(Custom_Crosswalk_Texture)
+		Delete_Texture
+		
 CrosswalkRaised(uvSet)-->
 	split(u,uvSpace,uvSet){ 0.4: Insert_Slope(Sidewalk_Height,case uvSet==1:180 else: 0)
 						  | ~1  : extrude(Sidewalk_Height) CrosswalkWalkway(false)
@@ -3237,9 +3233,9 @@ Sidewalk_Generation-->
 	set(sidewalkWidth,scope.sz)
 	set(sidewalkLength,scope.sx)
 	setupProjection(0,scope.xz,2,2,0,0,1)
-	setupProjection(5,scope.xz,2,2,0,0,1)
-	setupProjection(7,scope.xz,2,2,0,0,1)
-	setupProjection(8,scope.xz,2,2,0,0,1)
+# 	setupProjection(5,scope.xz,2,2,0,0,1)
+# 	setupProjection(7,scope.xz,2,2,0,0,1)
+# 	setupProjection(8,scope.xz,2,2,0,0,1)
 	color( _ThematicRouter ("Pedestrian","sidewalk"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	report("Cut/Fill.Total Sidewalk Cut/Fill Volume (m^3)", geometry.area()*Sidewalk_Height)
 	split(v,unitSpace,0){Curb_Depth: Curbs_Mass(false) 
@@ -3547,9 +3543,9 @@ Asphalt(Usage,LabelID) --> #Ground Textured Rule
 	
 ProjectPBRTextures(path,Usage,LabelID,Report)-->
 	case Not_Low_LOD:
-		setupProjection(5,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),1)
-		setupProjection(7,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),1)
-		setupProjection(8,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),1)
+		setupProjection(5,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
+		setupProjection(7,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
+		setupProjection(8,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
 		ApplyPBRTextures(path,Usage,LabelID,Report)
 	else:
 		ReportManager(Usage,LabelID,Report)
@@ -3566,8 +3562,7 @@ ApplyPBRTextures(path,Usage,LabelID,Report)-->
 		projectUV(7)
 		ReportManager(Usage,LabelID,Report)
 	else:
-		X.
-
+		NIL
 
 AsphaltPainted(paintColor,Usage,LabelID) --> #Ground Textured Rule
 	case paintColor!="black":# This makes sure that if the color is black, it is thrown into Asphalt Reporting
@@ -4071,7 +4066,7 @@ RailMaterial --> #Ground Textured Rule
 		set(material.specular.r, 1) set(material.specular.g, 1) set(material.specular.b, 1)
 		set(material.shininess, 20)
 		setupProjection(0,scope.xy,~12,~9,0,0,1) projectUV(0)
-		texture(SidewalkFolder+"/Concrete020_2K_Color.jpg")
+		texture(SidewalkFolder+"/Concrete Rough Light.jpg")
 		RailMaterialStep2
 	else:		
 		RailMaterialStep2
