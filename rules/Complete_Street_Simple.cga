@@ -1,9 +1,9 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 6/14/2020
+ * Last Updated: 9/26/2020
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
- * License: ESRI Attribution License and Apache License.
+ * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
 # ESRI Attribution License:
 #	ESRI Derivative work
@@ -255,7 +255,7 @@ attr Buffer_Object_Spacing		=_Default_Buffer_Object_Spacing
 attr Bike_Symbol_Spacing		= 24.5
 @Order(11)@Distance @Range(min=0,max=20) @Description("Creates conflict spacing made up by asphalt gaps in the bike lane for approaching interesections.")
 attr Bike_Conflict_Spacing		= 0
-@Order(12)@Enum("green","black","red","blue") @Description("Determines the color of the bike lane and bike box. Paint reporting costs adjust based on color choices.")
+@Order(12)@Enum("green","black","red","blue","yellow") @Description("Determines the color of the bike lane and bike box. Paint reporting costs adjust based on color choices.")
 attr Bike_Lane_Color			= case Bike_Lane_Type=="Sharrow" &&_Maxof(Left_Bike_Lane_Width,Right_Bike_Lane_Width)==0:"green" else: "black"
 @Order(13)@Enum("Both","Right", "Left", "None")@Description("Controls the white lines on the sides of preferential lanes.")@Hidden
 attr Bike_Paint_Line_Sides  	="Both"
@@ -271,7 +271,7 @@ attr Left_Bike_Box				= "false"
 attr Bike_Box_Symbol_Spacing	= 5
 @Order(4)@Distance @Range(min=0,max=5.3768)@Description("NACTO-A box formed by transverse lines shall be used to hold queuing bicyclists, typically 10-16  feet deep (3.048-4.8768 M). Deeper boxes show less encroachment by motor vehicles.")@Hidden
 attr Bike_Box_Length			= 4.26
-@Order(12)@Enum("green","black","red","blue") @Description("By default, the Bike Box will match the color of the bike lane, but this attribute can be adjusted to override that choice. Paint reporting costs adjust based on color choices.")
+@Order(12)@Enum("green","black","red","blue","yellow") @Description("By default, the Bike Box will match the color of the bike lane, but this attribute can be adjusted to override that choice. Paint reporting costs adjust based on color choices.")
 attr Bike_Box_Color_Override	= Bike_Lane_Color
 
 @Group("SIDEWALK LAYOUT","Sidewalk Attributes",7)@Description("Provides a file picker for the texture choice. This attribute also controls the curb buffer and median walkway textures.")
@@ -472,12 +472,17 @@ const TrafficControlFolder			= ObjectFolder +"/Dir_Traffic_controls"
 const TrafficSignFolder				= ObjectFolder +"/Dir_Traffic_signs"
 const LampsFolder					= ObjectFolder+"/Dir_Lamps"
 const MiscFolder					= CompleteStreetFolder +"/Misc"
-const StencilFolder					=  ObjectFolder+ "/Stencil"
+const StencilFolder					= ObjectFolder+ "/Stencil"
 #Paint Constants
+const Asphalt_Tile_Size				= 2.5
+const Sidewalk_Tile_Size			= 2
 const ThickPaintLineWidth			= 0.5
-const PaintLineWidth				= 0.1 #uvSpace 36/256-about 4 in
+const ModeratePaintLineWidth		= 0.17
+const PaintLineWidth				= 0.11 #uvSpace 36/256-about 4 in
 const Rumble_Strip_Len				= 1.5 #FWHA 7 in wide per bump with 5 in ashpalt spacing
 const Rumble_Strip_Wid				= .355 #FWHA-typically 12-16 in wide
+const Stencil_Color 				= "white"
+const Asphalt_Base  				= case !Not_Low_LOD: "asphalt_14x14m.jpg" else:"Asphalt003_2K_Color.jpg"
 #SideWalk and Median Constants
 const Centerline_Color				= case Center_Type == "White Centerline":"white" else: "yellow"
 const Median_Layout_Threshold		= case find(Center_Type,"Turn Lane",0)!=-1:Lane_Width*3 else: Lane_Width*2
@@ -491,20 +496,25 @@ const Curb_Depth					= 0.1574
 const BusStop_Length				= 16.0
 const Parklet_Shift					= case _Actual_Space_Management== "Best Fit" || (Parking_Protection_Bool && _Minof(Left_Buffer_Width+Street_Left_Bike_Lane_Width,Right_Buffer_Width+Street_Right_Bike_Lane_Width)>0):0 else:-_EmptySpace #if parking protection is on a shift will lead to geometric collision, but it will choose to collide if oneside does not have a bikelane/buffer (check later).   
 const Max_Sidewalk_Gap				= 5.4 #change this if you want a smaller or larger gap between first tree splits and crosswalks
-const Median_Turn_Transition_Depth  = Center_Width*(2*Speed_Limit_in_MPH/30)
+const Median_Turn_Transition_Depth  = Center_Width*(3*Speed_Limit_in_MPH/30)
+const TWLTL_Turn_Pocket_Depth		= 13.75
+const Total_Median_Turn_Depth 		= Median_Turn_Pocket_Depth + Median_Turn_Transition_Depth + ThickPaintLineWidth
+const Total_TWLTL_Turn_Depth		= TWLTL_Turn_Pocket_Depth + Median_Turn_Transition_Depth + ThickPaintLineWidth
+const Median_Turn_Pocket_Depth		= 14
 const Minimum_Turn_Curb_Width		= 1.5/Feet
-const Turn_Pocket_Curb_Width		=_Maxof(Minimum_Turn_Curb_Width,Center_Width/10)
-const Split_Divider_Width			= case LOD_Setting=="Low":3/Feet case LOD_Setting=="High":1/Feet else: 1.5/Feet
+const Turn_Pocket_Curb_Width		= _Maxof(Minimum_Turn_Curb_Width,Center_Width/10)
 const Dimension_Center_Hexcode		= case Boulevard_Configuration=="Bus Lanes": NACTOTransit 
 									  case Boulevard_Configuration=="Normal Lanes": NACTOAuto 
 									  case Boulevard_Configuration=="Cycle Path":NACTOBike 
 									  case Boulevard_Configuration=="Open Space":NACTOPlanting
 									  else: NACTOConflictZone
+#Transit Lane Constants
 #Bike Constants
-const sharrowHeight					=0.005
+const sharrowHeight					=0.005 * ceil(abs(geometry.angle(maxSlope)+1)/5)
 const Buffer_StartGap				=.2
 const BikeBox_Fraction				=.75
 const Center_Tube_Marker_Dist		=.1
+const L_to_W_Ratio_Bk			= 3 # MUTCD recommends a 72 in gap and length of symbol, gap, and arrows. Assuming a 6 ft lane, this is width of lane * 3
 const _Default_Buffer_Object_Spacing= case Buffer_Type=="Curb Buffer with Trees":8 case find(Buffer_Type,"Spaced Curb",0)!=-1:6 case Buffer_Type=="Cycle Track With Planters":2.5 else:1.5
 const BikeBoxGeometryThreshold		= Lane_Width *BikeBox_Fraction+_Maxof(Street_Right_Bike_Lane_Width,Street_Left_Bike_Lane_Width)-.1
 const Street_Right_Bike_Lane_Width	=	case find(Bike_Lane_Type,"Sidewalk",0)!=-1:0 else:Right_Bike_Lane_Width
@@ -533,6 +543,7 @@ const Default_Parklet				= (ObjectFolder+ "/Parklet_"+LOD_Object_Choice+"_LOD.ob
 const Default_BusStop				= (ObjectFolder+ "/Bus_Stop_2.glb")
 const Default_Median_End			= (StencilFolder+ "/Median_End.obj")
 const Default_Median_Transition		= (StencilFolder+"/Median_Transition.obj")
+const Default_TWLTL_Transition      = (StencilFolder+"/Center_Turn_Lane_Transition.obj")
 const Default_Wedge 				= (ObjectFolder+"/Wedge.obj")
 const Max_Distance_From_CS_Manage   = 1.5
 #Boolean Converted Constants
@@ -575,10 +586,10 @@ const Braking_Dist					= 1.075*((Design_Speed*Design_Speed)/Deceleration_Rate)# 
 const Stopping_Sight_Dist			= Brake_Reaction_Dist+Braking_Dist
 ##Unit Conversion- in terms of number of unit per meter,meter^2, or meter^3- convert by unit *conversion factor==new unit
 const Feet							=3.28084 #per meter ^1
-const SquareFeet					=10.7639 #per meter ^2
-const Miles							=0.00062137 #per meter ^1
-const Inches						=39.3701 #per meter ^1
-const CubicFeet						=35.3147 #per meter ^3
+# const SquareFeet					=10.7639 #per meter ^2
+# const Miles							=0.00062137 #per meter ^1
+# const Inches						=39.3701 #per meter ^1
+# const CubicFeet						=35.3147 #per meter ^3
 #Thematic Constants
 const Brightness="#d7d7d7"
 const NACTOPedestrian="#FFFFFF"
@@ -666,7 +677,7 @@ _ParkingWidth(ParkingType)				=
 	case ParkingType=="None":
 		0
 	case find(ParkingType,"Parallel",0)!=-1:
-		2.44 #Door zone should have another 1-1.5 ft if parking is on inside
+		2.44 #Door zone should have another 1-1.5 ft iff parking is on inside
 	else:
 		6.7 # 22 ft
 	
@@ -719,9 +730,9 @@ _Car_Angle(ParkingType)				=
 	case find(ParkingType,"Parallel",0)!=-1:
 		0
 	case leftHandTraffic:
-		300
+		295
 	else:
-		240
+		245
 _Front_Parking_Spacing(Parking_Type) = 
 case Front_Parking_Spacing!=0:
 	Front_Parking_Spacing
@@ -871,7 +882,7 @@ _Transit_Lane_Width_Switch(dir,Location)=
 		0
 
 
-#Stop Tex/Neighbor Detection Functions
+#Stop Tex/Approach/Neighbor Detection Functions
 _hasStop(neighbor) 	= neighbor=="CROSSING" || neighbor=="ROUNDABOUT" || neighbor=="JUNCTION_ENTRY"||neighbor=="JUNCTION"||neighbor=="DEAD_END"
 _hasStopSideSwitch(dir)= case dir==0: _neighborEnd else: _neighborBegin		
 _stopTex(stopType,lanenumber,lanestotal)			= #TODO: Add more lane options- D.J.Wasserman
@@ -902,7 +913,7 @@ _arrowChoice(stopCode) 								=
 		"_stop_arrows_all_1"#right
 	case stopCode =="through-right":
 		"_stop_arrows_all_2"#through-right
-	case stopCode =="through-right":
+	case stopCode =="through":
 		"_stop_arrows_all_3"#through
 	case stopCode =="through-left":
 		"_stop_arrows_all_4"#through-left	
@@ -911,14 +922,68 @@ _arrowChoice(stopCode) 								=
 	case stopCode =="all":
 		"_stop_arrows_all_6"#all
 	case stopCode =="both":
-		"_stop_arrows_all_7"#all
+		"_stop_arrows_all_7"#both
 	else:
 		"_stop_strip"
+_dropNones(stopType,lanestotal) 								=
+	case lanestotal<listSize(stopType) && find(stopType,"none",0)!=-1:
+		_dropNones(listRemove(stopType,"none"),lanestotal)
+	else:
+		stopType	
 		
+_stopSten(stopType,lanenumber,lanestotal)			= #TODO: Add more lane options- D.J.Wasserman
+	case find(stopType,";",0)!=-1:
+  	    _stopListStencil(stopType,lanenumber)
+  	case stopType == "with stop marking"	  : 
+  		_stopListStencil("stop;",lanenumber)
+    case stopType == "arrows on all lanes"  : 
+  		_stopListStencil("right;through-right;through;through-left;left",lanenumber)
+    case stopType == "arrows on side lanes" :
+  		_stopListStencil(_dropNones("right;none;none;none;none;none;none;left",lanestotal),lanenumber)
+    case stopType == "arrows for right turn":
+  		_stopListStencil(_dropNones("right;right;none",lanestotal),lanenumber)
+    case stopType == "arrows for left turn" && lanenumber+1==lanestotal :
+  		_stopListStencil(_dropNones("none;none;none;none;none;none;none;none;left;left",lanestotal),lanenumber)
+    else: #Any time you see more case logic for the first trigger, it is a result of trying to work in the current framework
+  		 _stopListStencil("none;",lanenumber)
+
+_stopListStencil(stopType,lanenumber)		=
+	case lanenumber >= listSize(stopType):
+		_arrowStencilChoice(listLast(stopType))
+	else:
+		_arrowStencilChoice(listItem(stopType,lanenumber))
 		
-	
+_arrowStencilChoice(stopCode) 								=
+	case stopCode =="stop":
+		case rightHandTraffic: "Stop_Symbol.obj" else:"Stop_Symbol_Mirrored.obj"	  
+	case stopCode =="right":
+		"Right_Arrow.obj"#right
+	case stopCode =="through-right":
+		"Right-Through_Arrow.obj"#through-right
+	case stopCode =="through":
+		"Through_Arrow.obj"#through
+	case stopCode =="through-left":
+		"Left-Through_Arrow.obj"#through-left	
+	case stopCode =="left":
+		"Left_Arrow.obj"#left
+	case stopCode =="all":
+		"All_Arrow.obj"#all
+	case stopCode =="both":
+		"Both_Arrow.obj"#both
+	else:
+		"Nothing.obj"		
+_LastLaneSwitch(lanenumber,lanestotal)=
+	case lanenumber==lanestotal-1:
+		0
+	else:
+		1	
 
 #Paintcontrol and Bus Furniture functions
+
+_TextureDimensionByUsage(Usage)=
+	case Usage =="Auto":Asphalt_Tile_Size
+	else: Sidewalk_Tile_Size
+	
 _PaintLineControl(side,Control_String)=
 	case side=="Left":
 		case Control_String=="Both":	1
@@ -1131,22 +1196,20 @@ _Construct_PBR_Path(color_map_path,type) =
 	case type == "col":
 		color_map_path
 	case type == "norm":
-		replace(color_map_path,"_basecolor","_normal")
+		replace(color_map_path,"_Color","_Normal")
 	case type == "disp":
-		replace(color_map_path,"_basecolor.jpg","_height.png")
+		replace(color_map_path,"_Color.jpg","_Displacement.png")
 	case type == "roug":
-		replace(color_map_path,"_basecolor","_roughness")
+		replace(color_map_path,"_Color","_Roughness")
 	case type == "aocc":
-		replace(color_map_path,"_basecolor","_ambientOcculsion")
+		replace(color_map_path,"_Color","_AmbientOcclusion")
 	case type == "spec":
-		replace(color_map_path,"_basecolor","_metallic")
+		replace(color_map_path,"_Color","_Metallic")
 	case type == "meta":
-		replace(color_map_path,"_basecolor","_specularity")
+		replace(color_map_path,"_Color","_Specularity")
 	else:
 		print("No correct type specified for path.")
-		
-	
-		
+			
 _ModeClassifier(Usage)	=
 	case Usage=="Shared Mobility":
 	_SharedMobilityThematics(FehrAndPeersUberSharedMobility)
@@ -1446,6 +1509,7 @@ Short_Long_Street_Altered-->
 Short_Long_Street-->
 	case _uScale==1: #IF the Street is long enough continue normally. 
 		Long_Street
+	
  	else: #If the street is too short no stop lines, no bike boxes. 
  		Short_Street	
 
@@ -1549,12 +1613,39 @@ Lanes(dir,stopType) -->
 	#print(geometry.dv(0,unitSpace))
 	#print(split.total)
 # prepare the uv coordinates and texture the shape
-ApproachMarkings(dir,lanenumber,lanestotal,markings) -->	# is used for textures for intersection approach (stop,turn arrows etc). 
+ApproachMarkings(dir,lanenumber,lanestotal,stopType) -->	# is used for textures for intersection approach (stop,turn arrows etc). 
+	case !Not_Low_LOD:
+		LowLODApproachMarkings(dir,lanenumber,lanestotal,_stopTex(stopType,lanenumber,lanestotal)) 
+	else:
+		HighLODApproachMarkings(dir,lanenumber,lanestotal,_stopSten(stopType,lanenumber,lanestotal))
+
+LowLODApproachMarkings(dir,lanenumber,lanestotal,markings) -->	# is used for textures for intersection approach (stop,turn arrows etc). 
 	tileUV(0,~14,~Lane_Width )				# the tileUV operation makes sure that one unit in u-space corresponds to approx 14 meters, the v-coord is not touched in the case of 0 as parameter
 	normalizeUV(0,v,separatePerFace)
 	scaleUV(0,1,(case (lanenumber==lanestotal-1):.95 else: 1))# Scale UV in V direction slightly to remove light line on lane closer to centerline. 
 	texture(LanesFolder+"/lanes_4"+markings+"_14x14m.jpg")
 	ColorAndReport("Auto","drive_lane")
+	
+HighLODApproachMarkings(dir,lanenumber,lanestotal,markings)-->
+	split(v,unitSpace,0) {~1:Asphalt("Auto","drive_lane") ApproachSymbolStencilsSetup(dir,lanenumber,lanestotal,markings)|
+								_LastLaneSwitch(lanenumber,lanestotal)*PaintLineWidth:AsphaltPainted("white","Auto","drive_lane")}
+	
+ApproachSymbolStencilsSetup(dir,lanenumber,lanestotal,markings)-->
+	split(v,unitSpace,0) {'0.1:NIL
+		  				 |~1:split(u,unitSpace,0){'0.65:NIL
+		  					 |~1:ApproachSymbolStencils(dir,lanenumber,lanestotal,markings)
+		  					 |'0.15:NIL}
+						  |'0.1:NIL}
+						  
+ApproachSymbolStencils(dir,lanenumber,lanestotal,markings)-->
+	case find(str(markings),"Nothing",0)!=-1:
+		NIL
+	else:
+		normalizeUV(0, uv, collectiveAllFaces)
+		rotateUV(0,90)
+		insertAlongUV(0, StencilFolder+"/"+markings, 0)
+		comp (f) {top:AsphaltPaintedStencil(Stencil_Color ,"Bikeways","bike_lane")}
+
 
 MainLaneMarkings(dir,lanenumber,markings)--> #Ground Textured Rule	
 	tileUV(0,~14,~ Lane_Width )				# the tileUV operation makes sure that one unit in u-space corresponds to approx 14 meters, the v-coord is not touched in the case of 0 as parameter
@@ -1584,26 +1675,26 @@ ConventionalLane(dir,lanestotal,lanenumber,stopType)-->
 		Sharrow(dir,lanestotal,lanenumber)
 	case !(stopType=="none"||stopType=="line only") && (lanenumber==lanestotal-1):# Makes sure with no stop type last lane has no lane with contiguous stripes
 		split(u,unitSpace,0){ ~1: Asphalt("Auto","drive_lane")
- 							| 14: ApproachMarkings(dir,lanenumber,lanestotal,_stopTex(stopType,lanenumber,lanestotal)) }
+ 							| 14: ApproachMarkings(dir,lanenumber,lanestotal,stopType) }
  		MixedTrafficOnLane (dir,lanenumber,lanestotal)
  		Sharrow(dir,lanestotal,lanenumber)
 	else:	# Makes basic lanes that that are not next to the last lane or a bus/hov lane (if they are on).
 		split(u,unitSpace,0){ ~1: MainLaneMarkingLODChoice(dir,lanenumber,"_stripes_white")
- 							| _hasStopSideSwitch(dir)* 14: ApproachMarkings(dir,lanenumber,lanestotal,_stopTex(stopType,lanenumber,lanestotal))}
+ 							| _hasStopSideSwitch(dir)* 14: ApproachMarkings(dir,lanenumber,lanestotal,stopType)}
  		MixedTrafficOnLane (dir,lanenumber,lanestotal)
  		Sharrow(dir,lanestotal,lanenumber)
  		
 MainLaneMarkingLODChoice(dir,lanenumber,marking)-->
-	case Not_High_LOD:
+	case !Not_Low_LOD:
 		MainLaneMarkings(dir,lanenumber,"_stripes_white")
 	else:
-		HighLODLaneMarking(dir,lanenumber,"Auto")
+		HighLODLaneMarking(dir,lanenumber,"Auto","drive_lane")
 		
-HighLODLaneMarking(dir,lanenumber,mode)-->
-	split(v,unitSpace,0) {~1:Asphalt(mode,"drive_lane")|PaintLineWidth:Repeated_Lane_Dash(mode)}
+HighLODLaneMarking(dir,lanenumber,Mode,LabelID)-->
+	split(v,unitSpace,0) {~1:Asphalt(Mode,LabelID)|PaintLineWidth:Repeated_Lane_Dash("white",Mode,LabelID)}
 
-Repeated_Lane_Dash(mode)-->
-	split(u,unitSpace,0) {~4:AsphaltPainted("white",mode,"drive_lane")|~4:Asphalt(mode,"drive_lane")}*	
+Repeated_Lane_Dash(Color,Mode,LabelID)-->
+	split(u,unitSpace,0) {~4:Asphalt(Mode,LabelID)|{~4:AsphaltPainted(Color,Mode,LabelID)|~4:Asphalt(Mode,LabelID)}*}	
 
 						
 #######################################################
@@ -1637,8 +1728,13 @@ Sharrow(dir,lanestotal,lanenumber)-->
 		
 Sharrow_Stamp(dir,lanestotal,lanenumber)-->
 	extrude(sharrowHeight)
-	comp(f) {all:BikeLaneStamp(1.5,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)}
-	
+	comp(f) {top: Sharrow_Stamp_Top
+			|side:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")}
+						
+Sharrow_Stamp_Top-->
+	AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")
+	alignScopeToGeometry(yUp,largest,longest)
+	BikeLaneSymbolStencil	
 		
 Transit_Lane_Reporting(dir)--> #Reports based on shape geometry and sends to allocator
 	report("Lane Width.Transit Lane Width (ft)",geometry.dv(0,unitSpace)*Feet) #Used to provide lane widths in feet
@@ -1658,32 +1754,35 @@ Transit_Lane_Allocator(dir)--> #Allocates the texture rule based on what type of
 
 
 Bus_Lane_Texture_Rule(dir)--> 
+	alignScopeToAxes(y)
 	split(v,unitSpace,0){PaintLineWidth*_PaintLineControl("Right", Transit_Paint_Line_Sides ):AsphaltPainted("white","Transit","bus_lane")
 							#Level 1-First split indentation
-							|~1:split(u,unitSpace,0){2:AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane")
+							|~1:AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane") split(u,unitSpace,0){2:NIL
 								#Level 2- sub-split indentation
-								| Transit_Lane_Width: Bus_Lane_Stamp (dir)
-								|~ Transit_Symbol_Spacing :AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane")
-								|{ Transit_Lane_Width : Bus_Lane_Stamp (dir)
-								|~ Transit_Symbol_Spacing :AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane")}*
-								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width: Bus_Lane_Stamp (dir)
-								|2:AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane")}
+								| Transit_Lane_Width: Bus_Lane_Stencil_Setup(dir)
+								|~ Transit_Symbol_Spacing :NIL
+								|{ Transit_Lane_Width : Bus_Lane_Stencil_Setup(dir)
+								|~ Transit_Symbol_Spacing :NIL}*
+								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width: Bus_Lane_Stencil_Setup(dir)
+								|2:NIL}
 							|PaintLineWidth*_PaintLineControl("Left", Transit_Paint_Line_Sides ):AsphaltPainted("white","Transit","bus_lane")}
 	BusOnLane(dir)
 
 Bus_Bike_Lane_Texture_Rule(dir)--> 
+	alignScopeToAxes(y)
 	split(v,unitSpace,0){PaintLineWidth*_PaintLineControl("Right", Transit_Paint_Line_Sides ):AsphaltPainted("white","Transit","bus_lane")
 							#Level 1-First split indentation
-							|~1:split(u,unitSpace,0){2:AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane")
+							|~1:AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane") split(u,unitSpace,0){2:NIL
 								#Level 2- sub-split 
-								| Transit_Lane_Width*.5: BikeBoxSymbolAllocation(1,Transit_Lane_Width*.5, Transit_Lane_Width*.75,Bus_Lane_Color)
-								| Transit_Lane_Width: Bus_Lane_Stamp (dir)
-								|~ Transit_Symbol_Spacing :AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane")
-								|{ Transit_Lane_Width*.5: BikeBoxSymbolAllocation(1,Transit_Lane_Width*.5, Transit_Lane_Width*.75,Bus_Lane_Color)
-								|Transit_Lane_Width: Bus_Lane_Stamp (dir)
-								|~ Transit_Symbol_Spacing :AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane")}*
-								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width: Bus_Lane_Stamp (dir)
-								|2:AsphaltPainted(Bus_Lane_Color,"Transit","bus_lane")}
+								| Transit_Lane_Width*.75: BikeBoxSymbolAllocation(1,Transit_Lane_Width*.5, Transit_Lane_Width*.75,Bus_Lane_Color)
+								| Transit_Lane_Width: Bus_Lane_Stencil_Setup(dir)
+								|~ Transit_Symbol_Spacing :NIL
+								|{ Transit_Lane_Width*.75: BikeBoxSymbolAllocation(1,Transit_Lane_Width*.5, Transit_Lane_Width*.75,Bus_Lane_Color)
+								|Transit_Lane_Width: Bus_Lane_Stencil_Setup(dir)
+								|~ Transit_Symbol_Spacing :NIL}*
+								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width * .75: BikeBoxSymbolAllocation(1,Transit_Lane_Width*.5, Transit_Lane_Width*.75,Bus_Lane_Color)
+								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width: Bus_Lane_Stencil_Setup(dir)
+								|2:NIL}
 							|PaintLineWidth*_PaintLineControl("Left", Transit_Paint_Line_Sides ):AsphaltPainted("white","Transit","bus_lane")}
 	BusOnLane(dir)
 	
@@ -1708,36 +1807,48 @@ Metal_Texture--> #Ground Textured Rule
 	texture(MiscFolder +"/Metal_Texture.jpg")
 	projectUV(0)
 	Delete_Texture
+
+Bus_Lane_Stencil_Setup(dir)-->
+	split(v,unitSpace,0) {'0.05: NIL|~1:Bus_Lane_Stencil(dir)|'0.05: NIL}
 	
-Bus_Lane_Stamp(dir)--> #Ground Textured Rule
+Bus_Lane_Stencil(dir)--> #Ground Textured Rule
 	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
  	rotateUV(0,90)
-	tileUV(0,~Transit_Lane_Width,~ Transit_Lane_Width ) 
-	texture(LanesFolder+"/BusLaneStamp"+(case Bus_Lane_Color=="black":"_black" else:"")+".jpg")#If Black change the stamp chosen, might make more elegant later. 
-	color( _ThematicRouter ("Transit","bus_lane"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-	ModeReporter ("Transit")
-	Delete_Texture
+ 	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0, StencilFolder+"/Bus_Only.obj",0)
+	setupProjection(0, scope.xz, ~2,~2,2,2,2)
+	reverseNormals()
+	comp (f) {top= AsphaltPaintedStencil(Stencil_Color ,"Transit","bus_lane")}
 	
 HOV_Lane_Texture_Rule(dir)--> #Ground Textured Rule
 	split(v,unitSpace,0){PaintLineWidth*2*_PaintLineControl("Right", Transit_Paint_Line_Sides ):AsphaltPainted("yellow","Shared Mobility","hov_lane")
 							#Level 1-First split indentation
-							|~1:split(u,unitSpace,0){2:Asphalt("Shared Mobility","hov_lane")
+							|~1:Asphalt("Shared Mobility","hov_lane")
+								split(u,unitSpace,0){2:NIL
 								#Level 2- sub-split indentation
-								| Transit_Lane_Width:HOVlaneStamp(dir)
-								|~ Transit_Symbol_Spacing :Asphalt("Shared Mobility","hov_lane")
-								|{ Transit_Lane_Width :HOVlaneStamp(dir)
-								|~ Transit_Symbol_Spacing :Asphalt("Shared Mobility","hov_lane")}*
-								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width :HOVlaneStamp(dir)
-								|2:Asphalt("Shared Mobility","hov_lane")}
+								| Transit_Lane_Width :HOVLaneStencilSetUp(dir)
+								|~ Transit_Symbol_Spacing :NIL
+								|{ Transit_Lane_Width:HOVLaneStencilSetUp(dir)
+								|~ Transit_Symbol_Spacing :NIL}*
+								| _tooShort(geometry.du(0,unitSpace),Transit_Symbol_Spacing)*_hasStopSideSwitch(dir)*Transit_Lane_Width  :HOVLaneStencilSetUp(dir)
+								|2:NIL}
 							|PaintLineWidth*2*_PaintLineControl("Left", Transit_Paint_Line_Sides ):AsphaltPainted("yellow","Shared Mobility","hov_lane")}
 	MixedTrafficOnLane (dir,-999,-999)
+	
+HOVLaneStencilSetUp(dir)-->
+	split(v,unitSpace,0) {'0.3:NIL|~1:HOVLaneStencil(dir)|'0.3:NIL}
 
-HOVlaneStamp(dir)--> #Ground Textured Rule
+HOVLaneStencil(dir)-->
+	alignScopeToAxes(y)
 	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
  	rotateUV(0,90)
-	tileUV(0,~ Transit_Lane_Width ,~Transit_Lane_Width )#Lane width is used for texture size because it can repeat if need for large streets and because it allows the text to stay in scale with that of a Bus or car. 
-	texture(LanesFolder+"/HOV_Diamond"+".jpg")#If Black change the stamp chosen, might make more elegant later. 
-	ColorAndReport("Shared Mobility","hov_lane")#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+ 	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0, StencilFolder+"/HOV_Symbol.obj",0)
+	setupProjection(0, scope.xz, ~2,~2,2,2,2)
+	cleanupGeometry(all, 0.0075)
+	reverseNormals()
+	comp (f) {top=AsphaltPaintedStencil(Stencil_Color ,"Shared Mobility","hov_lane")}
+
 ##############################################################
 #Non-Carlane Split Space- This is the space where 
 #parking, bike, and buffer lanes are constructed. 
@@ -1775,6 +1886,7 @@ BikeLaneSection (flip,Side_Width)-->
 		BikeLane(flip*Bike_Reversal_Switch,Side_Width)
 		
 BikeLane(sideflip,Width)-->#Was Left,now both, fairly modular
+	alignScopeToAxes(y)
 	Bikes((case sideflip==1:0 else: 2),(case _Twoway_Bikelane_Bool:Width/2 else: Width),bikeProb)
 	color( _ThematicRouter ("Bikeways"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	scaleUV(0,sideflip,sideflip)
@@ -1782,13 +1894,13 @@ BikeLane(sideflip,Width)-->#Was Left,now both, fairly modular
 							#Level 1-First split indentation
 							|~1:split(u,unitSpace,0){2:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")
 								#Level 2- sub-split indentation
-								| Width :BikeLaneStamp(Width  ,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
+								| Width*L_to_W_Ratio_Bk:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane") BikeLaneStencils(Width)
 								|~ Bike_Symbol_Spacing :AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")
-								|{Width  :BikeLaneStamp(Width  ,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
+								|{Width*L_to_W_Ratio_Bk:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane") BikeLaneStencils(Width)
 								|~ Bike_Symbol_Spacing :AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")}*
-								| _tooShort(geometry.du(0,unitSpace)-Bike_Conflict_Spacing,Bike_Symbol_Spacing)*_hasStopSideSwitch((case sideflip==1:0 else: 2))*Width  :BikeLaneStamp(Width,Bike_Lane_Color+"_stamp.jpg",Bike_Lane_Color)
+								| _tooShort(geometry.du(0,unitSpace)-Bike_Conflict_Spacing,Bike_Symbol_Spacing)*_hasStopSideSwitch((case sideflip==1:0 else: 2))* Width*L_to_W_Ratio_Bk:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane") BikeLaneStencils(Width)
 								| Bike_Conflict_Spacing :ConflictZone(Bike_Lane_Color)
-								|1:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")} 
+								|~1:AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")} 
 							|PaintLineWidth*_PaintLineControl("Right", Bike_Paint_Line_Sides):BikeLaneLines}
 
 BikeLaneLines-->
@@ -1796,14 +1908,31 @@ BikeLaneLines-->
 						|Bike_Conflict_Spacing:ConflictZone("white")
 						|1:AsphaltPainted("white","Bikeways","bike_lane")}
 
-BikeLaneStamp(Stamp_Width,FileEnd, Color)--> #Ground Textured Rule
-	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
-	tileUV(0,~Stamp_Width,~Stamp_Width)
-	texture(LanesFolder+"/street_1bike_"+FileEnd)
-	color( _ThematicRouter ("Bikeways","bike_lane"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-	ModeReporter ("Bikeways")
-	Delete_Texture
+BikeLaneStencils(Stamp_Width)-->
+	split(v,unitSpace,0) {~Stamp_Width/10:NIL|
+						 {~Stamp_Width:split(u,unitSpace,0){~1:BikeLaneSymbolStencil|
+											 ~1:NIL|
+											 ~1:BikeLaneArrowSetUp}|
+						 ~Stamp_Width/10:NIL}}
+BikeLaneArrowSetUp--> 
+	split(v,unitSpace,0) {~1:NIL|~3:BikeLaneArrowStencil|~1:NIL}
 
+BikeLaneArrowStencil--> 
+	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
+	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0, StencilFolder+"/Bike_Arrow.obj",0)
+	cleanupGeometry(all, 0.001) 
+	comp (f) {top:AsphaltPaintedStencil(Stencil_Color ,"Bikeways","bike_lane")}
+	
+
+BikeLaneSymbolStencil--> #Ground Textured Rule
+	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
+	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0, StencilFolder+"/Bike_Symbol.obj", 0)
+	cleanupGeometry(all, 0.001) 
+	comp (f) {top:AsphaltPaintedStencil(Stencil_Color,"Bikeways","bike_lane")}
+	
+		
 ConflictZone(passedcolor)-->
 	split(u,unitSpace,0){~1: AsphaltPainted(passedcolor,"Conflict Zones","conflict_marking")|~1:Asphalt("Conflict Zones","conflict_marking")}*
 
@@ -1886,7 +2015,7 @@ Buffer_Top-->
 		Buffer_Texture
 
 Buffer_Texture--> #Ground Textured Rule
-	tileUV(0,2,2) texture(Sidewalk_Texture)
+	tileUV(0,Sidewalk_Tile_Size,Sidewalk_Tile_Size) texture(Sidewalk_Texture)
 	scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
 	rotateUV(0, Sidewalk_Texture_Rotation)
 	Delete_Texture
@@ -1901,13 +2030,15 @@ Shoulder(Dir)-->
 								|Rumble_Strip_Wid:Rumble_Strip
 								|PaintLineWidth:AsphaltPainted("white","Auto","asphalt")}
 
-
-Striped_Buffer(Buffer_Width)--> #Ground Textured Rule
-	rotateUV(0,90)
-	tileUV(0,~ Buffer_Width ,~Buffer_Width*1.5 )
-	texture(LanesFolder+"/street_1bike_"+"buffer2.jpg")
-	ModeReporter ("Bikeways")
-	Delete_Texture
+Striped_Buffer(Buffer_Width)-->
+	split(u,unitSpace,0) {~Buffer_Width*1.5:Asphalt("Bikeways","bike_buffer") Bike_Buffer_Stencil("Bikeways","bike_buffer")}*
+	
+Bike_Buffer_Stencil(Mode,LabelID)-->
+	alignScopeToAxes(y)
+	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0, StencilFolder+"/Bike_Buffer_Center.obj", 0)
+	cleanupGeometry(all, 0.001) 
+	comp (f) {top:AsphaltPaintedStencil(Stencil_Color,Mode,LabelID)}
 
 #Bike Box Creation Rule- controls the splits for the bike box. Works best if Bike lane is adjacent to sidewalk.
 BikeBoxCreation(dir)-->
@@ -1933,15 +2064,18 @@ BikeBoxCreation(dir)-->
 BikeBoxSymbolAllocation(dir,symbol_spacing,allocation_width,bike_box_color)-->
 	case dir==2: #left
 		scaleUV(0,-1,1)
-		split(v,unitSpace,0) {~ symbol_spacing/2:AsphaltPainted(bike_box_color,"Bikeways","bike_lane")
-								| allocation_width *BikeBox_Fraction: BikeLaneStamp( allocation_width,bike_box_color +"_stamp_noarrow.jpg",bike_box_color)
-								|~ symbol_spacing /2:AsphaltPainted(bike_box_color,"Bikeways","bike_lane")}*
+		AsphaltPainted(bike_box_color,"Bikeways","bike_lane")
+		split(v,unitSpace,0) {~ symbol_spacing/2: NIL
+								| allocation_width *BikeBox_Fraction: BikeBoxSymbolSetup(allocation_width)
+								|~ symbol_spacing /2: NIL }*
 	else:
 		scaleUV(0,1,1) 
-		split(v,unitSpace,0) {~ symbol_spacing /2:AsphaltPainted(bike_box_color,"Bikeways","bike_lane")
-								| allocation_width*BikeBox_Fraction: BikeLaneStamp( allocation_width, bike_box_color +"_stamp_noarrow.jpg",bike_box_color)
-								|~ symbol_spacing /2:AsphaltPainted(bike_box_color,"Bikeways","bike_lane")}*
-								
+		AsphaltPainted(bike_box_color,"Bikeways","bike_lane")
+		split(v,unitSpace,0) {~ symbol_spacing/2: NIL
+								| allocation_width *BikeBox_Fraction: BikeBoxSymbolSetup(allocation_width)
+								|~ symbol_spacing /2: NIL }*
+BikeBoxSymbolSetup(Width)-->
+	split(u,unitSpace,0) {~0.2:NIL|~Width:BikeLaneSymbolStencil|~0.2:NIL}							
 ########################
 #####Parking Lane Rules
 ParkingLane(Side,ParkingType,ParkingLength,ParkingWidth,CurbsideLength)-->
@@ -1966,11 +2100,11 @@ ParallelParkingLane(Side,ParkingType,ParkingLength,ParkingWidth,CurbsideLength)-
  			else:	
  				case Side=="Right":-1 else:1,1)
  	split(u,unitSpace,0) {~_Front_Parking_Spacing(ParkingType):Asphalt("Auto","parking_lane")
- 							|~CurbsideLength*_Allocate_Farside_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):CurbsideAllocatorSide(Side,ParkingType,CurbsideLength, ParkingWidth)
+ 							|~CurbsideLength*_Allocate_Farside_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):CurbsideAllocatorSide("Far-side",Side,ParkingType,ParkingLength, ParkingWidth)
  							|{ParkingLength:ParkingSpace(Side,ParkingType,split.index,split.total,ParkingLength,ParkingWidth)}*
- 							|~CurbsideLength*_Allocate_Midpoint_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):CurbsideAllocatorSide(Side,ParkingType,CurbsideLength, ParkingWidth)
+ 							|~CurbsideLength*_Allocate_Midpoint_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):CurbsideAllocatorSide("Mid-block",Side,ParkingType,ParkingLength, ParkingWidth)
  							|{ParkingLength:ParkingSpace(Side,ParkingType,split.index,split.total,ParkingLength,ParkingWidth)}*
- 							|~CurbsideLength*_Allocate_Nearside_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):CurbsideAllocatorSide(Side,ParkingType,CurbsideLength, ParkingWidth)
+ 							|~CurbsideLength*_Allocate_Nearside_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(ParkingType):CurbsideAllocatorSide("Near-side",Side,ParkingType,ParkingLength, ParkingWidth)
  							|~_Rear_Parking_Spacing(ParkingType):Asphalt("Auto","parking_lane")} 
  		
 AngledParkingLane(Side,ParkingType,ParkingLength,ParkingWidth,CurbsideLength)-->
@@ -1992,20 +2126,20 @@ ParkingSpace(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,Parkin
  	else:
  		AngledNoseOutParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)
 
-CurbsideAllocatorSide(Side,ParkingType,ParkingLength,ParkingWidth)-->
+CurbsideAllocatorSide(Position,Side,ParkingType,ParkingLength,ParkingWidth)-->
 	case Side =="Right":
-		RightCurbsideAllocator(Side,ParkingType,ParkingLength,ParkingWidth)
+		RightCurbsideAllocator(Position,Side,ParkingType,ParkingLength,ParkingWidth)
 	else:
-		LeftCurbsideAllocator(Side,ParkingType,ParkingLength,ParkingWidth)
+		LeftCurbsideAllocator(Position,Side,ParkingType,ParkingLength,ParkingWidth)
 
-RightCurbsideAllocator(Side,ParkingType,ParkingLength,ParkingWidth)-->
+RightCurbsideAllocator(Position,Side,ParkingType,ParkingLength,ParkingWidth)-->
 	label("curbside_managed_zone")
-	Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)
-LeftCurbsideAllocator(Side,ParkingType,ParkingLength,ParkingWidth)-->
+	Curbside_Allocator(Position,Side,ParkingType,ParkingLength, ParkingWidth)
+LeftCurbsideAllocator(Position,Side,ParkingType,ParkingLength,ParkingWidth)-->
 	label("curbside_managed_zone")
-	Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)
+	Curbside_Allocator(Position,Side,ParkingType,ParkingLength, ParkingWidth)
 	
-Curbside_Allocator(Side,ParkingType,ParkingLength, ParkingWidth)-->
+Curbside_Allocator(Position,Side,ParkingType,ParkingLength, ParkingWidth)-->
 	case find(ParkingType,"Freight",0)!=-1:
 		label("freight_loading_zone")
 		Freight_Loading_Allocation(Side,ParkingWidth,ParkingLength)
@@ -2038,7 +2172,7 @@ Passenger_Loading_Allocation(Side,ParkingWidth,ParkingLength)-->
 	split(v,unitSpace,0){
 	PaintLineWidth:AsphaltPainted("white","Shared Mobility","passenger_loading")|
 	~1:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("white","Shared Mobility","passenger_loading")|
-		~1:ParallelParkingCar(_ParParkedFacing(Side),ParkingLength, ParkingWidth) Project_Zebra_Stripe("white","Shared Mobility","passenger_loading")|
+		~1:ParallelParkingCar(_ParParkedFacing(Side),scope.sx, ParkingWidth) Project_Zebra_Stripe("white","Shared Mobility","passenger_loading")|
 		PaintLineWidth:AsphaltPainted("white","Shared Mobility","passenger_loading")}|
 	PaintLineWidth:AsphaltPainted("white","Shared Mobility","passenger_loading")}
 		
@@ -2048,10 +2182,12 @@ DoBi_Scooter_Parking(Side,ParkingWidth,ParkingLength)-->
 DoBi_Scooter_Parking_Stamp(Side,ParkingWidth,ParkingLength)--> #Ground Textured Rule
 	report("Curbside Management.DoBi & Scooter Parking Length (m)",geometry.du(0,unitSpace))
 	alignScopeToGeometry(yUp, largest, 0)
-	setupProjection(0,scope.xz,'1,'1)
-	texture(LanesFolder +"/MicromobilityParking.jpg")
-	projectUV(0)
-	ColorAndReport("Shared Mobility","bike_parking")
+	split(v,unitSpace,0){PaintLineWidth:AsphaltPainted("white","Shared Mobility", "bike_parking")
+						|~1: split(u,unitSpace,0) {
+								PaintLineWidth:AsphaltPainted("white","Shared Mobility","bike_parking")
+								|~1:Asphalt("Shared Mobility","bike_parking")
+								|PaintLineWidth:AsphaltPainted("white","Shared Mobility","bike_parking")}
+						|PaintLineWidth:AsphaltPainted("white","Shared Mobility", "bike_parking")}					
 
 Carshare_Parking_Split(Side,Color,ParkingWidth,ParkingLength)-->
 	split(u,unitSpace,0) {~ParkingLength:Carshare_Parking_Allocation(Side,Color,ParkingWidth,ParkingLength)}*
@@ -2061,47 +2197,58 @@ Carshare_Parking_Allocation(Side,Color,ParkingWidth,ParkingLength)-->
 	split(v,unitSpace,0){
 			PaintLineWidth:AsphaltPainted("green","Shared Mobility","parking_lane")|
 			~ParkingWidth:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("green","Shared Mobility","parking_lane")|	
-				~ParkingLength:Carshare_Parking_Stamp(Side)|		
+				~ParkingLength:Asphalt("Shared Mobility","parking_lane") Carshare_Parking_Stencil_Setup(Side)|		
 				PaintLineWidth:AsphaltPainted("green","Shared Mobility","parking_lane")}*|
 			PaintLineWidth:AsphaltPainted("green","Shared Mobility","parking_lane")}
-			
-Carshare_Parking_Stamp(Side)--> #Ground Textured Rule
+
+Carshare_Parking_Stencil_Setup(Side)-->
+	split(v,unitSpace,0){'0.05:NIL|~1:split(u,unitSpace,0) {'0.1:NIL|~1:Carshare_Parking_Stencil(Side)|'0.1:NIL}|'0.05:NIL}
+
+Carshare_Parking_Stencil(Side)--> #Ground Textured Rule
 	alignScopeToGeometry(yUp, largest, 0)
-	setupProjection(0,scope.zx,'1,'1)
-	texture(LanesFolder +"/CarshareOnly.jpg")
-	projectUV(0)
-	scaleUV(0,case (Side=="Right" || Lane_Distribution==1) && Lane_Distribution!=0:1 else: -1,
-	case (Side=="Right" || Lane_Distribution==1) && Lane_Distribution!=0:1 else: -1)
-	scaleUV(0,case rightHandTraffic: 1 else: -1,case rightHandTraffic: 1 else: -1)
-	ColorAndReport("Shared Mobility","parking_lane")
+	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
+ 	scaleUV(0,1,case (Side=="Right" || Lane_Distribution==1) && Lane_Distribution!=0:1 else: -1)
+ 	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0, StencilFolder+"/Carshare_Only.obj",0)
+	comp (f) {top= AsphaltPaintedStencil(Stencil_Color ,"Transit","bus_pull_in")}
 		
 Bus_Stop_Allocation(Side,Color,StampWidth)-->
 	report("Curbside Management.Bus Stop Length (m)",geometry.du(0,unitSpace))
 	split(v,unitSpace,0){
 			PaintLineWidth:AsphaltPainted("white","Transit","bus_pull_in")|
 			~1:split(u,unitSpace,0) {PaintLineWidth:AsphaltPainted("white","Transit","bus_pull_in")|
-				~6:Asphalt("Transit","bus_pull_in")|
-				StampWidth:Bus_Stop_Stamp(Side,Color)|
-				~6:Asphalt("Transit","bus_pull_in")|
+				~0.25:Asphalt("Transit","bus_pull_in")|
+				StampWidth/4:Asphalt("Transit","bus_pull_in") Bus_Stop_Stencil_Setup(Side)|
+				~9:Asphalt("Transit","bus_pull_in")|
+				StampWidth/4:Asphalt("Transit","bus_pull_in") Bus_Stop_Stencil_Setup(Side)|
+				~0.25:Asphalt("Transit","bus_pull_in")|
 				PaintLineWidth:AsphaltPainted("white","Transit","bus_pull_in")}|
 			PaintLineWidth:AsphaltPainted("white","Transit","bus_pull_in")}
 
-Bus_Stop_Stamp(Side,Color)--> #Ground Textured Rule
+Bus_Stop_Stencil_Setup(Side)-->
+	split(v,unitSpace,0) {'0.2: NIL|~1:Bus_Stop_Stencil(Side)|'0.2: NIL}
+	
+Bus_Stop_Stencil(Side)--> #Ground Textured Rule
 	alignScopeToGeometry(yUp, largest, 0)
-	setupProjection(0,scope.zx,'1,'1)
-	texture(LanesFolder +"/BusStopStamp_"+Color+".jpg")
-	projectUV(0)
-	scaleUV(0,case Side=="Right":1 else: -1,case Side=="Right":1 else: -1)
-	scaleUV(0,case rightHandTraffic: 1 else: -1,case rightHandTraffic: 1 else: -1)
-	color( _ThematicRouter ("Transit","bus_pull_in"))
-	Delete_Texture
+	scaleUV(0,1,DirectionalFlip)# Will flip with a change in driving direction
+ 	scaleUV(0,1,case (Side=="Right" || Lane_Distribution==1) && Lane_Distribution!=0:1 else: -1)
+ 	rotateUV(0,90)
+ 	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0, StencilFolder+"/Bus_Stop.obj",0)
+	comp (f) {top= AsphaltPaintedStencil(Stencil_Color ,"Transit","bus_pull_in")}
 	
 	
 Project_Zebra_Stripe(Color,Mode_Class,LabelID)--> #Ground Textured Rule
-	setupProjection(0,scope.xz,'1,'1)
-	texture(LanesFolder +"/crosswalk_zebra_"+Color+".jpg")
-	projectUV(0)
-	ColorAndReport(Mode_Class,LabelID)
+	case !Not_Low_LOD:
+		setupProjection(0,scope.xz,'1,'1)
+		texture(LanesFolder +"/crosswalk_zebra_"+Color+".jpg")
+		projectUV(0)
+		ColorAndReport(Mode_Class,LabelID)
+	else:
+		cleanupGeometry(all, 0.001)
+		split(u,unitSpace,0) {ThickPaintLineWidth:Asphalt(Mode_Class,LabelID)|
+		                     {ThickPaintLineWidth:AsphaltPainted(Color,Mode_Class,LabelID)|
+							ThickPaintLineWidth:Asphalt(Mode_Class,LabelID)}*}
 
 Parklet_Insert(ParkingLength,Rotation)-->
 	alignScopeToGeometry(yUp, largest, 1)
@@ -2116,27 +2263,35 @@ Parklet_Insert(ParkingLength,Rotation)-->
  	
 AngledNoseIn(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
 	AngledParkingCar((case Side=="Right":0 else:2),ParkingType,ParkingLength, ParkingWidth,SpaceNumber)
+	Asphalt("Storage","parking_lane")
 	scaleUV(0,-1,
  		(case Side=="Right":
  						(case Parking_Protection_Bool :1 else:-1)
  					 else:
  						(case Parking_Protection_Bool :-1 else:1)))
- 						
- 	tileUV(0,~ParkingLength,~ParkingWidth)
-	texture(LanesFolder+"/AngledParking.jpg")
-	ParkingReport(Side,case SpaceNumber==1: false else:true,false)#Don't include last spot
-	ColorAndReport("Storage","parking_lane")
+ 	split(v,unitSpace,0){'0.24:NIL|~1:AngledParkingStencil(Side,ParkingLength,ParkingWidth)}
+ 	ParkingReport(Side,case SpaceNumber==1: false else:true,true)#Don't include last spot
 
 AngledNoseOutParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
+	Asphalt("Storage","parking_lane")
 	AngledParkingCar((case Side=="Right":0 else:2),ParkingType,ParkingLength, ParkingWidth,SpaceNumber)
 	scaleUV(0,1,(case Side=="Right":
  							(case Parking_Protection_Bool :1 else:-1)
  						 else:
  							(case Parking_Protection_Bool :-1 else:1)))
- 		tileUV(0,~ParkingLength,~ParkingWidth)
-		texture(LanesFolder+"/AngledParking.jpg")
-	ParkingReport(Side,case SpaceNumber==1: false else:true,false) #Don't include last spot
-	ColorAndReport("Storage","parking_lane")
+ 	split(v,unitSpace,0){'0.24:NIL|~1:AngledParkingStencil(Side,ParkingLength,ParkingWidth)}
+	ParkingReport(Side,case SpaceNumber==1: false else:true,true) #Don't include last spot
+	
+
+
+AngledParkingStencil(Side,ParkingLength,ParkingWidth)-->
+	alignScopeToGeometry(yUp,largest,0)
+	normalizeUV(0, uv, collectiveAllFaces)
+	reverseNormals()	
+	setupProjection(0, scope.xz, 2,2,2,2,2)
+	insertAlongUV(0,StencilFolder+"/Angled_Parking_Line.obj",0)
+	t(0,0,-.2)
+	comp (f) {top=AsphaltPaintedStencil("white","Storage","parking_lane")}
 	
 ParallelParking(Side,ParkingType,SpaceNumber,TotalSpacesonSide,ParkingLength,ParkingWidth)-->
 	case SpaceNumber==TotalSpacesonSide-2:#1 from index total, 1 from additional split- Start
@@ -2176,13 +2331,7 @@ ParkingInsertCap (Rotation,Obj_Path)--> #Ground Textured Rule
 	alignScopeToGeometry(yUp,largest,0)
 	rotateScope(0,Rotation,0)
 	i(StencilFolder+Obj_Path)
-	extrude(sharrowHeight)
-	normalizeUV(0,uv, separatePerFace)
-	setupProjection(0,scope.xz,2,2,2,2,2)
-	texture(LanesFolder+"/asphalt_painted_" + "white" + "_7x7m.jpg")
-	projectUV(0)
-	color( _ThematicRouter ("Storage","parking_lane"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-	Delete_Texture
+	AsphaltPaintedStencil(Stencil_Color,"Storage","parking_lane")
 
 ParallelParkingTexture(Side,ParkingLength,ParkingWidth,ReportBool)-->
  	scaleUV(0,1,(case Side=="Right":
@@ -2273,54 +2422,56 @@ CenterSpace -->
 	case Center_Type == "White Stripe Centerline":
 		Striped_Centerline
 	else:
-		CenterLineMarkings(Centerline_Color)
+		CenterLineMarkings(Centerline_Color,"Auto","centerline")
 
 Striped_Centerline-->
-	split(u,unitSpace,0){ _stopBegin*21: CenterLineMarkings("white")
-						| ~1		   : split(u,unitSpace,0){~5: CenterLineMarkings("white")|~5:Asphalt("Auto","asphalt")}*
-						| _stopEnd*21  : CenterLineMarkings("white") }
+	split(u,unitSpace,0){ _stopBegin*21: CenterLineMarkings("white","Auto","centerline")
+						| ~1		   : split(u,unitSpace,0){~5: CenterLineMarkings("white","Auto","centerline")|~5:Asphalt("Auto","asphalt")}*
+						| _stopEnd*21  : CenterLineMarkings("white","Auto","centerline") }
 
 
 
 MedianWTurnLane-->
 	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
 						|_neighborBegin*_stopBegin*ThickPaintLineWidth:AsphaltPainted("white","Auto","stop_bar")
-						|(_tooShort(geometry.du(0,unitSpace),16+Median_Turn_Transition_Depth+ThickPaintLineWidth))*_neighborBegin*_stopBegin*(14+Median_Turn_Transition_Depth):MedianTurnPocket("Median",0)
+						|(_tooShort(geometry.du(0,unitSpace),Total_Median_Turn_Depth ))*_neighborBegin*_stopBegin*(Total_Median_Turn_Depth ):MedianTurnPocket("Median",0)
 						|~1:Raised_Offset_Curb("Median",1,"Auto",Center_Width/4)
-						|(_tooShort(geometry.du(0,unitSpace),16+Median_Turn_Transition_Depth+ThickPaintLineWidth))*_neighborEnd*_stopEnd*(14+Median_Turn_Transition_Depth):MedianTurnPocket("Median",2)
+						|(_tooShort(geometry.du(0,unitSpace),Total_Median_Turn_Depth ))*_neighborEnd*_stopEnd*(Total_Median_Turn_Depth ):MedianTurnPocket("Median",2)
 						|_neighborEnd*_stopEnd*ThickPaintLineWidth:AsphaltPainted("white","Auto","stop_bar")
 						|(_Bike_Box_Gap("End")): Bike_Box_Left_Turn_Gap("End")}
 
 MedianTurnPocket(Location,dir)-->
-	case dir==0:
-		scaleUV(0,-1,1)
-		split(u,unitSpace,0){Median_Turn_Transition_Depth:TransitionSpace(Location,dir)
-		|~1:TurnLanePocket(dir)}
-	else:
-		scaleUV(0,1,-1)
-		split(u,unitSpace,0){Median_Turn_Transition_Depth:TransitionSpace(Location,dir)
-		|~1:TurnLanePocket(dir)}
-		
-TransitionSpace(Location,dir)-->
-	split(v,unitSpace,0){Turn_Pocket_Curb_Width:Raised_Offset_Curb("Turn Lane Curb",1,"Auto",Turn_Pocket_Curb_Width)
-						|~1: AngledSplitTransition(Location,dir)}			
+	scaleUV(0,case dir==0:-1 else: 1,case dir==0:1 else: -1)
+	split(u,unitSpace,0){Median_Turn_Transition_Depth:MedianTransitionSpace(Location,dir)
+	|~1:RaisedTurnLanePocket(dir)}
 
-AngledSplitTransition(Location,dir)-->
-	TransitionInsert(Location,dir)
+		
+MedianTransitionSpace(Location,dir)-->
+	split(v,unitSpace,0){Turn_Pocket_Curb_Width:Raised_Offset_Curb("Turn Lane Curb",1,"Auto",Turn_Pocket_Curb_Width)
+						|~1: RaisedAngledSplitTransition(Location,dir)}			
+
+RaisedAngledSplitTransition(Location,dir)-->
+	RaisedTransitionInsert(Location,dir)
 	Asphalt("Auto","asphalt")
 
-TransitionInsert(Location,dir)-->
+RaisedTransitionInsert(Location,dir)-->
 	normalizeUV(0, uv, collectiveAllFaces)	
 	setupProjection(0, scope.xz, 2,2,2,2,2)
 	insertAlongUV(0,Default_Median_Transition,0)
 	comp (f) {top:Raised_Curb_End_Extrusion("Auto",dir)}
 	
-TurnLanePocket(dir)-->
+RaisedTurnLanePocket(dir)-->
 	split(v,unitSpace,0){
 		Turn_Pocket_Curb_Width:split(u,unitSpace,0) {~1:Raised_Offset_Curb("Turn Lane Curb",1,"Auto",Turn_Pocket_Curb_Width)
 									|Turn_Pocket_Curb_Width:Asphalt("Auto","asphalt") Raised_Curb_End("Median With Turn Lane",dir)}
-						|{~Lane_Width: ApproachMarkings(dir,1,1,"_stop_arrows_all_" + str(1))}*}
+						|{~Lane_Width: ApproachMarkings(dir,1,1,"right;")}*}#Right because UV is scaled at beginning
 Center_Turn_Lane-->
+	case !Not_Low_LOD:
+		Center_Turn_Lane_Low_LOD
+	else:
+		Center_Turn_Lane_High_LOD
+
+Center_Turn_Lane_Low_LOD-->
 	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
 						|_neighborBegin*_stopBegin*ThickPaintLineWidth:AsphaltPainted("white","Auto","stop_bar")
 						|(_tooShort(geometry.du(0,unitSpace),18+ThickPaintLineWidth))*_neighborBegin*_stopBegin*18:CenterTurnLaneStamp("Transition_",180)
@@ -2332,7 +2483,60 @@ Center_Turn_Lane-->
 						|(_tooShort(geometry.du(0,unitSpace),18+ThickPaintLineWidth))*_neighborEnd*_stopEnd*18:CenterTurnLaneStamp("Transition_",0)
 						|_neighborEnd*_stopEnd*ThickPaintLineWidth:AsphaltPainted("white","Auto","stop_bar")
 						|(_Bike_Box_Gap("End")): Bike_Box_Left_Turn_Gap("End")}
-						
+
+Center_Turn_Lane_High_LOD-->
+	split(u,unitSpace,0){(_Bike_Box_Gap("Begin")): Bike_Box_Left_Turn_Gap("Begin")
+						|_neighborBegin*_stopBegin*ThickPaintLineWidth:AsphaltPainted("white","Auto","stop_bar")
+						|(_tooShort(geometry.du(0,unitSpace),Total_TWLTL_Turn_Depth))*_neighborBegin*_stopBegin*(Total_TWLTL_Turn_Depth ):CenterTurnLaneTurnPocket("Center Turn Lane",0)
+						| ~1:CenterTurnLanePattern
+						|(_tooShort(geometry.du(0,unitSpace),Total_TWLTL_Turn_Depth))*_neighborBegin*_stopBegin*(Total_TWLTL_Turn_Depth ):CenterTurnLaneTurnPocket("Center Turn Lane",2)
+						|_neighborEnd*_stopEnd*ThickPaintLineWidth:AsphaltPainted("white","Auto","stop_bar")
+						|(_Bike_Box_Gap("End")): Bike_Box_Left_Turn_Gap("End")}
+
+CenterTurnLanePattern-->
+	split(v,unitSpace,0){ModeratePaintLineWidth:AsphaltPainted("yellow","Auto","center_turn_lane")
+						|ModeratePaintLineWidth:Asphalt("Auto","center_turn_lane")
+						|~1:split(u,unitSpace,0){~Lane_Width:CenterTurnLaneStencilSections("black")
+											|{~Lane_Width:CenterTurnLaneStencilSections("yellow")
+											|~Lane_Width:CenterTurnLaneStencilSections("black")}*}
+						|ModeratePaintLineWidth:Asphalt("Auto","center_turn_lane")
+						|ModeratePaintLineWidth:AsphaltPainted("yellow","Auto","center_turn_lane")}
+
+CenterTurnLaneStencilSections(EdgeColor)-->						
+	split(v,unitSpace,0) {ModeratePaintLineWidth:AsphaltPainted(EdgeColor,"Auto","center_turn_lane")
+						 |~1:Asphalt("Auto","center_turn_lane") CenterTurnLaneArrowSetup(EdgeColor,"Auto","center_turn_lane")
+						 |ModeratePaintLineWidth:AsphaltPainted(EdgeColor,"Auto","center_turn_lane")}
+
+CenterTurnLaneArrowSetup(EdgeColor,Mode,LabelID)-->
+	case EdgeColor == "black":
+		NIL
+	else:
+		split(v,unitSpace,0) {'0.25:NIL|
+							 ~1:split(u,unitSpace,0) {'0.4:ApproachSymbolStencils(0,0,1,"Left_Arrow.obj")
+								 |'0.2:NIL
+								 |'0.4:scaleUV(0,-1,1) ApproachSymbolStencils(0,0,1,"Right_Arrow.obj")}	
+						     |'0.25:NIL}
+						     
+CenterTurnLaneTurnPocket(Location,dir)-->
+	scaleUV(0,case dir==0:-1 else: 1,case dir==0:1 else: -1)
+	PaintedTransitionInsert(Location,dir)
+	split(u,unitSpace,0){Median_Turn_Transition_Depth:Asphalt("Auto","asphalt")
+	|~1: split(v,unitSpace,0) {'0.05:Asphalt("Auto","asphalt")|~1:ApproachMarkings(dir,1,1,"right;")}}
+
+
+PaintedTransitionInsert(Location,dir)-->
+	alignScopeToGeometry(yUp,largest,0)
+	normalizeUV(0, uv, collectiveAllFaces)	
+	setupProjection(0, scope.xz, 2,2,2,2,2)
+	insertAlongUV(0,Default_TWLTL_Transition,0)
+	comp (f) {top=AsphaltPaintedStencil("yellow","Auto","center_turn_lane")}
+	
+PaintedTurnLanePocket(dir)-->
+	split(v,unitSpace,0){ModeratePaintLineWidth*3:CenterLineMarkings("yellow","Auto","center_turn_lane")
+		|{~Lane_Width: ApproachMarkings(dir,1,1,"right;")}*}#Right because UV is scaled at beginning	
+						     
+					 				
+
 Boulevard-->
 	case Boulevard_Configuration=="Open Space": #If open space send to different split set up. 
 	split(v,unitSpace,0){~(case WalkWay_Width==0:1 else:WalkWay_Width):Raised_Curb("Boulevard",0)
@@ -2363,7 +2567,7 @@ Boulevard_StopBars(dir)-->
 			split(u,unitSpace,0) {_stopBegin*ThickPaintLineWidth:AsphaltPainted("white","Auto","stop_bar")|~1:BikeLane(-1,geometry.dv(0,unitSpace))}
 Boulevard_Center-->
 	case Boulevard_Center_Type=="Center Line":
-		CenterLineMarkings(Centerline_Color)
+		CenterLineMarkings(Centerline_Color,"Auto","centerline")
 	case Boulevard_Center_Type=="Median":
 		Raised_Curb("Boulevard Center",1) #HAS no bus stop
 	case Boulevard_Center_Type=="Curb Buffer":
@@ -2378,19 +2582,18 @@ Boulevard_Center-->
 		split(u,unitSpace,0) {.3:NIL|~1:Fence("Boulevard Center")|.3:NIL}#The split only makes it so the fence poles are not put in the curb.
 		Raised_Curb("Boulevard Center",1)
 	else:
-		CenterLineMarkings(Centerline_Color)
+		CenterLineMarkings(Centerline_Color,"Auto","centerline")
 
 Center_Normal_Lanes(dir)-->
 	 split(v,unitSpace,0) {~1:Drainage
 	 					  |{ Lane_Width :MainLaneMarkings(0,split.index,"_stripes_white") MixedTrafficOnLane (dir,-999,-999)}*
 	 					  | Lane_Width :Asphalt("Auto","asphalt") MixedTrafficOnLane (dir,-999,-999)}
 
-CenterLineMarkings(line_color) --> 
-	split(v,unitSpace,0) {~PaintLineWidth:AsphaltPainted(line_color,"Auto","centerline")|
-					 ~PaintLineWidth:Asphalt("Auto","asphalt")|
-					 ~PaintLineWidth:AsphaltPainted(line_color,"Auto","centerline")}
-	color( _ThematicRouter ("Auto","centerline"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 		
-	
+CenterLineMarkings(line_color,Mode,LabelID) --> 
+	split(v,unitSpace,0) {~PaintLineWidth:AsphaltPainted(line_color,Mode,LabelID)|
+					 ~PaintLineWidth:Asphalt(Mode,LabelID)|
+					 ~PaintLineWidth:AsphaltPainted(line_color,Mode,LabelID)}
+
 CenterTurnLaneStamp(texture_choice,degree)--> #Ground Textured Rule
 	normalizeUV(0,v,collectiveAllFaces)
 	rotateUV(0,degree)
@@ -2502,16 +2705,9 @@ General_Sidewalk_Texture--> #Ground Textured Rule
 	projectUV(0)
 	scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
 	rotateUV(0, Sidewalk_Texture_Rotation)
-	set(material.roughness,0.8)
     set(material.metallic,1.0)
 	Delete_Texture
 	
-	#set(material.colormap,_Construct_PBR_Path(Sidewalk_Texture,"col")) 
-	#set(material.roughnessmap,_Construct_PBR_Path(Sidewalk_Texture,"roug"))
-	#set(material.normalmap, _Construct_PBR_Path(Sidewalk_Texture,"norm"))
-	#set(material.occlusionmap, _Construct_PBR_Path(Sidewalk_Texture,"aocc"))
-	#set(material.metallicmap, _Construct_PBR_Path(Sidewalk_Texture,"meta"))
-  
 
 Median_Top_Setup(Dir)-->
 	case Dir==0:
@@ -2665,7 +2861,7 @@ OpenSpace_Planting-->
 	Pervious_Reporting
 	
 WalkWay_Texture--> #Ground Textured Rule
-	tileUV(0,2,2) texture(Sidewalk_Texture)
+	tileUV(0,Sidewalk_Tile_Size,Sidewalk_Tile_Size) texture(Sidewalk_Texture)
 	scaleUV(0, Sidewalk_Texture_Scale, Sidewalk_Texture_Scale)
 	rotateUV(0, Sidewalk_Texture_Rotation)
 	color( _ThematicRouter ("Pedestrian","median"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
@@ -2830,7 +3026,7 @@ Tree_Type_Adjusted(Tree_Type) =
 
 randomTreeType = 
 	25%:	 "White Ash"
-	25%:	 "Common Hackberry"
+	25%:	 "Red Hickory"
 	25%:	 "Sweetgum"
 	else:	 "Sassafras"
 ###################################################
@@ -2880,17 +3076,24 @@ CrosswalkDashed(uvSet) -->
 						  | 0.17: CrosswalkStripes(0.6) }	
 
 CrosswalkStripes(stripeWidth) --> #Ground Textured Rule
-	cleanupGeometry(all, 0.001) 
-	tileUV(0,0,~1) scaleUV(0,1,1/8/stripeWidth) 		# to setup the v-direction: a continental crosswalk line is 1m width, and the texture contains 8 of these.
-	texture(LanesFolder + "/crosswalk_continental_"+ Crosswalk_Color +".jpg")
-	Delete_Texture
+	case !Not_Low_LOD:
+		cleanupGeometry(all, 0.001) 
+		tileUV(0,0,~1) scaleUV(0,1,1/8/stripeWidth) 		# to setup the v-direction: a continental crosswalk line is 1m width, and the texture contains 8 of these.
+		texture(LanesFolder + "/crosswalk_continental_"+ Crosswalk_Color +".jpg")
+		Delete_Texture
+	else:
+		cleanupGeometry(all, 0.001) 
+		split(v,unitSpace,0) {ThickPaintLineWidth:Asphalt("Conflict Zones","crosswalk")|
+		                     {ThickPaintLineWidth:AsphaltPainted( Crosswalk_Color,"Conflict Zones","crosswalk")|
+							ThickPaintLineWidth:Asphalt("Conflict Zones","crosswalk")}*}
+
 	
 CrosswalkWalkway(reporting)--> #Ground Textured Rule
 	case reporting:
-		tileUV(0,2,2) texture(Custom_Crosswalk_Texture)
+		tileUV(0,Sidewalk_Tile_Size,Sidewalk_Tile_Size) texture(Custom_Crosswalk_Texture)
 		Delete_Texture
 	else:
-		tileUV(0,2,2) texture(Custom_Crosswalk_Texture)
+		tileUV(0,Sidewalk_Tile_Size,Sidewalk_Tile_Size) texture(Custom_Crosswalk_Texture)
 		Delete_Texture
 		
 CrosswalkRaised(uvSet)-->
@@ -3030,12 +3233,16 @@ Sidewalk_Generation-->
 	set(sidewalkWidth,scope.sz)
 	set(sidewalkLength,scope.sx)
 	setupProjection(0,scope.xz,2,2,0,0,1)
+# 	setupProjection(5,scope.xz,2,2,0,0,1)
+# 	setupProjection(7,scope.xz,2,2,0,0,1)
+# 	setupProjection(8,scope.xz,2,2,0,0,1)
 	color( _ThematicRouter ("Pedestrian","sidewalk"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	report("Cut/Fill.Total Sidewalk Cut/Fill Volume (m^3)", geometry.area()*Sidewalk_Height)
 	split(v,unitSpace,0){Curb_Depth: Curbs_Mass(false) 
 						| ~1: Sidewalk_Setup }
 	Enclose_Shape #Enclose Shapes for Printing
 	ModeReporter("Pedestrian")
+
 
 Curbs_Mass(RotateUV)-->
 	extrude(world.y, Sidewalk_Height )
@@ -3062,15 +3269,15 @@ Curbs(RotateUV) --> #Ground Textured Rule
 Sidewalk_Setup-->
 	case sidewalkSide=="Right":
 		extrude(world.y, Sidewalk_Height )
-		comp(f){top=SidewalkTop(sidewalkSide)|side: Sidewalk_Pavement ("Building Side") }
+		comp(f){top=SidewalkTop(sidewalkSide)|side: Sidewalk_Pavement("Building Side") }
 	case sidewalkSide=="Left":
 		scaleUV(0,1,1)
 		extrude(world.y, Sidewalk_Height ) 
-		comp(f){top=SidewalkTop(sidewalkSide)|side: Sidewalk_Pavement ("Building Side") }
+		comp(f){top=SidewalkTop(sidewalkSide)|side: Sidewalk_Pavement("Building Side") }
 	else:
 		print("Error: two right sidewalks as default- please map this attribute.") 
 		extrude(world.y, Sidewalk_Height ) 
-		comp(f){top=SidewalkTop(sidewalkSide)|side: Sidewalk_Pavement ("Building Side") }
+		comp(f){top=SidewalkTop(sidewalkSide)|side: Sidewalk_Pavement("Building Side") }
 
 SidewalkTop(side)-->
 	case valency>1:
@@ -3079,15 +3286,15 @@ SidewalkTop(side)-->
 		split(v,unitSpace,0) {_Side_Sidewalk_Furniture_Zone_Width(side):Sign_Loader(side)
 							|_Side_Sidewalk_Planting_Width(side):Sidewalk_WOPlant_Loading_Section (case side=="Right":0 else:2)# Uses a different loading section rule
 							|_Sidewalk_BikeLane_Width(case side=="Right":0 else: 2)	:Sidewalk_Bike_Lane_Loader(case side=="Right":0 else: 2)
-							|~1: Sidewalk_Pavement ("Through Zone") People}
+							|~1: Sidewalk_Pavement("Through Zone") People}
 	else:
 		split(v,unitSpace,0){_Side_Sidewalk_Furniture_Zone_Width(side):Sign_Loader(side)
 							|_Side_Sidewalk_Planting_Width(side): Sidewalk_WPlant_Loading_Section (case side=="Right":0 else:2)
 							|_Sidewalk_BikeLane_Width(case side=="Right":0 else: 2)	:Sidewalk_Bike_Lane_Loader(case side=="Right":0 else: 2)
-							|~1: Sidewalk_Pavement ("Through Zone") People}
+							|~1: Sidewalk_Pavement("Through Zone") People}
 
 Sign_Loader(side)-->
-	Sidewalk_Pavement ("Sign Gap")
+	Sidewalk_Pavement("Sign Gap")
 	Traffic_Light_Setup
 	Parking_Meter_Setup
 	Sidewalk_Lamp_Setup
@@ -3189,7 +3396,7 @@ Parking_Meter_Loader(Parking_Length,Dir)-->
 						 |~Parking_Meters_Spacing:NIL}*
 						 |(_Sidewalk_CrossStop_Gap(Dir,"End")):NIL}
 
-Sidewalk_Pavement (Location) --> #Ground Textured Rule
+Sidewalk_Pavement(Location) --> #Ground Textured Rule
 	case Location== "Through Zone" || Location=="Corners":
 		report("Sidewalk."+Location+" Area (m^2)",geometry.area())
 		General_Sidewalk_Texture
@@ -3198,25 +3405,25 @@ Sidewalk_Pavement (Location) --> #Ground Textured Rule
 	
 		
 Sidewalk_WPlant_Loading_Section (Dir)-->
-	split(u,unitSpace,0){(_Sidewalk_CrossStop_Gap(Dir,"Begin")): Sidewalk_Pavement ("Cross Walk Begin Gap")
+	split(u,unitSpace,0){(_Sidewalk_CrossStop_Gap(Dir,"Begin")): Sidewalk_Pavement("Cross Walk Begin Gap")
 						|~_Bus_Sidewalk_Base("Near-side"):Bus_Stop_Base("Sidewalk",0)
 						|~geometry.du(0,unitSpace)/2:Sidewalk_Plant_Side("Begin")
 						|~_Bus_Sidewalk_Base("Mid-Block"):Bus_Stop_Base("Sidewalk",0)
 						|~geometry.du(0,unitSpace)/2:Sidewalk_Plant_Side("End")
 						|~_Bus_Sidewalk_Base("Far-side"):Bus_Stop_Base("Sidewalk",0)
-						|(_Sidewalk_CrossStop_Gap(Dir,"End") ): Sidewalk_Pavement ("Cross Walk End Gap")}
+						|(_Sidewalk_CrossStop_Gap(Dir,"End") ): Sidewalk_Pavement("Cross Walk End Gap")}
 
 Sidewalk_WOPlant_Loading_Section (Dir)-->
-	split(u,unitSpace,0){(_Sidewalk_CrossStop_Gap(Dir,"Begin")): Sidewalk_Pavement ("Cross Walk Begin Gap")People
+	split(u,unitSpace,0){(_Sidewalk_CrossStop_Gap(Dir,"Begin")): Sidewalk_Pavement("Cross Walk Begin Gap")People
 						|~_Bus_Sidewalk_Base("Near-side"):Bus_Stop_Base("Sidewalk",0)
-						|~geometry.du(0,unitSpace)/2: Sidewalk_Pavement ("Through Zone")People
+						|~geometry.du(0,unitSpace)/2: Sidewalk_Pavement("Through Zone")People
 						|~_Bus_Sidewalk_Base("Mid-Block"):Bus_Stop_Base("Sidewalk",0)
-						|~geometry.du(0,unitSpace)/2: Sidewalk_Pavement ("Through Zone") People
+						|~geometry.du(0,unitSpace)/2: Sidewalk_Pavement("Through Zone") People
 						|~_Bus_Sidewalk_Base("Far-side"):Bus_Stop_Base("Sidewalk",0)
-						|(_Sidewalk_CrossStop_Gap(Dir,"End") ): Sidewalk_Pavement ("Cross Walk End Gap")People}
+						|(_Sidewalk_CrossStop_Gap(Dir,"End") ): Sidewalk_Pavement("Cross Walk End Gap")People}
 
 Sidewalk_Bike_Lane_Loader(Dir)-->
-	split(u,unitSpace,0){~1:scaleUV(0,DirectionalFlip,1)BikeLaneSection(case Dir==0:1 else:-1,_Sidewalk_BikeLane_Width(Dir))}
+	split(u,unitSpace,0){~1:scaleUV(0,DirectionalFlip,1)BikeLaneSection(case Dir==0:-1 else:1,_Sidewalk_BikeLane_Width(Dir))}
 
 Sidewalk_Object_Split(RotationAng)-->
 	split(u,unitSpace,0){'_Bus_Alloc("Sidewalk"): Bus_Stop_Insert("Bus Stop",Bus_Stop_Object,RotationAng+90,Sidewalk_Bus_Stop_Setback)
@@ -3224,9 +3431,9 @@ Sidewalk_Object_Split(RotationAng)-->
 						|'_WayFinder_Alloc("Sidewalk"):Bus_Objects_Insert("Wayfinder",Wayfinder_Object,RotationAng,-.5,.3,3,0.5)}
 
 Sidewalk_Plant_Side(Plant_Side_Base_Switch)-->
-	split(u,unitSpace,0){~Sidewalk_Planting_Spacing /2: Sidewalk_Pavement ("Before Planting")
+	split(u,unitSpace,0){~Sidewalk_Planting_Spacing /2: Sidewalk_Pavement("Before Planting")
 						|~Sidewalk_Planting_Length:Plant_Base 
-						|~Sidewalk_Planting_Spacing/2: Sidewalk_Pavement ("After Planting") Sidewalk_Bench_Loader(split.index,split.total,Plant_Side_Base_Switch)}*	
+						|~Sidewalk_Planting_Spacing/2: Sidewalk_Pavement("After Planting") Sidewalk_Bench_Loader(split.index,split.total,Plant_Side_Base_Switch)}*	
 
 Sidewalk_Bench_Loader(splitNum,splitTotal,Plant_Side_Base_Switch)-->
 		case Sidewalk_Benches =="None":
@@ -3275,7 +3482,7 @@ Bench_Insert-->
 		
 Plant_Base-->
 case Sidewalk_Ground_Cover =="None":
-	Sidewalk_Pavement ("Plant_Space")
+	Sidewalk_Pavement("Plant_Space")
 else:
 	Curbside_Context_Planting_Allocation
 
@@ -3312,36 +3519,79 @@ Planting_Curb(Planting_Spacing)-->
 	else:
 		NIL
 Sign_Objects_Insert(Object_Identity,File_Extension,RotationAng,Translation,SX,SY,SZ)-->#Sidewalk Object Constructor Rule
-		alignScopeToAxes(y)
-		alignScopeToGeometry(yUp, largest, 1)
-		rotateScope(0,RotationAng,0)
-		center(xz)
-		t(scope.sx-SX,0,0)
-		t(Translation,0,0)
-		i(File_Extension)
-		set(material.name,"Signs")
-		label("Signs")
-		s(SX,SY,SZ)
-		report("Objects."+Object_Identity+" Count",1)
-		Delete_Texture
+	alignScopeToAxes(y)
+	alignScopeToGeometry(yUp, largest, 1)
+	rotateScope(0,RotationAng,0)
+	center(xz)
+	t(scope.sx-SX,0,0)
+	t(Translation,0,0)
+	i(File_Extension)
+	set(material.name,"Signs")
+	label("Signs")
+	s(SX,SY,SZ)
+	report("Objects."+Object_Identity+" Count",1)
+	Delete_Texture
 ##################################################
 #Paint & Asphalt Reporting	
 #Asphalt Painted is actually retrofitted to be the paint and mode reporting aggregator, all "Paint Areas" originate here. 
 Asphalt(Usage,LabelID) --> #Ground Textured Rule
-		tileUV(0,14,14)
-		cleanupGeometry(all, 0.001)
-		texture( LanesFolder+"/asphalt_14x14m.jpg")
-		ColorAndReport(Usage,LabelID)
+	tileUV(0,Asphalt_Tile_Size,Asphalt_Tile_Size)
+	cleanupGeometry(all, 0.001)
+	texture( LanesFolder+"/"+Asphalt_Base)
+	ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Usage,LabelID,true)
+	
+	
+ProjectPBRTextures(path,Usage,LabelID,Report)-->
+	case Not_Low_LOD:
+		setupProjection(5,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
+		setupProjection(7,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
+		setupProjection(8,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
+		ApplyPBRTextures(path,Usage,LabelID,Report)
+	else:
+		ReportManager(Usage,LabelID,Report)
+
+	
+ApplyPBRTextures(path,Usage,LabelID,Report)-->
+	case Not_Low_LOD:
+		set(material.shader,"CityEnginePBRShader")
+		set(material.normalmap,_Construct_PBR_Path(path,"norm"))
+		projectUV(5)
+		set(material.roughnessmap,_Construct_PBR_Path(path,"roug"))
+		projectUV(8)
+		set(material.occlusionmap, _Construct_PBR_Path(path,"aocc"))
+		projectUV(7)
+		ReportManager(Usage,LabelID,Report)
+	else:
+		NIL
 
 AsphaltPainted(paintColor,Usage,LabelID) --> #Ground Textured Rule
 	case paintColor!="black":# This makes sure that if the color is black, it is thrown into Asphalt Reporting
-		tileUV(0,7,7)
+		tileUV(0,Asphalt_Tile_Size,Asphalt_Tile_Size)
 		cleanupGeometry(all,0.001)
-		texture(LanesFolder+"/asphalt_painted_" + paintColor + "_7x7m.jpg")
+		texture(LanesFolder+"/Asphalt003_2K_" + paintColor + "_Color.jpg")
 		set(material.name,str(material.name)+"_"+str(paintColor))
-		ColorAndReport(Usage,LabelID)
+		ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Usage,LabelID,true)
 	else:#If Black redirect to asphalt rule.
 		Asphalt(Usage,LabelID)
+
+AsphaltPaintedStencil(paintColor,Usage,LabelID)-->
+	# Stencils should have no reporting, managed by overlay shapes.
+	alignScopeToAxes(y)
+	alignScopeToGeometry(yUp,largest,longest)
+	extrude(world.up,sharrowHeight)
+	normalizeUV(0,uv, separatePerFace)
+	setupProjection(0,scope.xz,Asphalt_Tile_Size,Asphalt_Tile_Size,Asphalt_Tile_Size,Asphalt_Tile_Size,1)
+	texture(LanesFolder+"/Asphalt003_2K_" + paintColor + "_Color.jpg")
+	set(material.name,str(material.name)+"_"+str(paintColor))
+	projectUV(0)
+	ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Usage,LabelID,false)
+	
+ReportManager(Usage,LabelID,Report)-->
+	case Report:
+		ColorAndReport(Usage,LabelID)
+	else:
+		color( _ThematicRouter (Usage,LabelID))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+		Delete_Texture
 
 ColorAndReport(Usage,LabelID)-->
 	color( _ThematicRouter (Usage,LabelID))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
@@ -3352,7 +3602,8 @@ ModeReporter(Usage)-->
 	case reportingOn:
 		report("Mode Area (m^2)."+str(Usage),geometry.area)
 	else:
-		X.
+		NIL
+		
 NoGeometryModeReporter(Usage)-->
 	case reportingOn:
 		report("Mode Area (m^2)."+str(Usage),geometry.area)
@@ -3855,18 +4106,10 @@ Rumble_Strip--> #Ground Textured Rule
 	
 Drainage--> #Ground Textured Rule
 	case geometry.dv(0,unitSpace)> Lane_Width /3 && Space_Management=="Flag":#Will flag the drainage area as Red if it is >1/3 the laneWidth-I mean really 1/3 of a lane is drainage? Put a bike lane or something
-		tileUV(0,~1,'1)
-		cleanupGeometry(all, 0.001)
-		texture(LanesFolder+"/Drainage_Side.jpg")
-		color( _ThematicRouter ("Conflict Zones"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 	
-		color(.7,0,0)
-		Delete_Texture
+		AsphaltPainted("red","Conflict Zones","asphalt")
+		color(.7,0,0)	 	
 	else:
-		tileUV(0,~1,'1)
-		cleanupGeometry(all, 0.001)
-		texture(LanesFolder+"/Drainage_Side.jpg")
-		color( _ThematicRouter ("Conflict Zones"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
-		Delete_Texture
+		Asphalt("Conflict Zones","asphalt") 
 		
 Enclose_Shape-->
 	set(material.opacity,0)#Make it transparent
