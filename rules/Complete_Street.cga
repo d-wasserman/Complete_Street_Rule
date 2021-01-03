@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 1/1/2021
+ * Last Updated: 1/2/2021
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -436,28 +436,28 @@ attr Base_Flood_Elevation=-.00001
 # Handle Control #
 ##################
 @Group("Handles",120)
-@Handle(shape=LampAsset^1,axis=x,type=move,color="#DDDD11")@Hidden
-@Order(1)@Description("This parameter represents a handle that controls lamp translation.")
+@Handle(shape=LampAsset^1,axis=x,type=move,color="#DDDD11")
+@Order(1)@Description("This parameter represents a handle that controls lamp translation.") #@Hidden
 attr SLight_Translate_X = Sidewalk_Furniture_Zone_Width/2
-@Handle(shape=LampAsset^1,axis=z,type=move,color="#DDDD11") @Hidden
+@Handle(shape=LampAsset^1,axis=z,type=move,color="#DDDD11") #@Hidden
 @Order(2)@Description("This parameter represents a handle that controls lamp translation.")
 attr SLight_Translate_Z = Sidewalk_Furniture_Zone_Width/2
-@Handle(shape=Traffic_Light^1,axis=z,type=angular,color="#FF1111")
+@Handle(shape=Traffic_Light^1,axis=z,type=angular,color="#FF1111") #@Hidden
 @Order(3)@Angle @Range(min=0,max=360)@Description("Determines the rotation of the signal pole at the intersection.")
 attr Traffic_Light_Rotation = 180
-@Handle(shape=Traffic_Light^1,axis=x,type=move,color="#FF1111")@Hidden
+@Handle(shape=Traffic_Light^1,axis=x,type=move,color="#FF1111")#@Hidden
 @Order(4)@Description("This parameter represents a handle that controls traffic light translation.")
 attr TLight_Translate_X = 0
-@Handle(shape=Traffic_Light^1,axis=y,type=move,color="#FF1111")@Hidden
+@Handle(shape=Traffic_Light^1,axis=y,type=move,color="#FF1111")#@Hidden
 @Order(5)@Description("This parameter represents a handle that controls traffic light translation.")
 attr TLight_Translate_Z = 0
-@Handle(shape=Bench_Insert,axis=x,type=move,color="#DD9922") @Hidden
+@Handle(shape=Bench_Insert,axis=x,type=move,color="#DD9922")#@Hidden
 @Order(6)@Description("This parameter represents a handle that controls bench translation.")
 attr SBench_Translate_X = 0
-@Handle(shape=Bench_Insert,axis=y,type=move,color="#DD9922") @Hidden
+@Handle(shape=Bench_Insert,axis=y,type=move,color="#DD9922")#@Hidden
 @Order(7)@Description("This parameter represents a handle that controls bench translation.")
 attr SBench_Translate_Z = 0
-@Handle(shape=Bench_Insert,type=toggle,color="#DD9922")@Enum(true,false) @Hidden
+@Handle(shape=Bench_Insert,type=toggle,color="#DD9922")@Enum(true,false) #@Hidden
 @Order(8)@Description("This parameter represents a handle that controls bench toggling.")
 attr SBench_Toggle = true
 
