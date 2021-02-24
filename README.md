@@ -34,4 +34,4 @@ If you are new to using CityEngine, then the instructions on this [page](Instruc
 If you use the complete street rule in academic research or as part of professional reports, please cite the rule as the following: 
 
 
-Wasserman, D. Complete Street Rule. (2020) GitHub repository, https://github.com/d-wasserman/Complete_Street_Rule.
+Wasserman, D. Complete Street Rule. (2015) GitHub repository, https://github.com/d-wasserman/Complete_Street_Rule.
