@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 1/2/2021
+ * Last Updated: 5/3/2021
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -193,7 +193,7 @@ attr Median_Tree_2_Type				= "None"
 @Order(9) @Distance @Range(min=0,max=80) @Description("This attributes controls the height of Median Trees Type 1.") #@Hidden
 @Handle(shape=Median_Tree_Insert_Setup_1^3,axis=y,type=linear,reference=center,color="#11FF11",skin=sphere)
 attr Median_Tree_1_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk_Tree_1_Type))
-@Order(10) @Distance @Range(min=0,max=80) @Description("This attributes controls the height of Median Trees Type 2.")@Hidden
+@Order(10) @Distance @Range(min=0,max=80) @Description("This attributes controls the height of Median Trees Type 2.")#@Hidden
 @Handle(shape=Median_Tree_Insert_Setup_2^3,axis=y,type=linear,reference=center,color="#11FF11",skin=sphere)
 attr Median_Tree_2_Height = Tree._heightMin(Tree._indexFromCommonName(Sidewalk_Tree_2_Type))
 @Order(11) @Percent @Range(min=0,max=5) @Description("This attribute controls the random deviation that applies to tree heights. As a percent of total height.")
