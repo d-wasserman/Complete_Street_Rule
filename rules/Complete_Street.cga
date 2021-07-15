@@ -3538,7 +3538,7 @@ Sign_Objects_Insert(Object_Identity,File_Extension,RotationAng,Translation,SX,SY
 #Paint & Asphalt Reporting	
 #Asphalt Painted is actually retrofitted to be the paint and mode reporting aggregator, all "Paint Areas" originate here. 
 Asphalt(Usage,LabelID) --> #Ground Textured Rule
-	tileUV(0,Asphalt_Tile_Size,Asphalt_Tile_Size)
+	setupProjection(0, world.xz, Asphalt_Tile_Size, Asphalt_Tile_Size, 0, 0, 1)
 	cleanupGeometry(all, 0.001)
 	texture( LanesFolder+"/"+Asphalt_Base)
 	ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Usage,LabelID,true)
@@ -3546,9 +3546,9 @@ Asphalt(Usage,LabelID) --> #Ground Textured Rule
 	
 ProjectPBRTextures(path,Usage,LabelID,Report)-->
 	case Not_Low_LOD:
-		setupProjection(5,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
-		setupProjection(7,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
-		setupProjection(8,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
+		setupProjection(5,world.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
+		setupProjection(7,world.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
+		setupProjection(8,world.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
 		ApplyPBRTextures(path,Usage,LabelID,Report)
 	else:
 		ReportManager(Usage,LabelID,Report)
@@ -3569,7 +3569,7 @@ ApplyPBRTextures(path,Usage,LabelID,Report)-->
 
 AsphaltPainted(paintColor,Usage,LabelID) --> #Ground Textured Rule
 	case paintColor!="black":# This makes sure that if the color is black, it is thrown into Asphalt Reporting
-		tileUV(0,Asphalt_Tile_Size,Asphalt_Tile_Size)
+		setupProjection(0, world.xz, Asphalt_Tile_Size, Asphalt_Tile_Size, 0, 0, 1)
 		cleanupGeometry(all,0.001)
 		texture(LanesFolder+"/Asphalt003_2K_" + paintColor + "_Color.jpg")
 		set(material.name,str(material.name)+"_"+str(paintColor))
