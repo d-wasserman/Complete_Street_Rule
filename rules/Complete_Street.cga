@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 7/11/2021
+ * Last Updated: 8/6/2021
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -3326,6 +3326,7 @@ Traffic_Light_Setup-->
 		NIL
 	case sidewalkSide=="Right":
 		case Traffic_Lights=="Right" || Traffic_Lights=="Both":
+			scaleUV(0,DirectionalFlip,1)
 			split(u,unitSpace,0) {_crosswalkEndWidth-3.5:NIL #-3.5 is so that if if the crosswalk is short its just placed at the end of the sidewalk-handles up to 9 m crosswalks well.
 								 |1:Traffic_Light(0)
 								 |~1:NIL}
@@ -3333,6 +3334,7 @@ Traffic_Light_Setup-->
 			NIL
 	case sidewalkSide=="Left":
 		case Traffic_Lights=="Left" || Traffic_Lights=="Both":
+			scaleUV(0,DirectionalFlip,1)
 			split(u,unitSpace,0) {_crosswalkEndWidth-3.5:NIL #-3.5 is so that if if the crosswalk is short its just placed at the end of the sidewalk-handles up to 9 m crosswalks well.
 								 |1:Traffic_Light(2)
 								 |~1:NIL}
