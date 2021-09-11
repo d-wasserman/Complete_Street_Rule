@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 8/6/2021
+ * Last Updated: 9/11/2021
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -3139,9 +3139,9 @@ Freeway -->
 	report("Connection Shape Area.Freeway Area",geometry.area())#Only reports given to freeways. 
 	set(streetWidth,geometry.dv(0,unitSpace))
 	set( Lane_Width ,streetWidth/geometry.dv(0,uvSpace))
-	split(v,unitSpace,0){   Lane_Width *18/256: tileUV(0,0,- Lane_Width ) MainLaneMarkings(0,split.index,"_stripes_white") 	# with tileUV we make sure that the v-coord starts always at zero (independent of the direction of the segment) and since the last stripe is on the top of the texture, we have to reverse the v-coord	
-						| { Lane_Width       : MainLaneMarkings(0,split.index,"_stripes_white")}* 
-						|	Lane_Width :Asphalt("Auto","drive_lane")}
+	split(v,unitSpace,0){ {Lane_Width       : MainLaneMarkingLODChoice(0,split.index,"_stripes_white")}* 
+						|~Lane_Width :Asphalt("Auto","drive_lane")}
+# 	MixedTrafficOnLane (0,split.index,nLanesTotal)
 	BridgeMain
 # crossing is just Asphalt for now
 @StartRule
@@ -3159,8 +3159,9 @@ FreewayEntry -->
 	report("Connection Shape Area.Freeway Entry Area",geometry.area())#Only reports given to freeways. 
 	set(streetWidth,geometry.dv(0,unitSpace))
 	set(Lane_Width ,streetWidth/geometry.dv(0,uvSpace))
-	split(v,unitSpace,1){   Lane_Width *18/256: tileUV(0,0,- Lane_Width ) MainLaneMarkings(0,split.index,"_stripes_white") 	# with tileUV we make sure that the v-coord starts always at zero (independent of the direction of the segment) and since the last stripe is on the top of the texture, we have to reverse the v-coord	
-						| { Lane_Width       : MainLaneMarkings(0,split.index,"_stripes_white")}* }
+	split(v,unitSpace,1){{Lane_Width      : MainLaneMarkingLODChoice(0,split.index,"_stripes_white")}* 
+						|~Lane_Width :Asphalt("Auto","asphalt")}
+
 	BridgeMain
 
 
