@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 9/11/2021
+ * Last Updated: 10/15/2021
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -1883,9 +1883,11 @@ RightBikeLaneSpace(list)-->
 #BikeLane Start
 BikeLaneSection (flip,Side_Width)-->
 	case _Twoway_Bikelane_Bool:
+		scaleUV(0,1,case Buffer_Protection_Bool : 1 else:-1)
 		split(v,unitSpace,0) {'.5:BikeLane(-1*Bike_Reversal_Switch,Side_Width)
 		|~1:BikeLane(1*Bike_Reversal_Switch,Side_Width)}						
 	else:
+		scaleUV(0,1,case Buffer_Protection_Bool : 1 else:-1)
 		BikeLane(flip*Bike_Reversal_Switch,Side_Width)
 		
 BikeLane(sideflip,Width)-->#Was Left,now both, fairly modular
@@ -2151,9 +2153,11 @@ Curbside_Allocator(Position,Side,ParkingType,ParkingLength, ParkingWidth)-->
 		Passenger_Loading_Allocation(Side,ParkingWidth,ParkingLength)		
 	case find(ParkingType,"Bus Stop",0)!=-1:
 		label("bus_loading_zone")
+		scaleUV(0,1,case Parking_Protection_Bool :-1 else:1)
 		Bus_Stop_Allocation(Side,"black",ParkingWidth)
 	case find(ParkingType,"Carshare",0)!=-1:
 		label("carshare_parking")
+		scaleUV(0,1,case Parking_Protection_Bool :-1 else:1)
 		Carshare_Parking_Split(Side,"green",ParkingWidth,ParkingLength)
 	case find(ParkingType,"DoBi & Scooter",0)!=-1:
 		label("dobi_parking")
