@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 5/7/2022
+ * Last Updated: 10/1/2022
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -59,7 +59,7 @@
 #1 feet		==.3048  Meters
 #1/2 feet	==.1524  Meters
 #1 inch		==.0254  Meters
-version "2021.0"
+version "2022.0"
 
 
 
@@ -510,6 +510,7 @@ const Dimension_Center_Hexcode		= case Boulevard_Configuration=="Bus Lanes": NAC
 									  case Boulevard_Configuration=="Cycle Path":NACTOBike 
 									  case Boulevard_Configuration=="Open Space":NACTOPlanting
 									  else: NACTOConflictZone
+const Curb_Switch					= case streetWidth ==0:0 else: 1 
 #Transit Lane Constants
 #Bike Constants
 const sharrowHeight					=0.005 * ceil(abs(geometry.angle(maxSlope)+1)/5)
@@ -3245,7 +3246,7 @@ Sidewalk_Generation-->
 # 	setupProjection(8,scope.xz,2,2,0,0,1)
 	color( _ThematicRouter ("Pedestrian","sidewalk"))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
 	report("Cut/Fill.Total Sidewalk Cut/Fill Volume (m^3)", geometry.area()*Sidewalk_Height)
-	split(v,unitSpace,0){Curb_Depth: Curbs_Mass(false) 
+	split(v,unitSpace,0){Curb_Depth*Curb_Switch: Curbs_Mass(false) 
 						| ~1: Sidewalk_Setup }
 	Enclose_Shape #Enclose Shapes for Printing
 	ModeReporter("Pedestrian")
