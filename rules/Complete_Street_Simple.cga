@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 10/1/2022
+ * Last Updated: 1/5/2022
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -376,18 +376,22 @@ attr Left_Parked_Car_Angle			= _Car_Angle(Left_Parking_Type)
 
 @Group("CUSTOM OBJECTS",90) 
 @Order(1)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
+@Enum(valuesAttr=Street_Lamp_Object_Values, restricted=false)
 attr Street_Lamp_Object						=Default_Lamp
 @Order(2)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
 attr Parking_Meter_Object					=Default_Parking_Meter
 @Order(3)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
+@Enum(valuesAttr=Traffic_Light_Object_Values, restricted=false)
 attr Traffic_Light_Object					= case streetWidth > 11: Default_Large_Traffic_Light else: Default_Small_Traffic_Light
 @Order(4)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
 attr Wayfinder_Object						=Default_WayFinder
 @Order(5)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
+@Enum(valuesAttr=Bench_Object_Values, restricted=false)
 attr Bench_Object							=Default_Bench
 @Order(6)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
 attr Bike_Rack_Object						=Default_Bike_Rack
 @Order(7)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
+@Enum(valuesAttr=Bus_Stop_Object_Values, restricted=false)
 attr Bus_Stop_Object						=Default_BusStop
 @Order(8)@File("glb","dae","dxf","gdb","kml","kmz","obj","osm","shp")@Description("Make sure object/3D files are aligned so that UP is aligned to the Y Axis. Keep in mind objs were inserted assuming a standard alignment.")@Hidden
 attr Parklet_Object							=Default_Parklet					
@@ -461,6 +465,22 @@ attr SBench_Translate_Z = 0
 @Order(8)@Description("This parameter represents a handle that controls bench toggling.")
 attr SBench_Toggle = true
 
+############################
+# Reference Asset Constants
+###########################
+const assetDataFilename = CompleteStreetFolder + "/Asset_Metadata.csv"
+const assetData = readStringTable(assetDataFilename)
+getAssetsInCategory(category) = assetData[assetData[0:nRows(assetData)-1,1].==category, 0]
+
+@Hidden
+attr Street_Lamp_Object_Values 		= getAssetsInCategory("street_lamp")
+@Hidden
+attr Traffic_Light_Object_Values 	= getAssetsInCategory("traffic_light")
+@Hidden
+attr Bench_Object_Values 			= getAssetsInCategory("bench")
+@Hidden
+attr Bus_Stop_Object_Values 		= getAssetsInCategory("bus_stop")
+
 
 ##################
 # User constants #
@@ -471,10 +491,11 @@ const LanesFolder					= CompleteStreetFolder +"/Lanes"
 const SidewalkFolder				= CompleteStreetFolder +"/Sidewalks"
 const ObjectFolder					= CompleteStreetFolder +"/Street_Furniture_and_Objects"
 const GrassFolder					= CompleteStreetFolder +"/Sidewalks/Grass"
-const TrafficControlFolder			= ObjectFolder +"/Dir_Traffic_controls"
-const LampsFolder					= ObjectFolder+"/Dir_Lamps"
 const MiscFolder					= CompleteStreetFolder +"/Misc"
 const StencilFolder					= ObjectFolder+ "/Stencil"
+const EsriSignsAndSignalsFolder		= "/ESRI.lib/assets/Webstyles/SignsAndSignals"
+const EsriStreetSceneFolder			= "/ESRI.lib/assets/Webstyles/StreetScene"
+const EsriTransportationFolder		= "/ESRI.lib/assets/Webstyles/Transportation"
 #Paint Constants
 const Asphalt_Tile_Size				= 2.5
 const Sidewalk_Tile_Size			= 2
@@ -535,15 +556,15 @@ const Random_Grass					=(fileRandom(GrassFolder + "/*.jpg"))
 #Parking Constants
 const _Place_Colored_Curb			= case(find(Buffer_Type,"Curb",0)!=-1 || !Parking_Protection_Bool): true else: false
 #Object Model Constants
-const Default_Lamp					= (LampsFolder +"/Overhanging_Street_-_Light_off.glb")
+const Default_Lamp					= (EsriStreetSceneFolder +"/Overhanging_Street_-_Light_off.glb")
 const Default_Parking_Meter			= (ObjectFolder+ "/parkingMeter.obj")
-const Default_Small_Traffic_Light	= (TrafficControlFolder+ "/Traffic_Light_1.glb")
-const Default_Large_Traffic_Light	= (TrafficControlFolder+ "/Traffic_Light_2.glb")
+const Default_Small_Traffic_Light	= (EsriSignsAndSignalsFolder+ "/Traffic_Light_1.glb")
+const Default_Large_Traffic_Light	= (EsriSignsAndSignalsFolder+ "/Traffic_Light_2.glb")
 const Default_WayFinder				= (ObjectFolder+ "/WayFinder.obj")
-const Default_Bench					= (ObjectFolder+ "/Park_Bench_2.glb")
+const Default_Bench					= (EsriStreetSceneFolder+ "/Park_Bench_2.glb")
 const Default_Bike_Rack				= (ObjectFolder+ "/Bike_Rack.obj")
 const Default_Parklet				= (ObjectFolder+ "/Parklet_"+LOD_Object_Choice+"_LOD.obj")
-const Default_BusStop				= (ObjectFolder+ "/Bus_Stop_2.glb")
+const Default_BusStop				= (EsriStreetSceneFolder+ "/Bus_Stop_2.glb")
 const Default_Median_End			= (StencilFolder+ "/Median_End.obj")
 const Default_Median_Transition		= (StencilFolder+"/Median_Transition.obj")
 const Default_TWLTL_Transition      = (StencilFolder+"/Center_Turn_Lane_Transition.obj")
@@ -3624,12 +3645,22 @@ NoGeometryModeReporter(Usage)-->
 # ------------------Paint:-------------------------
 #######################################################################
 #Vehicles
-# 
+# Use Asset CSV for object retrieval. 
 # Sample assets provided by Esri CityEngine Team
-# 
 # -------------------------------------------
 
-vehicleAsset(type) = fileRandom( CompleteStreetFolder + "/Low_Poly_Esri_CityEngine_Vehicles/" + type + "/*.glb")
+const busAssets 	= getAssetsInCategory("bus")
+const carAssets 	= getAssetsInCategory("car")
+const freightAssets	= getAssetsInCategory("freight")
+const taxiAssets 	= getAssetsInCategory("taxi")
+
+vehicleAsset(type) =
+	case type=="bus":		getRandomAsset(busAssets)
+	case type=="freight":	getRandomAsset(freightAssets)
+	case type=="taxi":		getRandomAsset(taxiAssets)
+	else:					getRandomAsset(carAssets)
+
+getRandomAsset(assetList) = assetList[rint(rand(size(assetList)-1))]
 
 const vehiclesProb = ( Vehicles_Per_KM *minCarDistance)/1000
 const busProb	   = (Bus_Lane_Buses_Per_KM*minCarDistance)/1000
