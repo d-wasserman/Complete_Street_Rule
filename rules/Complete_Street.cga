@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 1/5/2022
+ * Last Updated: 1/6/2022
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -486,7 +486,7 @@ attr Bus_Stop_Object_Values 		= getAssetsInCategory("bus_stop")
 # User constants #
 ##################
 #Folder Constants-Asset Links
-const CompleteStreetFolder 			= case fileExists(fileRandom("Complete_Streets/Lanes*.jpg")):"Complete_Streets" else: "/ESRI.lib/assets/Streets"
+const CompleteStreetFolder 			= case fileExists("Complete_Streets/Asset_Metadata.csv"):"Complete_Streets" else: "/ESRI.lib/assets/Streets"
 const LanesFolder					= CompleteStreetFolder +"/Lanes"
 const SidewalkFolder				= CompleteStreetFolder +"/Sidewalks"
 const ObjectFolder					= CompleteStreetFolder +"/Street_Furniture_and_Objects"
@@ -1812,17 +1812,20 @@ Bus_Bike_Lane_Texture_Rule(dir)-->
 	
 Light_Rail_Lane_Texture(dir)-->	
 	color( _ThematicRouter ("Transit"))
-	split(v,unitSpace,0){~1:Sidewalk_Pavement("Light Rail Lane")NoGeometryModeReporter("Transit")|
+	split(v,unitSpace,0){~1: Rail_Pavement|
 						 Rail_Depth*3:Rail_Inset|
-						 Track_Gauge:Sidewalk_Pavement("Light Rail Lane")NoGeometryModeReporter("Transit")|
+						 Track_Gauge:Rail_Pavement  |
 						 Rail_Depth*3:Rail_Inset|
-						 ~1:Sidewalk_Pavement("Light Rail Lane")NoGeometryModeReporter("Transit")}
+						 ~1: Rail_Pavement }
 	
-						 
+Rail_Pavement -->
+ 	setupProjection(0,scope.xz,2,2)
+ 	Sidewalk_Pavement("Light Rail Lane")
+ 	NoGeometryModeReporter("Transit")				 
 
 Rail_Inset-->
 	split(v,unitSpace,0) {Rail_Depth:Metal_Texture|
-						  Rail_Depth: extrude(-Rail_Depth) comp(f){side:Metal_Texture|top:Metal_Texture NoGeometryModeReporter("Transit")}|
+						  Rail_Depth:extrude(-Rail_Depth) comp(f){side:Metal_Texture|top:Metal_Texture NoGeometryModeReporter("Transit")}|
 						  Rail_Depth:Metal_Texture}
 
 Metal_Texture--> #Ground Textured Rule
@@ -3647,6 +3650,7 @@ NoGeometryModeReporter(Usage)-->
 #Vehicles
 # Use Asset CSV for object retrieval. 
 # Sample assets provided by Esri CityEngine Team
+# TODO - Make a Microtransit Fraction. 
 # -------------------------------------------
 
 const busAssets 	= getAssetsInCategory("bus")
