@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 1/6/2022
+ * Last Updated: 1/11/2022
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -2378,8 +2378,9 @@ ParallelParkingCar(dir,ParkingLength, ParkingWidth) -->
 	else: NIL
 
 ParallelParkingCarStep2(dir,ParkingLength, ParkingWidth) -->
-	alignScopeToGeometry(yUp, 0, (case dir==2:1 else:3))#If distortion is too high, the edge numbers might change making this look weird. Hard to evaluate options. 
-	rotateScope(0,DirectionalRotation ,0) 
+# 	alignScopeToGeometry(yUp, 0, (case dir==2:1 else:3))#If distortion is too high, the edge numbers might change making this look weird. Hard to evaluate options. 
+	alignScopeToGeometryBBox(zx)
+	rotateScope(0,(case dir == 2:DirectionalRotation +180 else: DirectionalRotation),0) 
 	s(0,0,0)
 	i(vehicleAsset("car"))
 	label("parked car")
