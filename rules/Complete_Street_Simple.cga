@@ -115,9 +115,9 @@ attr Stop_Begin 				= _getInitialStop(connectionStart,nLanesLeft+_Lt_Transit_Lan
 attr Stop_End 					= _getInitialStop(connectionEnd, _Distribute_Right_Lanes+_Rt_Transit_Lane_Count)
 
 @Group("ROAD LAYOUT","Crosswalk Markings",3)
-@Order(1) @Enum("none","continental","ladder","transverse","dashed","solid","custom","ladder custom","raised custom") @Description("NACTO-High­visibility ladder, zebra, and continental crosswalk markings are preferable to standard parallel or dashed pavement markings. These are more visible to approaching vehicles and have been shown to improve yielding behavior.")										# TODO "solid","dashed","ladder"
+@Order(1) @Enum("none","continental","ladder","transverse","dashed","solid","custom","ladder custom","raised custom") @Description("NACTO-Highï¿½visibility ladder, zebra, and continental crosswalk markings are preferable to standard parallel or dashed pavement markings. These are more visible to approaching vehicles and have been shown to improve yielding behavior.")										# TODO "solid","dashed","ladder"
 attr Crosswalk_Begin 			= _getInitialCrosswalk(connectionStart)
-@Order(2) @Enum("none","continental","ladder","transverse","dashed","solid","custom","ladder custom","raised custom")@Description("NACTO-High­visibility ladder, zebra, and continental crosswalk markings are preferable to standard parallel or dashed pavement markings. These are more visible to approaching vehicles and have been shown to improve yielding behavior.")									
+@Order(2) @Enum("none","continental","ladder","transverse","dashed","solid","custom","ladder custom","raised custom")@Description("NACTO-Highï¿½visibility ladder, zebra, and continental crosswalk markings are preferable to standard parallel or dashed pavement markings. These are more visible to approaching vehicles and have been shown to improve yielding behavior.")									
 attr Crosswalk_End 				= _getInitialCrosswalk(connectionEnd)
 @Order(3) @Distance @Range(min=0,max=20) @Description("Crosswalk to Stop Bar Distance. If the Crosswalk UV is clipping geometry, adjust this to set it back more on angled streets. If used, stop and yield lines should be placed a minimum of  4 ft (1.2 m) from the Crosswalk-MUTCD. NACTO suggests a minimum of 8 ft (2.44 m) in urban areas.")
 attr Begin_Crosswalk_To_Stop_Bar= _getInitialGap(connectionStart)
@@ -2381,7 +2381,7 @@ ParallelParkingCarStep2(dir,ParkingLength, ParkingWidth) -->
 	alignScopeToGeometry(yUp, 0, 3)#If distortion is too high, the edge numbers might change making this look weird. Hard to evaluate options. 
 	alignScopeToGeometryBBox(zx) # This might correct for the distortion, but not assured.
 	rotateScope(0,DirectionalRotation,0)
-	rotateScope(0,(case dir == 2:180 else:0),0) 
+	rotateScope(0,(case dir == 2:180 else:0),0)
 	s(0,0,0)
 	i(vehicleAsset("car"))
 	label("parked car")
