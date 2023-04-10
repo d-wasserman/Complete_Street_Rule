@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 1/11/2022
+ * Last Updated: 1/11/2023
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -3771,11 +3771,19 @@ BikeAsset(Bike_Lane_Width) -->
 Delete_Color_Texture(Mode,label)-->
 	case thematicsOn && !texturingOn:
 		deleteUV(0)
+		deleteUV(2)
+		deleteUV(5)
+		deleteUV(8)
+		deleteUV(7)
 		color( _ThematicRouter (Mode,label))
 	case thematicsOn:
 		color( _ThematicRouter (Mode,label))
 	case !texturingOn:
-		deleteUV(0)		
+		deleteUV(0)
+		deleteUV(2)	
+		deleteUV(5)
+		deleteUV(8)
+		deleteUV(7)
 	else:
 		X.
 
@@ -3785,6 +3793,10 @@ Delete_Texture-->
 # 		print(geometry.isInstanced())	
 	else: 
 		deleteUV(0)
+		deleteUV(2)
+		deleteUV(5)
+		deleteUV(8)
+		deleteUV(7)
 # 		print(geometry.isInstanced())
 
 # -------------------------------------------
