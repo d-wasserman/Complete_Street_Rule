@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 1/11/2023
+ * Last Updated: 3/27/2025
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -1533,7 +1533,6 @@ Short_Long_Street_Altered-->
 Short_Long_Street-->
 	case _uScale==1: #IF the Street is long enough continue normally. 
 		Long_Street
-	
  	else: #If the street is too short no stop lines, no bike boxes. 
  		Short_Street	
 
@@ -1542,6 +1541,7 @@ Long_Street-->
 	BridgeMain
 	split(u,uvSpace,1){_crosswalkBeginWidth/10: Asphalt("Auto","asphalt")
 					  | _crosswalkBeginWidth  : Crosswalk( Crosswalk_Begin ,1)
+					  |( Begin_Crosswalk_To_Stop_Bar ):Asphalt("Auto","asphalt")
  					  | ~1			  		  : StreetWithCrosswalkEnd }
 
 Short_Street-->
@@ -1572,13 +1572,9 @@ StreetWithCrosswalkEnd -->
 	#print("DirLane "+str(DirLaneTotal))
 	split(u,uvSpace,2){ _crosswalkEndWidth/10: Asphalt("Auto","asphalt")
 					  | _crosswalkEndWidth    : Crosswalk( Crosswalk_End ,2)
- 					  | ~1			  		  : CrossWalkGap}
- 					  
-CrossWalkGap--> 
-#This solution while imperfect and vulnerable to distortion prevents UVspace/UnitSpace conflicts from cutting geometry. User can adjust relative gaps to compensate. 
-	split(u,unitSpace,0) {( Begin_Crosswalk_To_Stop_Bar ):Asphalt("Auto","asphalt")
-						 |~1:StreetWithEntries
-						 |( End_Crosswalk_To_Stop_Bar ):Asphalt("Auto","asphalt")} 
+					  |(End_Crosswalk_To_Stop_Bar ):Asphalt("Auto","asphalt")
+ 					  | ~1			  		  : StreetWithEntries}
+
 # split into the two street sides (if not oneway)
 StreetWithEntries -->
 	split(v,unitSpace,0) {~1:Drainage
