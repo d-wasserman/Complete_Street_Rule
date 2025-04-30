@@ -1,7 +1,7 @@
 /*
  * File:    Complete Street.cga
  * Created: 10/30/2015 Oct 2015
- * Last Updated: 3/27/2025
+ * Last Updated: 4/29/2025
  * Author:  David J. Wasserman- As Part of and Based on Work from Esri Redlands
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -1539,7 +1539,7 @@ Short_Long_Street-->
 Long_Street-->
 	ReportMultimodalMetrics(reportingOn)
 	BridgeMain
-	split(u,uvSpace,1){_crosswalkBeginWidth/10: Asphalt("Auto","asphalt")
+	split(u,uvSpace,1){_crosswalkBeginWidth/25: Asphalt("Auto","asphalt")
 					  | _crosswalkBeginWidth  : Crosswalk( Crosswalk_Begin ,1)
 					  |( Begin_Crosswalk_To_Stop_Bar ):Asphalt("Auto","asphalt")
  					  | ~1			  		  : StreetWithCrosswalkEnd }
@@ -1570,7 +1570,7 @@ ReportMultimodalMetrics(report_bool)-->
 # split away the crosswalks at the end (if any) using the special UVSET 2
 StreetWithCrosswalkEnd -->	
 	#print("DirLane "+str(DirLaneTotal))
-	split(u,uvSpace,2){ _crosswalkEndWidth/10: Asphalt("Auto","asphalt")
+	split(u,uvSpace,2){ _crosswalkEndWidth/25: Asphalt("Auto","asphalt")
 					  | _crosswalkEndWidth    : Crosswalk( Crosswalk_End ,2)
 					  |(End_Crosswalk_To_Stop_Bar ):Asphalt("Auto","asphalt")
  					  | ~1			  		  : StreetWithEntries}
