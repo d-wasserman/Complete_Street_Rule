@@ -43,6 +43,8 @@ def generate_attribute_product(attr_dict):
 
 def batch_attribute_alteration(alteration_dict = {},translation=[0,0,0]):
     """ This function will take a dictionary of attributes and use python combinatoric functions to create a copy of a selection in a new layer for every combination possible of those attributes.
+    Parameters
+    -------------
     @param: alteration_dict - dictionary with attributes to add in based on every combination
     @param: translation - list of translation coordinates to move the new layer"""
     layers = ce.getObjectsFrom(ce.selection())
