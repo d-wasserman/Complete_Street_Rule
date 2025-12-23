@@ -35,8 +35,8 @@ attr Bike_Conflict_Spacing		= 0
 attr Bike_Lane_Color			=  "black"
 @Order(13)@Enum("Both","Right", "Left", "None")@Description("Controls the white lines on the sides of preferential lanes.")#@Hidden
 attr Bike_Paint_Line_Sides  	="Both"
-@Order(14)@Range(min=0,max=150)@Description("Density of cyclists placed on the bikelane.")
-attr Bicyclists_Density = 80
+@Order(14)@Range(min=0,max=150)@Description("Determines the number of bicyclists per KM of road length loaded onto bike lanes only.")
+attr Bicycles_Per_KM = 80
 
 @Group("MULTIMODAL LANES LAYOUT","Bike Box",6)
 @Order(1) @Enum("true","false") @Hidden @Description("Right Side Bike Box: NACTO-A bike box is a designated area at the head of a traffic lane at a signalized intersection that provides bicyclists with a safe and visible way to get ahead of queuing traffic during the red signal phase. Works best if bike lane is adjacent to sidewalk.")
@@ -200,7 +200,7 @@ BikeBoxSymbolSetup(Width)-->
 
 bikeAsset = fileRandom( Ref.CompleteStreetFolder + "/LowPolygon3D.com_Cyclists/*.obj")
 
-const bikeProb = (Bicyclists_Density  * minBikeDistance)/1000
+const bikeProb = (Bicycles_Per_KM  * minBikeDistance)/1000
 const minBikeDistance = 2
 
 Bikes(dir,Bike_Lane_Width,bike_probability) -->
