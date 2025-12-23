@@ -1,0 +1,234 @@
+/*
+ * File:    BikeLane.cga
+ * Created: 5/31/2025
+ * Last Updated: 5/31/2025
+ * Author:  David J. Wasserman
+ * License: Apache 2.0 License and ESRI Attribution License.
+ * Source: https://github.com/d-wasserman/Complete_Street_Rule
+# ESRI Attribution License:
+#	ESRI Derivative work
+#	http://mappingcenter.esri.com/downloads/AttributionAndLicense_05_09_07.pdf
+#
+# Copyright 2025 David J. Wasserman
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required bys applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------
+ */
+version "2025.0"
+# Parameters
+@Group("MULTIMODAL LANES LAYOUT", "Bike Lanes",5)
+@Order(10)@Distance @Range(min=1,max=100,restricted=false)@Description("MUTCD- Preferential Lanes: Markings spaced as close as 80 feet (~24.5 m) apart might be appropriate on city streets, while markings spaced as far as 1,000 feet (304.8 m) apart might be appropriate for freeways.")#@Hidden
+attr Bike_Symbol_Spacing		= 24.5
+@Order(11)@Distance @Range(min=0,max=20) @Description("Creates conflict spacing made up by asphalt gaps in the bike lane for approaching interesections.")
+attr Bike_Conflict_Spacing		= 0
+@Order(12)@Enum("green","black","red","blue","yellow") @Description("Determines the color of the bike lane and bike box. Paint reporting costs adjust based on color choices.")
+attr Bike_Lane_Color			=  "black"
+@Order(13)@Enum("Both","Right", "Left", "None")@Description("Controls the white lines on the sides of preferential lanes.")#@Hidden
+attr Bike_Paint_Line_Sides  	="Both"
+@Order(14)@Range(min=0,max=150)@Description("Density of cyclists placed on the bikelane.")
+attr Bicyclists_Density = 80
+
+@Group("MULTIMODAL LANES LAYOUT","Bike Box",6)
+@Order(1) @Enum("true","false") @Hidden @Description("Right Side Bike Box: NACTO-A bike box is a designated area at the head of a traffic lane at a signalized intersection that provides bicyclists with a safe and visible way to get ahead of queuing traffic during the red signal phase. Works best if bike lane is adjacent to sidewalk.")
+attr Right_Bike_Box				= "false"
+@Order(2) @Enum("true","false") @Hidden @Description("Left Side Bike Box: NACTO-A bike box is a designated area at the head of a traffic lane at a signalized intersection that provides bicyclists with a safe and visible way to get ahead of queuing traffic during the red signal phase. Works best if bike lane is adjacent to sidewalk.")
+attr Left_Bike_Box				= "false"
+@Order(3)@Distance @Range(min=1,max=10) @Hidden @Description("Is the best fit spacing between the bicycle symbols on the bike box. Can be increased to reduce the number of symbols created.")#@Hidden
+attr Bike_Box_Symbol_Spacing	= 5
+@Order(4)@Distance @Range(min=0,max=5.3768) @Hidden @Description("NACTO-A box formed by transverse lines shall be used to hold queuing bicyclists, typically 10-16  feet deep (3.048-4.8768 M). Deeper boxes show less encroachment by motor vehicles.")#@Hidden
+attr Bike_Box_Length			= 4.26
+@Order(12)@Enum("green","black","red","blue","yellow") @Hidden @Description("By default, the Bike Box will match the color of the bike lane, but this attribute can be adjusted to override that choice. Paint reporting costs adjust based on color choices.")
+attr Bike_Box_Color_Override	= Bike_Lane_Color
+
+# Reference Import
+
+import Ref : "Complete_Lanes/Imports/Reference.cga" 
+import Crossing: "Complete_Lanes/Imports/Crossing.cga"
+
+# Hidden attributes
+
+@Hidden
+attr travelDirection = ""
+@Hidden
+attr width = geometry.dv(0,unitSpace)
+
+# Functions
+const _Bike_Paint_Adjuster	   = case Bike_Paint_Line_Sides=="Right"||Bike_Paint_Line_Sides=="None":1 else:2
+const _CrosswalkSwitchBegin = case travelDirection == "Reverse":0 else: 1
+const _CrosswalkSwitchEnd = case travelDirection == "Reverse":1 else: 0
+
+####################
+#Rules - Approach Set Up
+####################
+@StartRule
+start Lane-->	#DeleteUV if texturing is off
+	set(material.name,"Road_Bed")
+	LaneWithCrosswalkBegin
+
+LaneWithCrosswalkBegin-->
+		split(u,uvSpace,1){Crossing._crosswalkBeginWidth/25: Ref.Asphalt("Auto","asphalt")
+					  | Crossing._crosswalkBeginWidth  : Crossing.Crosswalk(Crossing.Crosswalk_Begin ,1)
+					  | Crossing.End_Crosswalk_To_Stop_Bar*_CrosswalkSwitchEnd :Ref.Asphalt("Auto","asphalt")
+					  |~1:LaneWithCrosswalkEnd}
+	
+#The StopBox rule creates both the stop line and Bikebox when they are selected, 
+#and then moves the rest of the space left to the dedicated lane spaces. 
+LaneWithCrosswalkEnd-->
+	split(u,uvSpace,2){ Crossing._crosswalkEndWidth/25: Ref.Asphalt("Auto","asphalt")
+					  | Crossing._crosswalkEndWidth    : Crossing.Crosswalk( Crossing.Crosswalk_End ,2)
+					  | Crossing.End_Crosswalk_To_Stop_Bar*_CrosswalkSwitchBegin :Ref.Asphalt("Auto","asphalt")
+					  |~1:RoadReverser}
+RoadReverser-->
+	case travelDirection=="Reverse":
+		InRoadStopBar(-1)
+	else:
+		InRoadStopBar(1)
+		
+					  
+InRoadStopBar(sideflip)-->
+	scaleUV(0,sideflip,sideflip)
+	split(u,unitSpace,0) {~1:BikeLane(sideflip,width)|Ref.ThickPaintLineWidth:Ref.AsphaltPainted("white","Auto","stop_bar")
+			}
+		
+# split into the two street sides (if not oneway)
+
+BikeLane(sideflip,Width)-->#Was Left,now both, fairly modular
+	alignScopeToAxes(y)
+	Bikes((case sideflip==1:0 else: 2),Width,Ref.bikeProb)
+	color( Ref.Brightness)#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+	split(v,unitSpace,0){Ref.PaintLineWidth*Ref._PaintLineControl("Left", Bike_Paint_Line_Sides):BikeLaneLines
+							#Level 1-First split indentation
+							|~1:split(u,unitSpace,0){2:Ref.AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")
+								#Level 2- sub-split indentation
+								| Width*Ref.L_to_W_Ratio_Bk:Ref.AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane") BikeLaneStencils(Width)
+								|~ Bike_Symbol_Spacing :Ref.AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")
+								|{Width*Ref.L_to_W_Ratio_Bk:Ref.AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane") BikeLaneStencils(Width)
+								|~ Bike_Symbol_Spacing :Ref.AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")}*
+								| Ref._tooShort(geometry.du(0,unitSpace)-Bike_Conflict_Spacing,Bike_Symbol_Spacing)*Ref._hasStopSideSwitch((case sideflip==1:0 else: 2))* Width*Ref.L_to_W_Ratio_Bk:Ref.AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane") BikeLaneStencils(Width)
+								| Bike_Conflict_Spacing :ConflictZone(Bike_Lane_Color)
+								|~1:Ref.AsphaltPainted(Bike_Lane_Color,"Bikeways","bike_lane")} 
+							|Ref.PaintLineWidth*Ref._PaintLineControl("Right", Bike_Paint_Line_Sides):BikeLaneLines}
+
+BikeLaneLines-->
+	split(u,unitSpace,0){~1:Ref.AsphaltPainted("white","Bikeways","bike_lane")
+						|Bike_Conflict_Spacing:ConflictZone("white")
+						|1:Ref.AsphaltPainted("white","Bikeways","bike_lane")}
+
+BikeLaneStencils(Stamp_Width)-->
+	split(v,unitSpace,0) {~Stamp_Width/10:NIL|
+						 {~Stamp_Width:split(u,unitSpace,0){~1:BikeLaneSymbolStencil|
+											 ~1:NIL|
+											 ~1:BikeLaneArrowSetUp}|
+						 ~Stamp_Width/10:NIL}}
+BikeLaneArrowSetUp--> 
+	split(v,unitSpace,0) {~1:NIL|~3:BikeLaneArrowStencil|~1:NIL}
+
+BikeLaneArrowStencil--> 
+	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0, Ref.StencilFolder+"/Bike_Arrow.obj",0)
+	cleanupGeometry(all, 0.001) 
+	comp (f) {top:Ref.AsphaltPaintedStencil(Ref.Stencil_Color ,"Bikeways","bike_lane")}
+	
+
+BikeLaneSymbolStencil--> #Ground Textured Rule
+	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0, Ref.StencilFolder+"/Bike_Symbol.obj", 0)
+	cleanupGeometry(all, 0.001) 
+	comp (f) {top:Ref.AsphaltPaintedStencil(Ref.Stencil_Color,"Bikeways","bike_lane")}
+	
+		
+ConflictZone(passedcolor)-->
+	split(u,unitSpace,0){~1: Ref.AsphaltPainted(passedcolor,"Conflict Zones","conflict_marking")|~1:Ref.Asphalt("Conflict Zones","conflict_marking")}*
+
+#Bike Box Creation Rule- controls the splits for the bike box. Works best if Bike lane is adjacent to sidewalk.
+BikeBoxCreation(dir)-->
+	case dir==2:#left
+	split(v, unitSpace,0) {Ref.PaintLineWidth:Ref.AsphaltPainted("white","Bikeways","bike_lane")|
+						  ~1:split(u, unitSpace,0){
+						  	  Ref.PaintLineWidth:Ref.AsphaltPainted("white","Bikeways","bike_lane")
+						  	  |~1:BikeBoxSymbolAllocation(dir,Bike_Box_Symbol_Spacing,3.25,Bike_Box_Color_Override)
+						  	  |Ref.ThickPaintLineWidth:Ref.AsphaltPainted("white","Bikeways","stop_bar")}
+						  |(3.25-Ref.PaintLineWidth*_Bike_Paint_Adjuster):split(u,unitSpace,0){
+						  		Ref.PaintLineWidth:Ref.AsphaltPainted("white","Bikeways","bike_lane")|~1:Ref.AsphaltPainted(Bike_Box_Color_Override,"Bikeways","bike_lane")}
+						  |Ref.PaintLineWidth:Ref.AsphaltPainted("white","Bikeways","bike_lane")}
+	else:
+		split(v, unitSpace,0) {Ref.PaintLineWidth:Ref.AsphaltPainted("white","Bikeways","bike_lane")
+							  |(3.25-Ref.PaintLineWidth*_Bike_Paint_Adjuster):split(u,unitSpace,0){
+							  		~1:Ref.AsphaltPainted(Bike_Box_Color_Override,"Bikeways","bike_lane")|Ref.PaintLineWidth:Ref.AsphaltPainted("white","Bikeways","bike_lane")}
+						  	  |~1:split(u, unitSpace,0){
+						  	 	 Ref.ThickPaintLineWidth:Ref.AsphaltPainted("white","Bikeways","stop_bar")
+						  	 	 |~1:BikeBoxSymbolAllocation(dir,Bike_Box_Symbol_Spacing,3.25,Bike_Box_Color_Override)
+						  	 	 |Ref.PaintLineWidth:Ref.AsphaltPainted("white","Bikeways","bike_lane")}
+						  	  |Ref.PaintLineWidth:Ref.AsphaltPainted("white","Bikeways","bike_lane")}					  				  		  
+
+BikeBoxSymbolAllocation(dir,symbol_spacing,allocation_width,bike_box_color)-->
+	case dir==2: #left
+		scaleUV(0,-1,1)
+		Ref.AsphaltPainted(bike_box_color,"Bikeways","bike_lane")
+		split(v,unitSpace,0) {~ symbol_spacing/2: NIL
+								| allocation_width *Ref.BikeBox_Fraction: BikeBoxSymbolSetup(allocation_width)
+								|~ symbol_spacing /2: NIL }*
+	else:
+		scaleUV(0,1,1) 
+		Ref.AsphaltPainted(bike_box_color,"Bikeways","bike_lane")
+		split(v,unitSpace,0) {~ symbol_spacing/2: NIL
+								| allocation_width *Ref.BikeBox_Fraction: BikeBoxSymbolSetup(allocation_width)
+								|~ symbol_spacing /2: NIL }*
+BikeBoxSymbolSetup(Width)-->
+	split(u,unitSpace,0) {~0.2:NIL|~Width:BikeLaneSymbolStencil|~0.2:NIL}		
+
+# -------------------------------------------
+# Cyclists
+# 
+# Sample assets provided by lowpolygon3d.com
+# 
+# More assets with high-res textures can be 
+# purchased at http://www.lowpolygon3d.com.
+# 
+# -------------------------------------------
+
+bikeAsset = fileRandom( Ref.CompleteStreetFolder + "/LowPolygon3D.com_Cyclists/*.obj")
+
+const bikeProb = (Bicyclists_Density  * minBikeDistance)/1000
+const minBikeDistance = 2
+
+Bikes(dir,Bike_Lane_Width,bike_probability) -->
+	case bike_probability > 0:
+		BikesOnLane(dir,Bike_Lane_Width)		
+	else:
+		NIL
+	
+BikesOnLane(dir,Bike_Lane_Width) --> #Fix: Lots of logic here that doesn't apply to bikes, since it was adapted from car logic.
+case geometry.du(0,unitSpace) > 1000:
+	split(u,unitSpace,0){ '0.5: BikesOnLane(dir,Bike_Lane_Width) | '0.5: BikesOnLane(dir,Bike_Lane_Width) }
+case geometry.du(0,unitSpace) > 5:
+	split(u,unitSpace,0){ ~1: BikesOnLane(dir,Bike_Lane_Width) | (rand(minBikeDistance,3)): Bike(dir,Bike_Lane_Width,bikeProb) }
+else:
+	NIL
+
+	
+Bike(dir,Bike_Lane_Width,bike_probability) --> 
+	case p(bike_probability):
+		split(u,unitSpace,0){ ~1: NIL | 0.5: alignScopeToGeometry(yUp,0,dir) BikeAsset(Bike_Lane_Width) | ~1: NIL }
+	else:
+		NIL	
+		
+BikeAsset(Bike_Lane_Width) -->
+	t(0,0,Bike_Lane_Width/2 + rand(-Bike_Lane_Width/4,Bike_Lane_Width/4)) 
+	s(0,0,0) 
+	r(scopeCenter,0,90,0)
+	i(bikeAsset) 
+	label("bicyclist")
+	set(material.name,"Bicyclist")
+	Ref.Delete_Color_Texture("Bikeways","bicyclist")
+			
