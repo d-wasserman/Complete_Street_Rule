@@ -193,10 +193,10 @@ CrosswalkStripes(stripeWidth) --> #Ground Textured Rule
 CrosswalkWalkway(reporting)--> #Ground Textured Rule
 	case reporting:
 		tileUV(0,Ref.Sidewalk_Tile_Size,Ref.Sidewalk_Tile_Size) texture(Custom_Crosswalk_Texture)
-		Ref.Delete_Texture
+ 		#Ref.Delete_Texture # Add back when thematics are relevant. 
 	else:
 		tileUV(0,Ref.Sidewalk_Tile_Size,Ref.Sidewalk_Tile_Size) texture(Custom_Crosswalk_Texture)
-		Ref.Delete_Texture
+ 		#Ref.Delete_Texture # Add back when thematics are relevant. 
 		
 CrosswalkRaised(uvSet)-->
 	split(u,uvSpace,uvSet){ 0.4: Insert_Slope(Crossing_Curb_Height,case uvSet==1:180 else: 0)
