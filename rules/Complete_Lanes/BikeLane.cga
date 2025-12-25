@@ -25,7 +25,9 @@
 # --------------------------------
  */
 version "2025.0"
+# --------------------------------
 # Parameters
+# --------------------------------
 @Group("MULTIMODAL LANES LAYOUT", "Bike Lanes",5)
 @Order(10)@Distance @Range(min=1,max=100,restricted=false)@Description("MUTCD- Preferential Lanes: Markings spaced as close as 80 feet (~24.5 m) apart might be appropriate on city streets, while markings spaced as far as 1,000 feet (304.8 m) apart might be appropriate for freeways.")#@Hidden
 attr Bike_Symbol_Spacing		= 24.5
@@ -50,26 +52,32 @@ attr Bike_Box_Length			= 4.26
 @Order(12)@Enum("green","black","red","blue","yellow") @Hidden @Description("By default, the Bike Box will match the color of the bike lane, but this attribute can be adjusted to override that choice. Paint reporting costs adjust based on color choices.")
 attr Bike_Box_Color_Override	= Bike_Lane_Color
 
-# Reference Import
+# --------------------------------
+# Imports
+# --------------------------------
 
 import Ref : "Complete_Lanes/Imports/Reference.cga" 
 import Crossing: "Complete_Lanes/Imports/Crossing.cga"
 
-# Hidden attributes
+# --------------------------------
+# Hidden Attributes
+# --------------------------------
 
 @Hidden
 attr travelDirection = ""
 @Hidden
 attr width = geometry.dv(0,unitSpace)
 
-# Functions
+# --------------------------------
+# Constants & Paths
+# --------------------------------
 const _Bike_Paint_Adjuster	   = case Bike_Paint_Line_Sides=="Right"||Bike_Paint_Line_Sides=="None":1 else:2
 const _CrosswalkSwitchBegin = case travelDirection == "Reverse":0 else: 1
 const _CrosswalkSwitchEnd = case travelDirection == "Reverse":1 else: 0
 
-####################
-#Rules - Approach Set Up
-####################
+# --------------------------------
+# Rules - Approach Set Up (Crossing Logic)
+# --------------------------------
 @StartRule
 start Lane-->	#DeleteUV if texturing is off
 	set(material.name,"Road_Bed")
@@ -100,9 +108,9 @@ InRoadStopBar(sideflip)-->
 	split(u,unitSpace,0) {~1:BikeLane(sideflip,width)|Ref.ThickPaintLineWidth:Ref.AsphaltPainted("white","Auto","stop_bar")
 			}
 		
-########################
-# Lane Set Up End
-########################
+# --------------------------------
+# Main Buffer Rule
+# --------------------------------
 BikeLane(sideflip,width)-->#Was Left,now both, fairly modular
 	alignScopeToAxes(y)
 	Bikes((case sideflip==1:0 else: 2),width,bikeProb)
