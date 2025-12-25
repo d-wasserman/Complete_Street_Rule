@@ -3,7 +3,7 @@ version "2025.0"
 /*
  * File:    Complete Street_Configuration.cga
  * Created: 5/31/2025
- * Last Updated: 5/31/2025
+ * Last Updated: 12/24/2025
  * Author:  David J. Wasserman
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -132,8 +132,6 @@ const Default_Mix_Taxi = .05
 
 bikeAsset = fileRandom( CompleteStreetFolder + "/LowPolygon3D.com_Cyclists/*.obj")
 
-const bikeProb = (20 * minBikeDistance)/1000
-const minBikeDistance = 2
 
 
 #########
@@ -296,6 +294,25 @@ _SemanticClassifier(LabelID)=
 const assetDataFilename = CompleteStreetFolder + "/Asset_Metadata.csv"
 const assetData = readStringTable(assetDataFilename)
 getAssetsInCategory(category) = assetData[assetData[0:nRows(assetData)-1,1].==category, 0]
+
+
+###########################
+# Vehicle Asset Constants & Functions
+###########################
+
+const busAssets 	= getAssetsInCategory("bus")
+const carAssets 	= getAssetsInCategory("car")
+const freightAssets	= getAssetsInCategory("freight")
+const taxiAssets 	= getAssetsInCategory("taxi")
+
+vehicleAsset(type) =
+	case type=="bus":		getRandomAsset(busAssets)
+	case type=="freight":	getRandomAsset(freightAssets)
+	case type=="taxi":		getRandomAsset(taxiAssets)
+	else:					getRandomAsset(carAssets)
+
+getRandomAsset(assetList) = assetList[rint(rand(size(assetList)-1))]
+
 ####################
 #Reference Rules
 ####################
@@ -402,7 +419,7 @@ Delete_Color_Texture(Mode,label)-->
 		X.
 
 Delete_Texture-->
-	case false: 
+	case true: 
 		X.	
 # 		print(geometry.isInstanced())	
 	else: 
@@ -412,3 +429,4 @@ Delete_Texture-->
 		deleteUV(8)
 		deleteUV(7)
 # 		print(geometry.isInstanced())
+
