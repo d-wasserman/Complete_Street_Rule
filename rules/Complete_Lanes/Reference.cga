@@ -129,6 +129,10 @@ const Default_Mix_Bus = .075
 const Default_Mix_Bike = .2
 const Default_Mix_Freight = .05
 const Default_Mix_Taxi = .05
+# Vegetation and Hardscape costs -------------------------------
+const TreeCostAverage = 750 
+# const GrassSurfaceCostAverage = 10	# In square meters
+# const HardscapePaverCost = 25		# In square meters
 
 bikeAsset = fileRandom( CompleteStreetFolder + "/LowPolygon3D.com_Cyclists/*.obj")
 
@@ -140,9 +144,9 @@ bikeAsset = fileRandom( CompleteStreetFolder + "/LowPolygon3D.com_Cyclists/*.obj
 # Mapped Attributes (comming from graph)
 #@Group("LINK TO OBJECT ATTRIBUTES",99)
 @Hidden @Order(5)@Description("For internal use and reporting, must be set to 'Source=Object'.")
-attr connectionEnd 				= "STREET"		# built in value attributes, needs to be sourced as Object (parent)
+attr connectionEnd 				= "CROSSING"		# built in value attributes, needs to be sourced as Object (parent)
 @Hidden @Order(6)@Description("For internal use and reporting, must be set to 'Source=Object'.")
-attr connectionStart 			= "STREET"		# built in value attributes, needs to be sourced as Object (parent)
+attr connectionStart 			= "CROSSING"		# built in value attributes, needs to be sourced as Object (parent)
 @Hidden @Order(7)@Description("For internal use and rep_getInitialCrosswalk(connectionStart)orting, must be set to 'Source=Object'.")
 attr valency 					= 0
 @Hidden @Order(8)@Description("For internal use and reporting, must be set to 'Source=Object'.")//If these two do not connect, crosswalks with have no default width-they must be connected. 
@@ -207,6 +211,7 @@ _hasStopSideSwitch(dir)= case dir==0: _neighborEnd else: _neighborBegin
 
 const _neighborBegin		   = case _hasStop(connectionStart):1 else: 0
 
+
 const _neighborEnd			   = case _hasStop(connectionEnd):1 else: 0
 
 _uScale	= case geometry.du(0,unitSpace)>10: 1	
@@ -216,7 +221,7 @@ _uScale	= case geometry.du(0,unitSpace)>10: 1
 _TextureDimensionByUsage(Usage)=
 	case Usage =="Auto":Asphalt_Tile_Size
 	else: Sidewalk_Tile_Size
-	
+
 _PaintLineControl(side,Control_String)=
 	case side=="Left":
 		case Control_String=="Both":	1
@@ -429,4 +434,3 @@ Delete_Texture-->
 		deleteUV(8)
 		deleteUV(7)
 # 		print(geometry.isInstanced())
-
