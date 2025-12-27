@@ -109,7 +109,7 @@ InRoadStopBar(sideflip)-->
 			}
 		
 # --------------------------------
-# Main Buffer Rule
+# Main Bike Lane Rule
 # --------------------------------
 BikeLane(sideflip,width)-->#Was Left,now both, fairly modular
 	alignScopeToAxes(y)
