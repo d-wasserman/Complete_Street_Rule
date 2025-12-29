@@ -94,6 +94,8 @@ const L_to_W_Ratio_Bk			= 3 # MUTCD recommends a 72 in gap and length of symbol,
 #Transit Constants
 const Track_Gauge					= 1.435 #Standard 
 const Rail_Depth 					= .05
+# Traffic Constants
+const rightHandTraffic 				= true
 #Vegetation Constants
 const Random_Grass					=(fileRandom(GrassFolder + "/*.jpg"))
 #Parking Constants
@@ -129,7 +131,7 @@ const Default_Mix_Bus = .075
 const Default_Mix_Bike = .2
 const Default_Mix_Freight = .05
 const Default_Mix_Taxi = .05
-# Vegetation and Hardscape costs -------------------------------
+# Vegetation and Hardscape costs ---a----------------------------
 const TreeCostAverage = 750 
 # const GrassSurfaceCostAverage = 10	# In square meters
 # const HardscapePaverCost = 25		# In square meters
@@ -169,9 +171,9 @@ attr Base_Flood_Elevation=-.00001
 attr travelDirection = "Forward"
 
 
-#########
+#######################################
 #Functions
-#########
+#######################################
 _GeneralThematic(display,solidColor, peakRunoffDisplayOn)				=
 	case display=="Thematics Off":
 		Brightness # Started as: "#d7d7d7" as constant
@@ -251,8 +253,92 @@ _Construct_PBR_Path(color_map_path,type) =
 		replace(color_map_path,"_Color","_Specularity")
 	else:
 		print("No correct type specified for path.")	
+
+################################################
+# Approach Functions
+################################################
+_stopListTex(stopType,lanenumber)		=
+	case lanenumber >= listSize(stopType):
+		_arrowChoice(listLast(stopType))
+	else:
+		_arrowChoice(listItem(stopType,lanenumber))
+		
+_arrowChoice(stopCode) 								=
+	case stopCode =="stop":
+		case rightHandTraffic: "_stop_word" else: "_stop_word_mirrored"			  
+	case stopCode =="right":
+		"_stop_arrows_all_1"#right
+	case stopCode =="through-right":
+		"_stop_arrows_all_2"#through-right
+	case stopCode =="through":
+		"_stop_arrows_all_3"#through
+	case stopCode =="through-left":
+		"_stop_arrows_all_4"#through-left	
+	case stopCode =="left":
+		"_stop_arrows_all_5"#left
+	case stopCode =="all":
+		"_stop_arrows_all_6"#all
+	case stopCode =="both":
+		"_stop_arrows_all_7"#both
+	else:
+		"_stop_strip"
+_dropNones(stopType,lanestotal) 								=
+	case lanestotal<listSize(stopType) && find(stopType,"none",0)!=-1:
+		_dropNones(listRemove(stopType,"none"),lanestotal)
+	else:
+		stopType	
+		
+_stopSten(stopType,lanenumber,lanestotal)			= #TODO: Add more lane options- D.J.Wasserman
+	case find(stopType,";",0)!=-1:
+  	    _stopListStencil(stopType,lanenumber)
+  	case stopType == "with stop marking"	  : 
+  		_stopListStencil("stop;",lanenumber)
+    case stopType == "arrows on all lanes"  : 
+  		_stopListStencil("right;through-right;through;through-left;left",lanenumber)
+    case stopType == "arrows on side lanes" :
+  		_stopListStencil(_dropNones("right;none;none;none;none;none;none;left",lanestotal),lanenumber)
+    case stopType == "arrows for right turn":
+  		_stopListStencil(_dropNones("right;right;none;none",lanestotal),lanenumber)
+    case stopType == "arrows for left turn" && lanenumber+1==lanestotal :
+  		_stopListStencil(_dropNones("none;none;none;none;none;none;none;none;left;left",lanestotal),lanenumber)
+    else: #Any time you see more case logic for the first trigger, it is a result of trying to work in the current framework
+  		 _stopListStencil("none;",lanenumber)
+
+_stopListStencil(stopType,lanenumber)		=
+	case lanenumber >= listSize(stopType):
+		_arrowStencilChoice(listLast(stopType))
+	else:
+		_arrowStencilChoice(listItem(stopType,lanenumber))
+		
+_arrowStencilChoice(stopCode) 								=
+	case stopCode =="stop":
+		case rightHandTraffic: "Stop_Symbol.obj" else:"Stop_Symbol_Mirrored.obj"	  
+	case stopCode =="right":
+		"Right_Arrow.obj"#right
+	case stopCode =="through-right":
+		"Right-Through_Arrow.obj"#through-right
+	case stopCode =="through":
+		"Through_Arrow.obj"#through
+	case stopCode =="through-left":
+		"Left-Through_Arrow.obj"#through-left	
+	case stopCode =="left":
+		"Left_Arrow.obj"#left
+	case stopCode =="all":
+		"All_Arrow.obj"#all
+	case stopCode =="both":
+		"Both_Arrow.obj"#both
+	else:
+		"Nothing.obj"		
+_LastLaneSwitch(lanenumber,lanestotal)=
+	case lanenumber==lanestotal-1:
+		0
+	else:
+		1	
+
+
 ################################################
 #Misc Functions	
+################################################
 _tooShort(length,goal_len)= 
 	case length<goal_len: 0
 	else: 1
@@ -322,8 +408,44 @@ getRandomAsset(assetList) = assetList[rint(rand(size(assetList)-1))]
 #Reference Rules
 ####################
 
+###################
+#Approach Rules
+##################
+
+ApproachMarkings(dir,lanenumber,lanestotal,stopType) -->	# is used for textures for intersection approach (stop,turn arrows etc). 
+	HighLODApproachMarkings(dir,lanenumber,lanestotal,_stopSten(stopType,lanenumber,lanestotal))
+
+LowLODApproachMarkings(dir,lanenumber,lanestotal,markings) -->	# is used for textures for intersection approach (stop,turn arrows etc). 
+	tileUV(0,~14,~3.5 )				# the tileUV operation makes sure that one unit in u-space corresponds to approx 14 meters, the v-coord is not touched in the case of 0 as parameter
+	normalizeUV(0,v,separatePerFace)
+	scaleUV(0,1,(case (lanenumber==lanestotal-1):.95 else: 1))# Scale UV in V direction slightly to remove light line on lane closer to centerline. 
+	texture(LanesFolder+"/lanes_4"+markings+"_14x14m.jpg")
+	ColorAndReport("Auto","drive_lane")
+	
+HighLODApproachMarkings(dir,lanenumber,lanestotal,markings)-->
+	split(v,unitSpace,0) {~1:Asphalt("Auto","drive_lane") ApproachSymbolStencilsSetup(dir,lanenumber,lanestotal,markings)|
+								_LastLaneSwitch(lanenumber,lanestotal)*PaintLineWidth:AsphaltPainted("white","Auto","drive_lane")}
+	
+ApproachSymbolStencilsSetup(dir,lanenumber,lanestotal,markings)-->
+	split(v,unitSpace,0) {'0.1:NIL
+		  				 |~1:split(u,unitSpace,0){'0.65:NIL
+		  					 |~1:ApproachSymbolStencils(dir,lanenumber,lanestotal,markings)
+		  					 |'0.15:NIL}
+						  |'0.1:NIL}
+						  
+ApproachSymbolStencils(dir,lanenumber,lanestotal,markings)-->
+	case find(str(markings),"Nothing",0)!=-1:
+		NIL
+	else:
+		normalizeUV(0, uv, collectiveAllFaces)
+		rotateUV(0,90)
+		insertAlongUV(0, StencilFolder+"/"+markings, 0)
+		comp (f) {top:AsphaltPaintedStencil(Stencil_Color ,"Bikeways","bike_lane")}
+
+
 ##################################################
-#Paint & Asphalt Reporting	
+#Paint & Asphalt Reporting
+##################################################	
 #Asphalt Painted is actually retrofitted to be the paint and mode reporting aggregator, all "Paint Areas" originate here. 
 Asphalt(Usage,LabelID) --> #Ground Textured Rule
 	tileUV(0,Asphalt_Tile_Size,Asphalt_Tile_Size)
