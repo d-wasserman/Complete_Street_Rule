@@ -193,8 +193,8 @@ RaisedTransitionInsert(Location,dir)-->
 	
 RaisedTurnLanePocket(dir)-->
 	split(v,unitSpace,0){
-		Turn_Pocket_Curb_Width:split(u,unitSpace,0) {~Turn_Pocket_Curb_Width:Raised_Curb_Extrusion("Auto",dir)
-									|~Turn_Pocket_Curb_Width: Ref.Asphalt("Auto","asphalt") Raised_Curb_End("Median With Turn Lane",dir)}
+		Turn_Pocket_Curb_Width:split(u,unitSpace,0) {~1:Raised_Curb_Extrusion("Auto",dir)
+									|Turn_Pocket_Curb_Width: Ref.Asphalt("Auto","asphalt") Raised_Curb_End("Median With Turn Lane",dir)}
 						|{~width: Ref.ApproachMarkings(dir,1,1,"right;")}*}#Right because UV is scaled at beginning
 
 MedianTurnArrowSetup(dir) -->
