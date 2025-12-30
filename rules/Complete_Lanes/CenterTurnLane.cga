@@ -1,0 +1,373 @@
+/*
+ * File:    CenterTurnLane.cga
+ * Created: 5/31/2025
+ * Last Updated: 12/26/2025
+ * Author:  David J. Wasserman
+ * License: Apache 2.0 License and ESRI Attribution License.
+ * Source: https://github.com/d-wasserman/Complete_Street_Rule
+# ESRI Attribution License:
+#	ESRI Derivative work
+#	http://mappingcenter.esri.com/downloads/AttributionAndLicense_05_09_07.pdf
+#
+# Copyright 2025 David J. Wasserman
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required bys applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------
+ */
+version "2025.0"
+# --------------------------------
+# Parameters
+# --------------------------------
+
+@Group("CENTER LANE LAYOUT", "Configuration", 1)
+@Order(1) @Enum("Center Turn Lane", "Median with Turn Lane") 
+@Description("Selects between a continuous two-way left-turn lane (TWLTL) or a physical median that transitions into a turn pocket.")
+attr Lane_Type = "Center Turn Lane"
+
+@Order(2) @Distance @Range(min=2, max=6) 
+@Description("Width of the center lane or median.")
+attr Lane_Width = 3.6576 # ~12ft
+
+@Group("CENTER LANE LAYOUT", "Turn Pocket Settings", 2)
+@Order(3) @Distance @Range(min=5, max=50) 
+@Description("Length of the turn pocket at intersections (for Median type).")
+attr Turn_Pocket_Length = 10
+
+@Order(4) @Distance @Range(min=5, max=30) 
+@Description("Length of the transition taper from median to turn lane.")
+attr Transition_Length = 10
+
+@Group("CENTER LANE LAYOUT", "Median Aesthetics", 3)
+@Order(5) @Distance @Range(min=0, max=0.4) 
+@Description("Height of the median curb.")
+attr Curb_Height = 0.1524
+
+@Order(6) @Enum("None","Random", "Standard Grass", "Gravel","Grate","Lawn 1", "Lawn 2", "Park", "Bermuda 1", "Bermuda 2", "Bermuda Dark", "Bluegrass 1", "Bluegrass 2", "Grass Short", "Grass Thick", "St Augustine 1", "St Augustine 2", "Light Rye","Soil Small Stones","Paver Red Octagon Tile")
+@Description("Surface type for the median.")
+attr Median_Ground_Cover = "Standard Grass"
+
+@Order(7) @Distance @Range(min=0, max=15) 
+@Description("Creates a walkway spacing between created trees.")
+attr Median_Tree_Spacing = 10
+
+@Order(8)@Distance @Range(min=0,max=10) @Description("Is the approximate length of the green space accomodating trees, it can be used to space out trees more without walkway spacing.")
+attr Median_Planting_Length				=  4
+@Order(9) @Distance  @Range(min=0,max=10) @Description("Is the setback around the median planting areas to fill with walkway.")
+Median_Planting_Setback = width/6
+
+@Order(10) @File 
+@Description("Texture for the curb/sidewalk surface.")
+attr Curb_Texture = "Complete_Streets/Sidewalks/Concrete Clean Light.jpg"
+
+# --------------------------------
+# Tree Parameters (Original)
+# --------------------------------
+
+@Group("CENTER LANE LAYOUT", "Median Plantings", 4)
+@Order(8) @Description("Determines the species of the tree/plant selected for Tree 1. Random picks from 5 common tree types and is a good default.")
+@Enum("Random","Alder Buckthorn","Amazon Sword Plant","American Chestnut","American Sycamore","Apricot","Australian Pine","Baldcypress","Balsam Fir","Bamboo","Banana Tree","Basswood","Bay Laurel","Black Locust","Blue Gum Eucalyptus","Boxwood","Cabbage Palm Fern","California Bay","California Incense Cedar","California Palm","California Redwood","California Walnut","Coconut Palm","Common Hawthorn","Common Whitebeam","Conker Tree","Date Palm","Desert Willow","Douglas Fir","European Beech","European Larch","Ficus","Field Elm","Flannelbush","Flowering Dogwood","Giant Sequoia","Hedgehog Agave","Japanese Angelica Tree","Lacy Tree Philodendron","Leyland Cypress","Lily of the Valley","Lodgepole Pine","Mediterranean Buckthorn","Mexican Palmetto","Mountain Mahogany","Northern Red Oak","Norway Maple","Norway Spruce","Orange Tree","Orchid","Oval-leaved Privet","Palm Lily","Palo Verde","Paper Birch","Parlour Palm","Prickly Pear Cactus","Red Alder","Red Hickory","Rhododendron Azaleas","Rose","Ruffle Palm","Saguaro Cactus","Sassafras","Scots Pine","Sea Islands Yucca","Shadbush","Snake Plant","Southern Magnolia","Spanish Broom","Strawberry Tree","Sugar Maple","Sunflower","Sweetgum","Umbrella Acacia","Western Juniper","White Ash","White Oak","White Poplar","White Willow","Witch Hazel","_____________________________","GENERICS","Generic Dead Tree","Generic Stump","Generic Unknown","_____________________________","PROXIES","Algarrobo","American Elderberry","American Pepper","American Silverberry","Athel Tamarisk","Avocado","Black Tupelo","Buttonbush","Canada Buffaloberry","Chinaberry Tree","Chinese Tallow Tree","Common Hackberry","Common Holly","Common Persimmon","Desert Bitterbrush","European Hornbeam","Giant Chinquapin","Honey Locust","Hophornbeam","Huckleberry Shrub","Japanese Hemlock","Japanese Nutmeg","Judas Tree","Lawson Cypress","Loblolly Bay","Mexican Buckeye","Necklacepod","Northern Bilberry","Northern White Cedar","Octopus Tree","Osage Orange","Paper Bark Tree","Pawpaw","Persian Silk Tree","Princess Tree","Smooth Sumac","Sourwood","Southern Wax Myrtle","Tanoak","Tree of Heaven","Turkish Hazel","Western Soapberry","White Mulberry","Yellow Poplar","Yew")
+attr Median_Tree_1_Type = "Random"
+
+@Order(9) @Range(min=0,max=1) @Percent 
+@Description("Reduces the probability of Tree 1 appearing in a typical designated location.")
+attr Median_Tree_1_Percentage = 1
+
+# --------------------------------
+# Imports
+# --------------------------------
+
+import Ref : "Complete_Lanes/Imports/Reference.cga" 
+import Crossing: "Complete_Lanes/Imports/Crossing.cga"
+import Tree : "/ESRI.lib/rules/Plants/Plant_Loader.cga"
+
+# --------------------------------
+# Hidden Attributes
+# --------------------------------
+
+@Hidden
+attr travelDirection = ""
+@Hidden
+attr width = geometry.dv(0, unitSpace)
+
+# --------------------------------
+# Constants & Helpers
+# --------------------------------
+
+const _CrosswalkSwitchBegin = case travelDirection == "Reverse": 0 else: 1
+const _CrosswalkSwitchEnd   = case travelDirection == "Reverse": 1 else: 0
+const ThickPaintLineWidth = 0.5
+const ModeratePaintLineWidth = 0.17
+const Total_Turn_Depth = Turn_Pocket_Length + Transition_Length
+const Median_Turn_Transition_Depth  = width *(3)
+const TWLTL_Turn_Pocket_Depth		= 13.75
+const Minimum_Turn_Curb_Width		= 1/Ref.Feet
+const Turn_Pocket_Curb_Width		= Ref._Maxof(Minimum_Turn_Curb_Width,width/12)
+
+
+# --------------------------------
+# Rules - Approach Set Up (Crossing Logic)
+# --------------------------------
+@StartRule
+start Lane-->	#DeleteUV if texturing is off
+	set(material.name,"Road_Bed")
+	LaneWithCrosswalkBegin
+
+LaneWithCrosswalkBegin-->
+		split(u,uvSpace,1){Crossing._crosswalkBeginWidth/25: Ref.Asphalt("Auto","asphalt")
+					  | Crossing._crosswalkBeginWidth  : Crossing.Crosswalk(Crossing.Crosswalk_Begin ,1)
+					  | Crossing.End_Crosswalk_To_Stop_Bar*_CrosswalkSwitchEnd :Ref.Asphalt("Auto","asphalt")
+					  |~1:LaneWithCrosswalkEnd}
+	
+#The StopBox rule creates both the stop line and Bikebox when they are selected, 
+#and then moves the rest of the space left to the dedicated lane spaces. 
+LaneWithCrosswalkEnd-->
+	split(u,uvSpace,2){ Crossing._crosswalkEndWidth/25: Ref.Asphalt("Auto","asphalt")
+					  | Crossing._crosswalkEndWidth    : Crossing.Crosswalk( Crossing.Crosswalk_End ,2)
+					  | Crossing.End_Crosswalk_To_Stop_Bar*_CrosswalkSwitchEnd :Ref.Asphalt("Auto","asphalt")
+					  |~1:RoadReverser}
+RoadReverser-->
+	case travelDirection=="Reverse":
+		InRoadStopBar(-1)
+	else:
+		InRoadStopBar(1)
+		
+					  
+InRoadStopBar(sideflip)-->
+	split(u,unitSpace,0) {Ref.ThickPaintLineWidth*Ref._neighborBegin:Ref.AsphaltPainted("white","Auto","stop_bar")|
+							~1:CenterLaneLogic(sideflip)
+							|Ref.ThickPaintLineWidth*Ref._neighborEnd:Ref.AsphaltPainted("white","Auto","stop_bar")
+			}
+		
+# --------------------------------
+# Main Center Lane Logic
+# --------------------------------
+
+CenterLaneLogic(sideflip) -->
+	case Lane_Type == "Center Turn Lane":
+		TWLTL(sideflip)
+	case Lane_Type == "Median with Turn Lane":
+		MedianWTurnLane(sideflip)
+	else:
+		Ref.Asphalt("Auto", "asphalt")
+
+# --------------------------------
+# 1. Median with Turn Lane
+# --------------------------------
+
+MedianWTurnLane(sideflip)-->
+	scaleUV(0,sideflip,sideflip)
+	split(u,unitSpace,0){(Ref._tooShort(geometry.du(0,unitSpace),Total_Turn_Depth))*Ref._neighborBegin*(Total_Turn_Depth):MedianTurnPocket("Median",0)
+						|~1:Raised_Offset_Curb("Median",1,"Auto",width)
+						|(Ref._tooShort(geometry.du(0,unitSpace),Total_Turn_Depth))*Ref._neighborEnd*(Total_Turn_Depth ):MedianTurnPocket("Median",2)
+						}
+
+MedianTurnPocket(Location,dir)-->
+	scaleUV(0,case dir==0:-1 else: 1,case dir==0:1 else: -1)
+	split(u,unitSpace,0){Transition_Length:MedianTransitionSpace(Location,dir)
+	|~1:RaisedTurnLanePocket(dir)}
+
+		
+MedianTransitionSpace(Location,dir)-->
+	split(v,unitSpace,0){Turn_Pocket_Curb_Width: Raised_Curb_Extrusion("Auto",dir)
+						|~1: RaisedAngledSplitTransition(Location,dir)}			
+
+RaisedAngledSplitTransition(Location,dir)-->
+	RaisedTransitionInsert(Location,dir)
+	Ref.Asphalt("Auto","asphalt")
+
+RaisedTransitionInsert(Location,dir)-->
+	normalizeUV(0, uv, collectiveAllFaces)	
+	setupProjection(0, scope.xz, 2,2,2,2,2)
+	insertAlongUV(0,Ref.Default_Median_Transition,0)
+	comp (f) {top:Raised_Curb_Extrusion("Auto",dir)}
+	
+RaisedTurnLanePocket(dir)-->
+	split(v,unitSpace,0){
+		Turn_Pocket_Curb_Width:split(u,unitSpace,0) {~Turn_Pocket_Curb_Width:Raised_Curb_Extrusion("Auto",dir)
+									|~Turn_Pocket_Curb_Width: Ref.Asphalt("Auto","asphalt") Raised_Curb_End("Median With Turn Lane",dir)}
+						|{~width: Ref.ApproachMarkings(dir,1,1,"right;")}*}#Right because UV is scaled at beginning
+
+MedianTurnArrowSetup(dir) -->
+	# Matches CenterTurnArrowSetup logic to center the marking
+	split(u, unitSpace, 0) {
+		~1.5 : Ref.Asphalt("Auto", "drive_lane")
+		| width : Ref.ApproachMarkings(dir, 1, 1, "right;")
+		| ~1 : Ref.Asphalt("Auto", "drive_lane")
+	}
+# --------------------------------
+# 2. Center Turn Lane (TWLTL)
+# --------------------------------
+
+TWLTL(sideflip) -->
+	scaleUV(0,sideflip,sideflip)
+	split(u, unitSpace, 0) {
+		# Begin Pocket
+		(Ref._tooShort(geometry.du(0,unitSpace), Turn_Pocket_Length)) * Ref._neighborBegin * (Total_Turn_Depth) : CenterTurnLaneTurnPocket("Center Turn Lane", (case sideflip==1:0 else:2))
+		
+		# Middle Pattern
+		| ~1 : CenterTurnLanePattern
+		
+		# End Pocket
+		| (Ref._tooShort(geometry.du(0,unitSpace), Total_Turn_Depth)) * Ref._neighborEnd * (Total_Turn_Depth) : CenterTurnLaneTurnPocket("Center Turn Lane", (case sideflip==1:2 else:0))
+		
+	}
+
+CenterTurnLanePattern -->
+	split(v, unitSpace, 0) {
+		ModeratePaintLineWidth : Ref.AsphaltPainted("yellow", "Auto", "center_turn_lane")
+		| ModeratePaintLineWidth : Ref.Asphalt("Auto", "center_turn_lane")
+		| ~1 : split(u, unitSpace, 0) {
+			~Lane_Width : CenterTurnLaneStencilSections("black")
+			| { ~Lane_Width : CenterTurnLaneStencilSections("yellow")
+			  | ~Lane_Width : CenterTurnLaneStencilSections("black") }*
+		}
+		| ModeratePaintLineWidth : Ref.Asphalt("Auto", "center_turn_lane")
+		| ModeratePaintLineWidth : Ref.AsphaltPainted("yellow", "Auto", "center_turn_lane")
+	}
+
+CenterTurnLaneStencilSections(EdgeColor) -->
+	split(v, unitSpace, 0) {
+		ModeratePaintLineWidth : Ref.AsphaltPainted(EdgeColor, "Auto", "center_turn_lane")
+		| ~1 : Ref.Asphalt("Auto", "center_turn_lane") CenterTurnLaneArrowSetup(EdgeColor)
+		| ModeratePaintLineWidth : Ref.AsphaltPainted(EdgeColor, "Auto", "center_turn_lane")
+	}
+
+CenterTurnLaneArrowSetup(EdgeColor) -->
+	case EdgeColor == "black":
+		NIL
+	else:
+		split(v, unitSpace, 0) {
+			'0.25 : NIL
+			| ~1 : split(u, unitSpace, 0) {
+				'0.4 : Ref.ApproachSymbolStencils(0, 0, 1, "Left_Arrow.obj")
+				| '0.2 : NIL
+				| '0.4 : scaleUV(0, -1, 1) Ref.ApproachSymbolStencils(0, 0, 1, "Right_Arrow.obj")
+			}
+			| '0.25 : NIL
+		}
+
+CenterTurnLaneTurnPocket(Location, dir) -->
+	scaleUV(0, case dir ==2:-1 else: 1, case dir==2:1 else:-11)
+	PaintedTransitionInsert(Location, dir)
+	split(u, unitSpace, 0) {
+		Transition_Length  : Ref.Asphalt("Auto", "asphalt")
+		| ~Turn_Pocket_Length : split(v, unitSpace, 0) { ~1: CenterTurnArrowSetup(Location,dir) }
+	}
+CenterTurnArrowSetup(Location,dir)-->	
+	Ref.ApproachMarkings(dir, 1, 1, "right;")
+
+						
+
+PaintedTransitionInsert(Location, dir) -->
+	alignScopeToGeometry(yUp, largest, 0)
+	normalizeUV(0, uv, collectiveAllFaces)	
+	setupProjection(0, scope.xz, 2, 2, 2, 2, 2)
+	insertAlongUV(0, Ref.StencilFolder + "/Center_Turn_Lane_Transition.obj", 0)
+	comp(f) { top: Ref.AsphaltPaintedStencil("yellow", "Auto", "center_turn_lane") }
+
+# --------------------------------
+# Shared Utilities & Geometry
+# --------------------------------
+
+Raised_Offset_Curb(Location, Dir, Mode, Setback) -->
+	split(v, unitSpace, 0) {
+		Setback : Street_Pavement_Median(Dir)
+		| ~1 : split(u, unitSpace, 0) {
+			Setback : Street_Pavement_Median(Dir)
+			| ~1 : Street_Pavement_Median(Dir)
+			| Setback : Street_Pavement_Median(Dir)
+		}
+		| Setback : Street_Pavement_Median(Dir)
+	}
+
+Street_Pavement_Median(Dir) -->
+	extrude(world.y, Curb_Height)
+	comp(f) { top: Median_Plant_Side(Dir)
+			|side:CurbTexture }
+
+Raised_Curb_End(Location, Dir) -->
+	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0, Ref.StencilFolder + "/Median_End.obj", 0)
+	setupProjection(0, scope.xz, 2, 2, 2, 2, 2)
+	comp(f) { top: Raised_Curb_Extrusion("Pedestrian", Dir) }
+
+Raised_Curb_Extrusion(Mode, Dir) -->
+	extrude(Curb_Height)
+	CurbTexture
+	
+CurbTexture -->
+	setupProjection(0, scope.xz, 2, 2, 2, 2, 2)
+	texture(Curb_Texture)
+	projectUV(0)
+
+# --------------------------------
+# Planting Logic
+# --------------------------------
+
+Median_Plant_Side(Dir)-->
+	split(u,unitSpace,0){{~Median_Tree_Spacing/2:CurbTexture 
+						|~Median_Planting_Length:Median_Plant_Base 
+						|~Median_Tree_Spacing/2:CurbTexture }*}
+Median_Plant_Base -->
+	case Median_Ground_Cover == "None":
+		CurbTexture
+	else:
+		# Planting_Curb(Median_Tree_Spacing) # Omitted for brevity in this snippet
+		Tree_Setup(Median_Tree_1_Percentage, Median_Tree_1_Type)
+		setback(Median_Planting_Setback) { all = CurbTexture   |
+                remainder    : Median_Planting }
+		
+
+Median_Planting -->
+	case Median_Ground_Cover == "Random":
+		tileUV(0, 2, 2) texture(Ref.Random_Grass)
+	else:
+		tileUV(0, 2, 2) texture(Ref.GrassFolder + "/" + Median_Ground_Cover + ".jpg")
+
+Tree_Setup(Percentage1,Tree_Type1)-->	                     				
+		s(0,0,0)       // set scope
+		r(scopeCenter, 0,rand(0,360),0)// random rotate
+		set(material.name,"Planting")
+		alignScopeToAxes(y)
+		center(xz)
+		Center_Tree_Insert_Setup(Percentage1,Tree_Type1,true)
+		
+Center_Tree_Insert_Setup(Percentage1,Tree_Type1,Texture_Tree)-->
+	case p(Percentage1):
+		Tree_Insert_Type(Tree_Type1,Texture_Tree)
+	else:
+		NIL
+		
+Tree_Insert_Type(Tree_Type1,Texture_Tree)-->
+	case Texture_Tree:
+		s(0,0,0)
+		report("Vegetation.Construction, Tree Cost",Ref.TreeCostAverage)
+		set(Tree.Name, Tree_Type_Adjusted(Tree_Type1))
+		Tree.Generate
+	else: #If Texturing is off, the tree texture is overrided to the current thematic color 
+		s(0,0,0)
+		report("Vegetation.Construction, Tree Cost",Ref.TreeCostAverage)
+		set(Tree.OverwriteColor, Ref._ThematicRouter ("Plantings","vegetation"))
+		Tree.Generate
+
+	
+Tree_Type_Adjusted(Tree_Type) = 
+	case Tree_Type == "Random": randomTreeType
+	else: Tree_Type
+
+randomTreeType = 
+	25%:	 "White Ash"
+	25%:	 "Red Hickory"
+	25%:	 "Sweetgum"
+	else:	 "Sassafras"	
+
