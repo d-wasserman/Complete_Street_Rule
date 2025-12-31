@@ -255,13 +255,13 @@ ParkingSpace(sideFlip, type, spaceNum, totalSpaces) -->
 ParallelSpaceGeometry(sideFlip, spaceNum, totalSpaces) -->
 	# Logic for 'T' markings vs 'L' markings at ends
 	case spaceNum == totalSpaces-2: # Start Cap
-		ParallelParkingCar(sideFlip)
+		ParallelParkingCar(sideFlip,spaceNum, totalSpaces)
 		ParallelMarking(sideFlip, "Begin")
 	case spaceNum == 1: # End Cap
-		ParallelParkingCar(sideFlip)
+		ParallelParkingCar(sideFlip,spaceNum, totalSpaces)
 		ParallelMarking(sideFlip, "End")
 	else: # Middle
-		ParallelParkingCar(sideFlip)
+		ParallelParkingCar(sideFlip,spaceNum, totalSpaces)
 		ParallelMarking(sideFlip, "Middle")
 
 ParallelMarking(sideFlip, pos) -->
@@ -295,10 +295,10 @@ StencilInsert(objName, pos, sideFlip) -->
 	i(Ref.StencilFolder + objName)
 	Ref.AsphaltPaintedStencil("white", "Storage", "parking_lane")
 
-AngledSpaceGeometry(spaceNumber,sideFlip, noseSenceFlip) -->
+AngledSpaceGeometry(spaceNumber,sideFlip, noseSenseFlip) -->
 	Ref.Asphalt("Storage", "parking_lane")
-	AngledParkingCar(spaceNumber,sideFlip,noseSenceFlip)
-	scaleUV(0, 1, sideFlip)
+	scaleUV(0,noseSenseFlip,-1)
+# 	AngledParkingCar(spaceNumber,sideFlip,noseSenseFlip)
 	split(v, unitSpace, 0) { '0.24: NIL | ~1: AngledLineStencil }
 
 AngledLineStencil -->
@@ -428,8 +428,8 @@ ParkletInsert(sideFlip) -->
 	i(Parklet_Object)
 	label("Parklet")
 
-ParallelParkingCar(sideFlip) -->
-	case p(Parked_Car_Percentage):
+ParallelParkingCar(sideFlip,spaceNum, totalSpaces) -->
+	case p(Parked_Car_Percentage) && spaceNum!=totalSpaces-2:
 		ParallelParkingCarStep2(sideFlip)	  			
 	else: NIL
 
