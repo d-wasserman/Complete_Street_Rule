@@ -103,8 +103,6 @@ attr width = geometry.dv(0, unitSpace)
 # Constants & Helpers
 # --------------------------------
 
-const _CrosswalkSwitchBegin = case travelDirection == "Reverse": 0 else: 1
-const _CrosswalkSwitchEnd   = case travelDirection == "Reverse": 1 else: 0
 const ThickPaintLineWidth = 0.5
 const ModeratePaintLineWidth = 0.17
 const Total_Turn_Depth = Turn_Pocket_Length + Transition_Length
@@ -125,7 +123,7 @@ start Lane-->	#DeleteUV if texturing is off
 LaneWithCrosswalkBegin-->
 		split(u,uvSpace,1){Crossing._crosswalkBeginWidth/25: Ref.Asphalt("Auto","asphalt")
 					  | Crossing._crosswalkBeginWidth  : Crossing.Crosswalk(Crossing.Crosswalk_Begin ,1)
-					  | Crossing.End_Crosswalk_To_Stop_Bar*_CrosswalkSwitchEnd :Ref.Asphalt("Auto","asphalt")
+					  | Crossing.End_Crosswalk_To_Stop_Bar :Ref.Asphalt("Auto","asphalt")
 					  |~1:LaneWithCrosswalkEnd}
 	
 #The StopBox rule creates both the stop line and Bikebox when they are selected, 
@@ -133,7 +131,7 @@ LaneWithCrosswalkBegin-->
 LaneWithCrosswalkEnd-->
 	split(u,uvSpace,2){ Crossing._crosswalkEndWidth/25: Ref.Asphalt("Auto","asphalt")
 					  | Crossing._crosswalkEndWidth    : Crossing.Crosswalk( Crossing.Crosswalk_End ,2)
-					  | Crossing.End_Crosswalk_To_Stop_Bar*_CrosswalkSwitchEnd :Ref.Asphalt("Auto","asphalt")
+					  | Crossing.End_Crosswalk_To_Stop_Bar :Ref.Asphalt("Auto","asphalt")
 					  |~1:RoadReverser}
 RoadReverser-->
 	case travelDirection=="Reverse":
@@ -212,13 +210,13 @@ TWLTL(sideflip) -->
 	scaleUV(0,sideflip,sideflip)
 	split(u, unitSpace, 0) {
 		# Begin Pocket
-		(Ref._tooShort(geometry.du(0,unitSpace), Turn_Pocket_Length)) * Ref._neighborBegin * (Total_Turn_Depth) : CenterTurnLaneTurnPocket("Center Turn Lane", (case sideflip==1:0 else:2))
+		(Ref._tooShort(geometry.du(0,unitSpace), Turn_Pocket_Length)) * Ref._neighborBegin * (Total_Turn_Depth) : CenterTurnLaneTurnPocket("Center Turn Lane", 2)
 		
 		# Middle Pattern
 		| ~1 : CenterTurnLanePattern
 		
 		# End Pocket
-		| (Ref._tooShort(geometry.du(0,unitSpace), Total_Turn_Depth)) * Ref._neighborEnd * (Total_Turn_Depth) : CenterTurnLaneTurnPocket("Center Turn Lane", (case sideflip==1:2 else:0))
+		| (Ref._tooShort(geometry.du(0,unitSpace), Total_Turn_Depth)) * Ref._neighborEnd * (Total_Turn_Depth) : CenterTurnLaneTurnPocket("Center Turn Lane", 0)
 		
 	}
 
