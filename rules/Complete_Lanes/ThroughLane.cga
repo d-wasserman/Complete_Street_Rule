@@ -1,0 +1,160 @@
+/*
+ * File:    ThroughLane.cga
+ * Created: 5/31/2025
+ * Last Updated: 12/31/2025
+ * Author:  David J. Wasserman
+ * License: Apache 2.0 License and ESRI Attribution License.
+ * Source: https://github.com/d-wasserman/Complete_Street_Rule
+# ESRI Attribution License:
+#	ESRI Derivative work
+#	http://mappingcenter.esri.com/downloads/AttributionAndLicense_05_09_07.pdf
+#
+# Copyright 2025 David J. Wasserman
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required bys applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------
+ */
+version "2025.0"
+# --------------------------------
+# Parameters
+# --------------------------------
+
+@Group("LANE CONFIGURATION", "Markings", 1)
+@Order(1) @Enum("with stop marking","through;","through-right;","through-left;","left;","right;","both;","all;") 
+@Description("Determines the approach markings (arrows, stop lines) for this lane.")
+attr Stop_Type = "through"
+
+@Order(2) @Enum("white","yellow") 
+@Description("Color of the dashed split line.")
+attr Dash_Color = "white"
+
+@Order(3) @Enum("white","yellow") 
+@Description("Color of the approach markings (arrows).")
+attr Marking_Color = "white"
+
+@Group("LANE CONFIGURATION", "Context Logic", 2)
+@Order(4) @Description("The label this lane broadcasts to neighbors. Also the label it listens for.")
+attr Lane_Context_Label = "drive_lane"
+
+@Order(5) @Distance @Description("Distance threshold to detect a neighbor lane (inter-model).")
+attr Context_Detection_Range = 0.2
+
+# --------------------------------
+# Imports & Hidden
+# --------------------------------
+
+import Ref : "Complete_Lanes/Imports/Reference.cga" 
+import Crossing: "Complete_Lanes/Imports/Crossing.cga"
+
+@Hidden
+attr travelDirection = ""
+@Hidden
+attr width = geometry.dv(0,unitSpace)
+
+# --------------------------------
+# Functions & Constants
+# --------------------------------
+
+# --- Constants ---
+const _CrosswalkSwitchBegin = case travelDirection == "Reverse": 0 else: 1
+const _CrosswalkSwitchEnd   = case travelDirection == "Reverse": 1 else: 0
+const rightHandTraffic      = true 
+
+# --- Logic for Stops/Neighbors ---
+const _neighborBegin = case Stop_Type !="none" : 1 else: 0 
+const _neighborEnd   = case Stop_Type !="none" : 1 else: 0
+const _stopBegin     = case Stop_Type =="none": 0 else: 1
+const _stopEnd       = case Stop_Type =="none": 0 else: 1
+
+
+
+# Determines if the last lane line should be painted
+_LastLaneSwitch(lanenumber,lanestotal) =
+	case lanenumber == lanestotal-1: 0
+	else: 1	
+
+# --------------------------------
+# Start & Approach
+# --------------------------------
+
+@StartRule
+start Lane -->	
+	set(material.name, "Road_Bed")
+	LaneWithCrosswalkBegin
+
+LaneWithCrosswalkBegin -->
+	split(u, uvSpace, 1) {
+		Crossing._crosswalkBeginWidth/25 : Ref.Asphalt("Auto", "asphalt")
+		| Crossing._crosswalkBeginWidth  : Crossing.Crosswalk(Crossing.Crosswalk_Begin, 1)
+		| Crossing.End_Crosswalk_To_Stop_Bar * _CrosswalkSwitchEnd : Ref.Asphalt("Auto", "asphalt")
+		| ~1 : LaneWithCrosswalkEnd
+	}
+
+LaneWithCrosswalkEnd -->
+	split(u, uvSpace, 2) {
+		Crossing._crosswalkEndWidth/25 : Ref.Asphalt("Auto", "asphalt")
+		| Crossing._crosswalkEndWidth    : Crossing.Crosswalk(Crossing.Crosswalk_End, 2)
+		| Crossing.End_Crosswalk_To_Stop_Bar * _CrosswalkSwitchEnd : Ref.Asphalt("Auto", "asphalt")
+		| ~1 : InRoadStopBar(case travelDirection=="Reverse":-1 else:1)
+	} 
+InRoadStopBar(sideFlip) -->
+	scaleUV(0, sideFlip , sideFlip)
+	split(u,unitSpace,0){
+		~1:DriveLane(sideFlip, width)
+		|Ref.ThickPaintLineWidth*Ref._neighborEnd:Ref.AsphaltPainted("white","Auto","stop_bar")
+		}
+# --------------------------------
+# Main Lane
+# --------------------------------
+
+DriveLane(sideFlip, laneWidth) -->
+	alignScopeToAxes(y)
+	color(Ref.Brightness)
+	split(v, unitSpace, 0) {
+		Ref.PaintLineWidth : ContextualLine #TODO Refactor to be after approach markings
+		| ~1 : DriveLaneBody(sideFlip, laneWidth)
+		| Ref.PaintLineWidth : ContextualLine
+	}
+
+DriveLaneBody(sideflip, Width) -->
+	case Stop_Type == "none":
+		Ref.Asphalt("Auto", "drive_lane")
+	else:
+		split(u, unitSpace, 0) {
+			~1 : Ref.Asphalt("Auto", "drive_lane")
+			| 14 : Ref.ApproachMarkings(sideflip, 1, 1, Stop_Type)
+		}
+
+# --------------------------------
+# Contextual Line Logic
+# --------------------------------
+
+ContextualLine -->
+	label(Lane_Context_Label) 
+	QueryLine
+	
+QueryLine-->
+	# CUSTOM CONTEXT QUERY:
+	# Checks "inter" (other initial shapes in the scene) for the specific Lane_Context_Label.
+	case minimumDistance(inter, Lane_Context_Label) < Context_Detection_Range:
+		DashedLine
+	else:
+		Ref.Asphalt("Auto", "drive_lane") 
+
+DashedLine -->
+	split(u, unitSpace, 0) {
+		~4 : Ref.Asphalt("Auto", "drive_lane")
+		| { ~4 : Ref.AsphaltPainted(Dash_Color, "Auto", "drive_lane") 
+		  | ~4 : Ref.Asphalt("Auto", "drive_lane") }*
+		|14 : Ref.Asphalt("Auto", "drive_lane")
+	}
