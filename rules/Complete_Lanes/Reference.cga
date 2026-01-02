@@ -70,8 +70,8 @@ const ModeratePaintLineWidth		= 0.17
 const PaintLineWidth				= 0.11 #uvSpace 36/256-about 4 in
 const Rumble_Strip_Len				= 1.5 #FWHA 7 in wide per bump with 5 in ashpalt spacing
 const Rumble_Strip_Wid				= .355 #FWHA-typically 12-16 in wide
-const Stencil_Color 				= "white"
 const Asphalt_Base  				= "Asphalt003_2K_Color.jpg"
+const StencilColor 					= "white"
 #SideWalk and Median Constants
 const Bench_Threshold_Width			= .9
 const Bench_Adjuster				= 1
@@ -94,8 +94,7 @@ const L_to_W_Ratio_Bk			= 3 # MUTCD recommends a 72 in gap and length of symbol,
 #Transit Constants
 const Track_Gauge					= 1.435 #Standard 
 const Rail_Depth 					= .05
-# Traffic Constants
-const rightHandTraffic 				= true
+
 #Vegetation Constants
 const Random_Grass					=(fileRandom(GrassFolder + "/*.jpg"))
 #Parking Constants
@@ -131,10 +130,16 @@ const Default_Mix_Bus = .075
 const Default_Mix_Bike = .2
 const Default_Mix_Freight = .05
 const Default_Mix_Taxi = .05
-# Vegetation and Hardscape costs ---a----------------------------
+# Vegetation and Hardscape costs
 const TreeCostAverage = 750 
 # const GrassSurfaceCostAverage = 10	# In square meters
 # const HardscapePaverCost = 25		# In square meters
+
+# Directional Constants 
+const rightHandTraffic	 	= true # Traffic_Direction =="right-hand" (not supported yet)
+const leftHandTraffic	  	= !rightHandTraffic
+const DirectionalFlip	 	= case rightHandTraffic:1 else:-1 				# This is used to mirror UVs when right hand traffic is false
+const DirectionalRotation	= case rightHandTraffic:0 else:180
 
 bikeAsset = fileRandom( CompleteStreetFolder + "/LowPolygon3D.com_Cyclists/*.obj")
 
@@ -412,35 +417,29 @@ getRandomAsset(assetList) = assetList[rint(rand(size(assetList)-1))]
 #Approach Rules
 ##################
 
-ApproachMarkings(dir,lanenumber,lanestotal,stopType) -->	# is used for textures for intersection approach (stop,turn arrows etc). 
-	HighLODApproachMarkings(dir,lanenumber,lanestotal,_stopSten(stopType,lanenumber,lanestotal))
-
-LowLODApproachMarkings(dir,lanenumber,lanestotal,markings) -->	# is used for textures for intersection approach (stop,turn arrows etc). 
-	tileUV(0,~14,~3.5 )				# the tileUV operation makes sure that one unit in u-space corresponds to approx 14 meters, the v-coord is not touched in the case of 0 as parameter
-	normalizeUV(0,v,separatePerFace)
-	scaleUV(0,1,(case (lanenumber==lanestotal-1):.95 else: 1))# Scale UV in V direction slightly to remove light line on lane closer to centerline. 
-	texture(LanesFolder+"/lanes_4"+markings+"_14x14m.jpg")
-	ColorAndReport("Auto","drive_lane")
+ApproachMarkings(dir,lanenumber,lanestotal,stopType,lineOffset,markingColor) -->	# is used for textures for intersection approach (stop,turn arrows etc). 
+	HighLODApproachMarkings(dir,lanenumber,lanestotal,_stopSten(stopType,lanenumber,lanestotal),lineOffset,markingColor)
 	
-HighLODApproachMarkings(dir,lanenumber,lanestotal,markings)-->
-	split(v,unitSpace,0) {~1:Asphalt("Auto","drive_lane") ApproachSymbolStencilsSetup(dir,lanenumber,lanestotal,markings)|
-								_LastLaneSwitch(lanenumber,lanestotal)*PaintLineWidth:AsphaltPainted("white","Auto","drive_lane")}
+HighLODApproachMarkings(dir,lanenumber,lanestotal,markings,lineOffset,markingColor)-->
+	split(v,unitSpace,0) {~1:Asphalt("Auto","drive_lane") ApproachSymbolStencilsSetup(dir,lanenumber,lanestotal,markings,markingColor)|
+								_LastLaneSwitch(lanenumber,lanestotal)*PaintLineWidth:AsphaltPainted(markingColor,"Auto","drive_lane")|
+								lineOffset:Asphalt("Auto","drive_lane")}
 	
-ApproachSymbolStencilsSetup(dir,lanenumber,lanestotal,markings)-->
+ApproachSymbolStencilsSetup(dir,lanenumber,lanestotal,markings,markingColor)-->
 	split(v,unitSpace,0) {'0.1:NIL
 		  				 |~1:split(u,unitSpace,0){'0.65:NIL
-		  					 |~1:ApproachSymbolStencils(dir,lanenumber,lanestotal,markings)
+		  					 |~1:ApproachSymbolStencils(dir,lanenumber,lanestotal,markings,markingColor)
 		  					 |'0.15:NIL}
 						  |'0.1:NIL}
 						  
-ApproachSymbolStencils(dir,lanenumber,lanestotal,markings)-->
+ApproachSymbolStencils(dir,lanenumber,lanestotal,markings,markingColor)-->
 	case find(str(markings),"Nothing",0)!=-1:
 		NIL
 	else:
 		normalizeUV(0, uv, collectiveAllFaces)
 		rotateUV(0,90)
 		insertAlongUV(0, StencilFolder+"/"+markings, 0)
-		comp (f) {top:AsphaltPaintedStencil(Stencil_Color ,"Bikeways","bike_lane")}
+		comp (f) {top:AsphaltPaintedStencil(StencilColor,"Auto","drive_lane")}
 
 
 ##################################################
