@@ -72,15 +72,23 @@ attr Taxi_Percentage = 0.1
 import Ref : "Complete_Lanes/Imports/Reference.cga" 
 import Crossing: "Complete_Lanes/Imports/Crossing.cga"
 
+# Object Attributes
+
 @Hidden
 attr travelDirection = ""
 @Hidden
 attr width = geometry.dv(0,unitSpace)
+
+# Context Attrributes
+
 @Group("LANE CONFIGURATION", "Context Logic", 2)
 @Order(1) @Description("The label this lane broadcasts to neighbors. Also the label it listens for.") @Hidden
 attr Lane_Context_Label = "drive_lane"
 
-@Order(2) @Distance @Description("Distance threshold to detect a neighbor lane (inter-model).")@Hidden
+@Order(2)@Description("The label used to broadcast direction of lane to neighbors.Also the label it listens for.")@Hidden
+attr Lane_Direction_Label = travelDirection
+
+@Order(3) @Distance @Description("Distance threshold to detect a neighbor lane (inter-model).")@Hidden
 attr Context_Detection_Range = 0.2
 
 
@@ -171,16 +179,24 @@ DriveLaneBody(sideflip, width) -->
 # --------------------------------
 
 ContextualLine -->
-	label(Lane_Context_Label) 
+	label(Lane_Context_Label)
+	label(Lane_Direction_Label)
 	QueryLine
 	
 QueryLine-->
 	# CUSTOM CONTEXT QUERY:
 	# Checks "inter" (other initial shapes in the scene) for the specific Lane_Context_Label.
 	case minimumDistance(inter, Lane_Context_Label) < Context_Detection_Range:
-		DashedLine
+		LineChoice
 	else:
-		Ref.Asphalt("Auto", "drive_lane") 
+		Ref.Asphalt("Auto", "drive_lane")
+LineChoice -->
+	case Lane_Delineator_Type =="dashed":
+		DashedLine
+	case Lane_Delineator_Type =="solid":
+		SolidLine
+	else:
+		Ref.Asphalt("Auto", "drive_lane")
 
 DashedLine -->
 	split(u, unitSpace, 0) {
@@ -189,6 +205,9 @@ DashedLine -->
 		  | ~4 : Ref.Asphalt("Auto", "drive_lane") }*
 		|14 : Ref.Asphalt("Auto", "drive_lane")
 	}
+
+SolidLine -->
+	Ref.AsphaltPainted( Lane_Delineator_Color , "Auto", "drive_lane") 
 # --------------------------------
 # Mixed Traffic Logic
 # --------------------------------
