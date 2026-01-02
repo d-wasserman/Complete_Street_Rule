@@ -40,15 +40,19 @@ attr Stop_Type = "through"
 
 @Order(2)@Enum("dashed","solid")
 @Description("The type of line delination between lanes.")
-attr Lane_Delineator_Type = "dashed"
+attr Lane_Delineator_Type = Default_Type 
 
 @Order(3) @Enum("white","yellow") 
 @Description("Color of the dashed split line.")
-attr Lane_Delineator_Color = "white"
+attr Lane_Delineator_Color = Default_Color 
 
-@Order(4) @Enum("white","yellow") 
+@Order(4) @Distance @Description("The offset added to the paint lines.")
+attr Lane_Delinator_Offset = Ref.PaintLineWidth/2
+
+@Order(5) @Enum("white","yellow") 
 @Description("Color of the approach markings (arrows).")
 attr Approach_Marking_Color = "white"
+
 
 @Group("LANE CONFIGURATION", "Population", 3)
 @Order(5) @Range(min=0,max=500) @Description("Number of cars per kilometer.")
@@ -86,19 +90,24 @@ attr width = geometry.dv(0,unitSpace)
 attr Lane_Context_Label = "drive_lane"
 
 @Order(2)@Description("The label used to broadcast direction of lane to neighbors.Also the label it listens for.")@Hidden
-attr Lane_Direction_Label = travelDirection
+attr Lane_Reverse_Label = "True"
+@Order(3)@Description("The label used to broadcast direction of lane to neighbors.Also the label it listens for.")@Hidden
+attr Lane_Forward_Label = "True"
 
-@Order(3) @Distance @Description("Distance threshold to detect a neighbor lane (inter-model).")@Hidden
+@Order(4) @Distance @Description("Distance threshold to detect a neighbor lane (inter-model).")@Hidden
 attr Context_Detection_Range = 0.2
 
-
+@Order(5) @Description("Default delineator type set by context.") @Hidden
+attr Default_Type = _DefaultDelinatorType
+@Order(6)@Description("Default delineator color set by context.") @Hidden
+attr Default_Color = _DefaultDelinatorColor 
 # --------------------------------
 # Functions & Constants
 # --------------------------------
 
 # --- Constants ---
-const _CrosswalkSwitchBegin = case travelDirection == "Reverse": 0 else: 1
-const _CrosswalkSwitchEnd   = case travelDirection == "Reverse": 1 else: 0
+const _CrosswalkSwitchBegin = 1 # TODO Refactor Later
+const _CrosswalkSwitchEnd   = 1 # TODO Refactor Later
 const rightHandTraffic      = true 
 # --- Traffic Constants ---
 const minCarDistance = 6
@@ -119,6 +128,10 @@ const _stopEnd       = case Stop_Type =="none": 0 else: 1
 _LastLaneSwitch(lanenumber,lanestotal) =
 	case lanenumber == lanestotal-1: 0
 	else: 1	
+
+_DefaultDelinatorType = "dashed"
+
+_DefaultDelinatorColor = "white"
 
 # --------------------------------
 # Start & Approach
@@ -141,7 +154,7 @@ LaneWithCrosswalkEnd -->
 	split(u, uvSpace, 2) {
 		Crossing._crosswalkEndWidth/25 : Ref.Asphalt("Auto", "asphalt")
 		| Crossing._crosswalkEndWidth    : Crossing.Crosswalk(Crossing.Crosswalk_End, 2)
-		| Crossing.End_Crosswalk_To_Stop_Bar * _CrosswalkSwitchEnd : Ref.Asphalt("Auto", "asphalt")
+		| Crossing.End_Crosswalk_To_Stop_Bar * _CrosswalkSwitchEnd: Ref.Asphalt("Auto", "asphalt")
 		| ~1 : InRoadStopBar(case travelDirection=="Reverse":-1 else:1)
 	} 
 InRoadStopBar(sideFlip) -->
@@ -157,37 +170,56 @@ InRoadStopBar(sideFlip) -->
 DriveLane(sideFlip, laneWidth) -->
 	alignScopeToAxes(y)
 	color(Ref.Brightness)
-	split(v, unitSpace, 0) {
-		Ref.PaintLineWidth : ContextualLine #TODO Refactor to be after approach markings
-		| ~1 : DriveLaneBody(sideFlip, laneWidth)
-		| Ref.PaintLineWidth : ContextualLine
-	}
+	DriveLaneBody(sideFlip,laneWidth)
 
-DriveLaneBody(sideflip, width) -->
+DriveLaneBody(sideFlip, laneWidth) -->
 	case Stop_Type == "none":
-		MixedTrafficOnLane(sideflip)
+		MixedTrafficOnLane(sideFlip)
 		Ref.Asphalt("Auto", "drive_lane")
 	else:
-		MixedTrafficOnLane(sideflip)
+		MixedTrafficOnLane(sideFlip)
 		split(u, unitSpace, 0) {
-			~1 : Ref.Asphalt("Auto", "drive_lane")
-			| 14 : Ref.ApproachMarkings(sideflip, 1, 1, Stop_Type)
+			~1 : ThroughLane(sideFlip,laneWidth)
+			| 14 : Ref.ApproachMarkings(sideFlip, 1, 1, Stop_Type, Lane_Delinator_Offset,Lane_Delineator_Color)
 		}
 
+
+ThroughLane(sideFlip,laneWidth)-->
+	split(v, unitSpace, 0) {
+		Lane_Delinator_Offset:Ref.Asphalt("Auto", "drive_lane")
+		|Ref.PaintLineWidth : ContextualLine 
+		| ~1 : Ref.Asphalt("Auto", "drive_lane")
+		| Ref.PaintLineWidth : ContextualLine
+		|Lane_Delinator_Offset:Ref.Asphalt("Auto", "drive_lane")
+	}
 # --------------------------------
 # Contextual Line Logic
 # --------------------------------
 
 ContextualLine -->
-	label(Lane_Context_Label)
-	label(Lane_Direction_Label)
-	QueryLine
+	case travelDirection == "Reverse":
+		label(Lane_Context_Label)
+		label(Lane_Reverse_Label)
+		QueryLine
+	else:
+		label(Lane_Context_Label)
+		label(Lane_Forward_Label)
+		QueryLine
 	
 QueryLine-->
 	# CUSTOM CONTEXT QUERY:
 	# Checks "inter" (other initial shapes in the scene) for the specific Lane_Context_Label.
 	case minimumDistance(inter, Lane_Context_Label) < Context_Detection_Range:
-		LineChoice
+		case (minimumDistance(inter, Lane_Reverse_Label) < Context_Detection_Range && travelDirection == "Forward"):
+			print(minimumDistance(inter, Lane_Reverse_Label))
+			set(Lane_Delineator_Color,"yellow")
+			SolidLine
+		case (minimumDistance(inter, Lane_Forward_Label) < Context_Detection_Range && travelDirection == "Reverse"):
+			print(minimumDistance(inter, Lane_Forward_Label))
+			set(Lane_Delineator_Color,"yellow")
+			SolidLine
+		else:
+			LineChoice
 	else:
 		Ref.Asphalt("Auto", "drive_lane")
 LineChoice -->
@@ -202,9 +234,7 @@ DashedLine -->
 	split(u, unitSpace, 0) {
 		~4 : Ref.Asphalt("Auto", "drive_lane")
 		| { ~4 : Ref.AsphaltPainted( Lane_Delineator_Color , "Auto", "drive_lane") 
-		  | ~4 : Ref.Asphalt("Auto", "drive_lane") }*
-		|14 : Ref.Asphalt("Auto", "drive_lane")
-	}
+		  | ~4 : Ref.Asphalt("Auto", "drive_lane") }*}
 
 SolidLine -->
 	Ref.AsphaltPainted( Lane_Delineator_Color , "Auto", "drive_lane") 
