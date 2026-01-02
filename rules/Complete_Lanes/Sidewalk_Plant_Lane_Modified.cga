@@ -1,0 +1,156 @@
+/*
+ * File:    Sidewalk_Plant_Lane_Modified.cga
+ * Created: 5/31/2025
+ * Last Updated: 12/31/2025
+ * Author:  David J. Wasserman & Esri
+ * License: Apache 2.0 License and ESRI Attribution License.
+ * Source: https://github.com/d-wasserman/Complete_Street_Rule
+# ESRI Attribution License:
+#	ESRI Derivative work
+#	http://mappingcenter.esri.com/downloads/AttributionAndLicense_05_09_07.pdf
+#
+# Copyright 2025 David J. Wasserman
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required bys applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------
+ */
+version "2025.0"
+@Hidden
+attr shapeType = ""
+@Hidden
+attr sidewalkSide = ""
+
+@Hidden
+import cu : "/ESRI.lib/rules/Streets/Imports/CGA_Util.cga"
+
+@Hidden
+import Row_Distributor : "/ESRI.lib/rules/Streets/Imports/Elements/Row_Distributor.cga"(
+	Element --> SelectTreeBed
+)
+
+import Plant : "/ESRI.lib/rules/Streets/Imports/Elements/Solitary_Plant3.cga" (
+	Type = Plant_Type
+)
+
+import Ground_Cover_ : "/ESRI.lib/rules/Streets/Imports/Elements/Ground_Cover.cga"(
+	Type = Ground_Cover
+)
+
+import Plant_Pot : "/ESRI.lib/rules/Streets/Imports/Elements/Planter.cga" (
+	Width = Plant_Bed_Diameter,
+	Length = Plant_Bed_Diameter,
+	Shape = planterShape(),
+	Height = 0.4,
+	Surface --> Plant.start Ground_Cover_.start,
+	Wall --> Street_Materials.start
+)
+
+import Plant_Curb : "/ESRI.lib/rules/Streets/Imports/Elements/Curbed_Area.cga"(
+	Width = Plant_Bed_Diameter,
+	Length = Plant_Bed_Diameter,
+	Shape = planterShape(),
+	Surface --> Plant.start Ground_Cover_.start,
+	Wall --> Street_Materials.start
+)
+
+import Curb : "/ESRI.lib/rules/Streets/Imports/Elements/Curb_UV.cga"(
+	Height = Curb_Height,
+	Surface --> Street_Materials.start,
+	CurbWall --> Street_Materials.start
+)
+
+import Crossings : "/ESRI.lib/rules/Streets/Imports/Elements/Two_Crossings.cga"(
+	Type = Crossings.curb,
+	Position = Crossing_Position,
+	Street --> Lane,
+	Crossing --> Street_Materials.start
+)
+
+import Street_Materials : "/ESRI.lib/rules/Streets/Imports/Elements/Street_Materials.cga"
+
+@Group("General", 1)
+@Order(11)
+@Range(min=0, max=0.5, stepsize=0.01)
+attr Curb_Height = Curb.defaultHeight
+
+@Order(12)
+@Enum(valuesAttr=Crossings.crossingPositions)
+attr Crossing_Position = Crossings.none
+
+
+@Group("Vegetation", 2)
+@Order(21)
+@Enum(valuesAttr=Ground_Cover_.vegetationLabels)
+attr Ground_Cover = Ground_Cover_.soil
+
+@Order(22)
+@Enum(valuesAttr=Plant.plants)
+attr Plant_Type = Plant.default
+
+@Order(23)
+@Enum(valuesAttr=beds)
+attr Plant_Bed_Type = bed_curb_round
+
+@Order(24)
+@Range(min=0.5, max=10, stepsize=0.1, restricted=false)
+attr Plant_Bed_Diameter = 1.2
+
+@Order(25)
+@Enum(valuesAttr=Plant.representation)
+attr Vegetation_Representation = Plant.default_representation
+
+
+@Order(31)
+@Range(min=0.0, max=30.0, stepsize=0.1, restricted=false)
+attr Spacing = 10
+
+@Order(32)
+@Range(min=0.0, max=30.0, stepsize=0.1, restricted=false)
+attr Offset_Along = Spacing / 2
+
+@Order(33)
+@Range(min=-8.0, max=8.0, stepsize=0.05, restricted=false)
+attr Offset_Across = 0.0
+
+
+@Hidden
+attr beds = [bed_curb_round, bed_curb_rect, bed_pot_round, bed_pot_rect]
+
+const bed_curb_round = "Curbs (Round)"
+const bed_curb_rect = "Curbs (Rect)"
+const bed_pot_round = "Pot (Round)"
+const bed_pot_rect = "Pot (Rect)"
+
+const curb_material = Street_Materials.getCurbMaterial()
+const wall_material = Plant_Pot.Wall_Material
+isPot()  = cu.getByKey(Plant_Bed_Type, beds, [false, false, true, true])
+
+# TODO (MB): Attr-dependent assignment of component values, not sure whether we want that.
+planterShape() = cu.getByKey(Plant_Bed_Type, beds, [Plant_Pot.round, Plant_Pot.rectangular, Plant_Pot.round, Plant_Pot.rectangular])
+
+@StartRule
+start Start -->
+	Crossings.start
+
+
+Lane -->
+	Curb.start
+	t(0, Curb_Height, 0)
+	Row_Distributor.start
+
+
+SelectTreeBed -->
+	case isPot():
+		Plant_Pot.start
+	else:
+		Plant_Curb.start
