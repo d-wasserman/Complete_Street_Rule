@@ -29,26 +29,42 @@ version "2025.0"
 # Parameters
 # --------------------------------
 
-@Group("LANE CONFIGURATION", "Markings", 1)
+@Group("LANE CONFIGURATION", "General", 1)
+@Order(1)
+
+
+@Group("LANE CONFIGURATION", "Markings", 2)
 @Order(1) @Enum("with stop marking","through;","through-right;","through-left;","left;","right;","both;","all;") 
 @Description("Determines the approach markings (arrows, stop lines) for this lane.")
 attr Stop_Type = "through"
 
-@Order(2) @Enum("white","yellow") 
-@Description("Color of the dashed split line.")
-attr Dash_Color = "white"
+@Order(2)@Enum("dashed","solid")
+@Description("The type of line delination between lanes.")
+attr Lane_Delineator_Type = "dashed"
 
 @Order(3) @Enum("white","yellow") 
+@Description("Color of the dashed split line.")
+attr Lane_Delineator_Color = "white"
+
+@Order(4) @Enum("white","yellow") 
 @Description("Color of the approach markings (arrows).")
-attr Marking_Color = "white"
+attr Approach_Marking_Color = "white"
 
-@Group("LANE CONFIGURATION", "Context Logic", 2)
-@Order(4) @Description("The label this lane broadcasts to neighbors. Also the label it listens for.")
-attr Lane_Context_Label = "drive_lane"
+@Group("LANE CONFIGURATION", "Population", 3)
+@Order(5) @Range(min=0,max=500) @Description("Number of cars per kilometer.")
+attr Cars_Per_KM = 25
 
-@Order(5) @Distance @Description("Distance threshold to detect a neighbor lane (inter-model).")
-attr Context_Detection_Range = 0.2
+@Order(6) @Range(min=0,max=1) @Percent @Description("Probability of a bus appearing in traffic flow.")
+attr Mixed_Traffic_Bus_Percentage = 0.05
 
+@Order(7) @Range(min=0,max=1) @Percent @Description("Probability of freight trucks appearing.")
+attr Mixed_Traffic_Freight_Percentage = 0.05
+
+@Order(8) @Range(min=0,max=1) @Percent @Description("Probability of bikes appearing (Curb lanes only).")
+attr Mixed_Traffic_Bike_Percentage = 0.0001
+
+@Order(9) @Range(min=0,max=1) @Percent @Description("Probability of a car being a Taxi.")
+attr Taxi_Percentage = 0.1
 # --------------------------------
 # Imports & Hidden
 # --------------------------------
@@ -60,6 +76,13 @@ import Crossing: "Complete_Lanes/Imports/Crossing.cga"
 attr travelDirection = ""
 @Hidden
 attr width = geometry.dv(0,unitSpace)
+@Group("LANE CONFIGURATION", "Context Logic", 2)
+@Order(1) @Description("The label this lane broadcasts to neighbors. Also the label it listens for.") @Hidden
+attr Lane_Context_Label = "drive_lane"
+
+@Order(2) @Distance @Description("Distance threshold to detect a neighbor lane (inter-model).")@Hidden
+attr Context_Detection_Range = 0.2
+
 
 # --------------------------------
 # Functions & Constants
@@ -69,6 +92,12 @@ attr width = geometry.dv(0,unitSpace)
 const _CrosswalkSwitchBegin = case travelDirection == "Reverse": 0 else: 1
 const _CrosswalkSwitchEnd   = case travelDirection == "Reverse": 1 else: 0
 const rightHandTraffic      = true 
+# --- Traffic Constants ---
+const minCarDistance = 6
+# Probability calculation: (Cars/km * min_spacing) / 1000m
+const vehicleProb = (Cars_Per_KM * minCarDistance) / 1000
+# Bike Constants from new logic
+const minBikeDistance = 2
 
 # --- Logic for Stops/Neighbors ---
 const _neighborBegin = case Stop_Type !="none" : 1 else: 0 
@@ -126,10 +155,12 @@ DriveLane(sideFlip, laneWidth) -->
 		| Ref.PaintLineWidth : ContextualLine
 	}
 
-DriveLaneBody(sideflip, Width) -->
+DriveLaneBody(sideflip, width) -->
 	case Stop_Type == "none":
+		MixedTrafficOnLane(sideflip)
 		Ref.Asphalt("Auto", "drive_lane")
 	else:
+		MixedTrafficOnLane(sideflip)
 		split(u, unitSpace, 0) {
 			~1 : Ref.Asphalt("Auto", "drive_lane")
 			| 14 : Ref.ApproachMarkings(sideflip, 1, 1, Stop_Type)
@@ -154,7 +185,87 @@ QueryLine-->
 DashedLine -->
 	split(u, unitSpace, 0) {
 		~4 : Ref.Asphalt("Auto", "drive_lane")
-		| { ~4 : Ref.AsphaltPainted(Dash_Color, "Auto", "drive_lane") 
+		| { ~4 : Ref.AsphaltPainted( Lane_Delineator_Color , "Auto", "drive_lane") 
 		  | ~4 : Ref.Asphalt("Auto", "drive_lane") }*
 		|14 : Ref.Asphalt("Auto", "drive_lane")
 	}
+# --------------------------------
+# Mixed Traffic Logic
+# --------------------------------
+
+MixedTrafficOnLane(dir) -->
+	case geometry.du(0,unitSpace) > 1000:
+		split(u,unitSpace,0){ '0.5: MixedTrafficOnLane(dir) | '0.5: MixedTrafficOnLane(dir) }
+	case geometry.du(0,unitSpace) > 10 && p(Mixed_Traffic_Bus_Percentage):
+		split(u,unitSpace,0){ ~1: MixedTrafficOnLane(dir) | (rand(15,25)): Vehicle(dir,"bus") }
+	case geometry.du(0,unitSpace) > 10 && p(Mixed_Traffic_Freight_Percentage):
+		split(u,unitSpace,0){ ~1: MixedTrafficOnLane(dir) | (rand(15,25)): Vehicle(dir,"freight") }
+	case geometry.du(0,unitSpace) > 5 && p(Mixed_Traffic_Bike_Percentage): 
+		split(u,unitSpace,0){ ~1: MixedTrafficOnLane(dir) | (rand(minCarDistance,8)): Bike(dir,width,1) }
+	case geometry.du(0,unitSpace) > 5:
+		split(u,unitSpace,0){ ~1: MixedTrafficOnLane(dir) | (rand(minCarDistance,15)): VehicleTaxiOrCar(dir) }
+	else:
+		NIL
+
+VehicleTaxiOrCar(dir) -->
+	case p(Taxi_Percentage): 
+		Vehicle(dir,"taxi") 
+	else:
+		Vehicle(dir,"car") 
+
+
+Vehicle(dir,type) --> 
+	case p(vehicleProb):
+		split(u,unitSpace,0){ ~1: NIL | 0.5: alignScopeToGeometry(yUp,0,dir) VehicleAsset(type) | ~1: NIL }
+	else:
+		NIL	
+
+# --------------------------------
+# Asset Loading
+# --------------------------------
+
+VehicleAsset(type) -->
+	s(0,0,0)
+	center(x)
+	t(0,0,'rand(0.4,0.6)) 
+	r(0,180,0)
+	r(0, Ref.DirectionalRotation, 0) 
+	i(Ref.vehicleAsset(type))
+	label(type)
+	set(material.name,str(type))
+	color( Ref._ThematicRouter (case type=="bus":"Transit" else:"Auto",case type=="bus":"bus"else:"car"))
+	Ref.Delete_Texture
+
+# --------------------------------
+# Bike Logic (Updated)
+# --------------------------------
+
+Bikes(dir,Bike_Lane_Width,bike_probability) -->
+	case bike_probability > 0:
+		BikesOnLane(dir,Bike_Lane_Width)		
+	else:
+		NIL
+	
+BikesOnLane(dir,Bike_Lane_Width) --> 
+	case geometry.du(0,unitSpace) > 1000:
+		split(u,unitSpace,0){ '0.5: BikesOnLane(dir,Bike_Lane_Width) | '0.5: BikesOnLane(dir,Bike_Lane_Width) }
+	case geometry.du(0,unitSpace) > 5:
+		split(u,unitSpace,0){ ~1: BikesOnLane(dir,Bike_Lane_Width) | (rand(minBikeDistance,3)): Bike(dir,width,1) }
+	else:
+		NIL
+
+Bike(dir,Bike_Lane_Width,bike_probability) --> 
+	case p(bike_probability):
+		split(u,unitSpace,0){ ~1: NIL | 0.5: alignScopeToGeometry(yUp,0,dir) BikeAsset(Bike_Lane_Width) | ~1: NIL }
+	else:
+		NIL	
+		
+BikeAsset(Bike_Lane_Width) -->
+	s(0,0,0) 
+	rotateScope(0,Ref.DirectionalRotation,0)
+	center(x)
+	t(0,0,Bike_Lane_Width/2 + rand(-Bike_Lane_Width/3,Bike_Lane_Width/3)) 
+	i(Ref.bikeAsset) 
+	label("bicyclist")
+	set(material.name,"Bicyclist")
+	Ref.Delete_Color_Texture("Bikeways","bicyclist")
