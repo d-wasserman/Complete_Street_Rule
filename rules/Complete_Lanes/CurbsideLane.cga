@@ -153,7 +153,7 @@ _HasCurbsideManagement(ParkingType) =
     	0
 _StencilRotation(pos,sideFlip) = 
 	case sideFlip == 1:
-		case pos=="Begin":180 case pos=="End": 90 else: 180
+		case pos=="Begin":270 case pos=="End": 0  else: 0
 	else:
 		case pos=="Begin":270 case pos=="End": 0  else: 0
 # --------------------------------
@@ -284,7 +284,7 @@ ParallelMarking(sideFlip, pos) -->
 
 ParkingCapObj(sideFlip, pos, objName) -->
 	# Rotates and inserts the white paint stencil for parking corners
-	scaleUV(0, 1, sideFlip)
+	scaleUV(0, sideFlip, -1)
 	split(v, unitSpace, 0) {
 		0.6 : split(u, unitSpace, 0) {
 			0.6 : StencilInsert(objName, pos, sideFlip) | ~1 : NIL | 0.6 : NIL
