@@ -146,14 +146,14 @@ BikeLaneArrowStencil-->
 	normalizeUV(0, uv, collectiveAllFaces)	
 	insertAlongUV(0, Ref.StencilFolder+"/Bike_Arrow.obj",0)
 	cleanupGeometry(all, 0.001) 
-	comp (f) {top:Ref.AsphaltPaintedStencil(Ref.Stencil_Color ,"Bikeways","bike_lane")}
+	comp (f) {top:Ref.AsphaltPaintedStencil(Ref.StencilColor ,"Bikeways","bike_lane")}
 	
 
 BikeLaneSymbolStencil--> #Ground Textured Rule
 	normalizeUV(0, uv, collectiveAllFaces)	
 	insertAlongUV(0, Ref.StencilFolder+"/Bike_Symbol.obj", 0)
 	cleanupGeometry(all, 0.001) 
-	comp (f) {top:Ref.AsphaltPaintedStencil(Ref.Stencil_Color,"Bikeways","bike_lane")}
+	comp (f) {top:Ref.AsphaltPaintedStencil(Ref.StencilColor,"Bikeways","bike_lane")}
 	
 		
 ConflictZone(passed_color)-->
