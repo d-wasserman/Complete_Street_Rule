@@ -90,9 +90,9 @@ attr width = geometry.dv(0,unitSpace)
 attr Lane_Context_Label = "drive_lane"
 
 @Order(2)@Description("The label used to broadcast direction of lane to neighbors.Also the label it listens for.")@Hidden
-attr Lane_Reverse_Label = "True"
+attr Lane_Reverse_Label = "lane_reverse"
 @Order(3)@Description("The label used to broadcast direction of lane to neighbors.Also the label it listens for.")@Hidden
-attr Lane_Forward_Label = "True"
+attr Lane_Forward_Label = "lane_forward"
 
 @Order(4) @Distance @Description("Distance threshold to detect a neighbor lane (inter-model).")@Hidden
 attr Context_Detection_Range = 0.2
@@ -185,10 +185,11 @@ DriveLaneBody(sideFlip, laneWidth) -->
 
 
 ThroughLane(sideFlip,laneWidth)-->
+	label(Lane_Context_Label)
 	split(v, unitSpace, 0) {
-		Lane_Delinator_Offset:Ref.Asphalt("Auto", "drive_lane")
-		|Ref.PaintLineWidth : ContextualLine 
-		| ~1 : Ref.Asphalt("Auto", "drive_lane")
+# 		Lane_Delinator_Offset:Ref.Asphalt("Auto", "drive_lane")
+# 		|Ref.PaintLineWidth : ContextualLine 
+		 ~1 : Ref.Asphalt("Auto", "drive_lane")
 		| Ref.PaintLineWidth : ContextualLine
 		|Lane_Delinator_Offset:Ref.Asphalt("Auto", "drive_lane")
 	}
@@ -198,11 +199,9 @@ ThroughLane(sideFlip,laneWidth)-->
 
 ContextualLine -->
 	case travelDirection == "Reverse":
-		label(Lane_Context_Label)
 		label(Lane_Reverse_Label)
 		QueryLine
 	else:
-		label(Lane_Context_Label)
 		label(Lane_Forward_Label)
 		QueryLine
 	
@@ -211,14 +210,15 @@ QueryLine-->
 	# Checks "inter" (other initial shapes in the scene) for the specific Lane_Context_Label.
 	case minimumDistance(inter, Lane_Context_Label) < Context_Detection_Range:
 		case (minimumDistance(inter, Lane_Reverse_Label) < Context_Detection_Range && travelDirection == "Forward"):
-			print(minimumDistance(inter, Lane_Reverse_Label))
 			set(Lane_Delineator_Color,"yellow")
-			SolidLine
+			set(Lane_Delineator_Type,"solid")
+			LineChoice
 		case (minimumDistance(inter, Lane_Forward_Label) < Context_Detection_Range && travelDirection == "Reverse"):
-			print(minimumDistance(inter, Lane_Forward_Label))
 			set(Lane_Delineator_Color,"yellow")
-			SolidLine
+			set(Lane_Delineator_Type,"solid")
+			LineChoice
 		else:
+			print("test")
 			LineChoice
 	else:
 		Ref.Asphalt("Auto", "drive_lane")
@@ -228,6 +228,7 @@ LineChoice -->
 	case Lane_Delineator_Type =="solid":
 		SolidLine
 	else:
+		print("Test2")
 		Ref.Asphalt("Auto", "drive_lane")
 
 DashedLine -->
