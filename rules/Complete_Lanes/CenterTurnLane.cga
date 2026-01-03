@@ -41,7 +41,7 @@ attr Lane_Width = 3.6576 # ~12ft
 @Group("CENTER LANE LAYOUT", "Turn Pocket Settings", 2)
 @Order(3) @Distance @Range(min=5, max=50) 
 @Description("Length of the turn pocket at intersections (for Median type).")
-attr Turn_Pocket_Length = 10
+attr Turn_Pocket_Length = 14
 
 @Order(4) @Distance @Range(min=5, max=30) 
 @Description("Length of the transition taper from median to turn lane.")
@@ -193,13 +193,13 @@ RaisedTurnLanePocket(dir)-->
 	split(v,unitSpace,0){
 		Turn_Pocket_Curb_Width:split(u,unitSpace,0) {~1:Raised_Curb_Extrusion("Auto",dir)
 									|Turn_Pocket_Curb_Width: Ref.Asphalt("Auto","asphalt") Raised_Curb_End("Median With Turn Lane",dir)}
-						|{~width: Ref.ApproachMarkings(dir,1,1,"right;")}*}#Right because UV is scaled at beginning
+						|{~width: Ref.ApproachMarkings(dir,1,1,"right;",0,"white")}*}#Right because UV is scaled at beginning
 
 MedianTurnArrowSetup(dir) -->
 	# Matches CenterTurnArrowSetup logic to center the marking
 	split(u, unitSpace, 0) {
 		~1.5 : Ref.Asphalt("Auto", "drive_lane")
-		| width : Ref.ApproachMarkings(dir, 1, 1, "right;")
+		| width : Ref.ApproachMarkings(dir, 1, 1, "right;",0,"white")
 		| ~1 : Ref.Asphalt("Auto", "drive_lane")
 	}
 # --------------------------------
@@ -247,9 +247,9 @@ CenterTurnLaneArrowSetup(EdgeColor) -->
 		split(v, unitSpace, 0) {
 			'0.25 : NIL
 			| ~1 : split(u, unitSpace, 0) {
-				'0.4 : Ref.ApproachSymbolStencils(0, 0, 1, "Left_Arrow.obj")
+				'0.4 : Ref.ApproachSymbolStencils(0, 0, 1, "Left_Arrow.obj","white")
 				| '0.2 : NIL
-				| '0.4 : scaleUV(0, -1, 1) Ref.ApproachSymbolStencils(0, 0, 1, "Right_Arrow.obj")
+				| '0.4 : scaleUV(0, -1, 1) Ref.ApproachSymbolStencils(0, 0, 1, "Right_Arrow.obj","white")
 			}
 			| '0.25 : NIL
 		}
@@ -262,7 +262,7 @@ CenterTurnLaneTurnPocket(Location, dir) -->
 		| ~Turn_Pocket_Length : split(v, unitSpace, 0) { ~1: CenterTurnArrowSetup(Location,dir) }
 	}
 CenterTurnArrowSetup(Location,dir)-->	
-	Ref.ApproachMarkings(dir, 1, 1, "right;")
+	Ref.ApproachMarkings(dir, 1, 1, "right;",0,"white")
 
 						
 
