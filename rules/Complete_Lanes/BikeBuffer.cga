@@ -36,7 +36,7 @@ attr Buffer_Type = "Painted Stripes"
 
 @Order(2) @Distance @Range(min=0,max=10) 
 @Description("Controls the spacing of objects (bollards, planters, trees) within the buffer.")
-attr Buffer_Object_Spacing = 5
+attr Buffer_Object_Spacing = 3.048
 
 @Order(3) @Enum("green","black","red","blue","yellow") 
 @Description("Determines the paint color for stripes or solid buffers.")
