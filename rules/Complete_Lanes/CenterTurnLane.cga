@@ -86,8 +86,8 @@ attr Median_Tree_1_Percentage = 1
 # Imports
 # --------------------------------
 
-import Ref : "Complete_Lanes/Imports/Reference.cga" 
-import Crossing: "Complete_Lanes/Imports/Crossing.cga"
+import Ref : "Complete_Lanes/Reference.cga" 
+import Crossing: "Complete_Lanes/Crossing.cga"
 import Tree : "/ESRI.lib/rules/Plants/Plant_Loader.cga"
 
 # --------------------------------

@@ -51,8 +51,8 @@ attr Buses_Per_KM = 25
 
 # Reference Import
 
-import Ref : "Complete_Lanes/Imports/Reference.cga" 
-import Crossing: "Complete_Lanes/Imports/Crossing.cga"
+import Ref : "Complete_Lanes/Reference.cga" 
+import Crossing: "Complete_Lanes/Crossing.cga"
 
 # Hidden attributes
 
@@ -193,7 +193,7 @@ BusLaneStencil(sideflip) -->
 	insertAlongUV(0, Ref.StencilFolder + "/Bus_Only.obj", 0)
 	setupProjection(0, scope.xz, ~2, ~2, 2, 2, 2)
 	reverseNormals()
-	comp(f) { top: Ref.AsphaltPaintedStencil(Ref.Stencil_Color, "Transit", "bus_lane") }
+	comp(f) { top: Ref.AsphaltPaintedStencil(Ref.StencilColor, "Transit", "bus_lane") }
 
 # --------------------------------
 # Shared Bike/Bus Symbols
@@ -225,7 +225,7 @@ BikeLaneSymbolStencil -->
 	normalizeUV(0, uv, collectiveAllFaces)	
 	insertAlongUV(0, Ref.StencilFolder + "/Bike_Symbol.obj", 0)
 	cleanupGeometry(all, 0.001) 
-	comp(f) { top: Ref.AsphaltPaintedStencil(Ref.Stencil_Color, "Bikeways", "bike_lane") }
+	comp(f) { top: Ref.AsphaltPaintedStencil(Ref.StencilColor, "Bikeways", "bike_lane") }
 
 # --------------------------------
 # Vehicles (Buses)

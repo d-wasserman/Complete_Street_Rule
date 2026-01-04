@@ -56,8 +56,8 @@ attr Bike_Box_Color_Override	= Bike_Lane_Color
 # Imports
 # --------------------------------
 
-import Ref : "Complete_Lanes/Imports/Reference.cga" 
-import Crossing: "Complete_Lanes/Imports/Crossing.cga"
+import Ref : "Complete_Lanes/Reference.cga" 
+import Crossing: "Complete_Lanes/Crossing.cga"
 
 # --------------------------------
 # Hidden Attributes
