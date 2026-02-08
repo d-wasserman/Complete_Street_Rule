@@ -93,13 +93,14 @@ attr Lane_Context_Label = "drive_lane"
 attr Lane_Reverse_Label = "lane_reverse"
 @Order(3)@Description("The label used to broadcast direction of lane to neighbors.Also the label it listens for.")@Hidden
 attr Lane_Forward_Label = "lane_forward"
+@Order(4)@Description("The label used to broadcast lane color to neighbors. Also the label it listens for.")@Hidden
+attr Lane_Color_Label = "yellow"
+@Order(5) @Distance @Description("Distance threshold to detect a neighbor lane (inter-model).")@Hidden
+attr Context_Detection_Range = .2
 
-@Order(4) @Distance @Description("Distance threshold to detect a neighbor lane (inter-model).")@Hidden
-attr Context_Detection_Range = 0.2
-
-@Order(5) @Description("Default delineator type set by context.") @Hidden
+@Order(6) @Description("Default delineator type set by context.") @Hidden
 attr Default_Type = _DefaultDelinatorType
-@Order(6)@Description("Default delineator color set by context.") @Hidden
+@Order(7)@Description("Default delineator color set by context.") @Hidden
 attr Default_Color = _DefaultDelinatorColor 
 # --------------------------------
 # Functions & Constants
@@ -180,9 +181,10 @@ DriveLaneBody(sideFlip, laneWidth) -->
 		MixedTrafficOnLane(sideFlip)
 		split(u, unitSpace, 0) {
 			~1 : ThroughLane(sideFlip,laneWidth)
-			| 14 : Ref.ApproachMarkings(sideFlip, 1, 1, Stop_Type, Lane_Delinator_Offset,Lane_Delineator_Color)
+			| 14 : ApproachMarkings_Setup(sideFlip)
 		}
-
+ApproachMarkings_Setup(sideFlip)-->
+	Ref.ApproachMarkings(sideFlip, 1, 1, Stop_Type, Lane_Delinator_Offset,Lane_Delineator_Color)
 
 ThroughLane(sideFlip,laneWidth)-->
 	label(Lane_Context_Label)
@@ -212,10 +214,12 @@ QueryLine-->
 		case (minimumDistance(inter, Lane_Reverse_Label) < Context_Detection_Range && travelDirection == "Forward"):
 			set(Lane_Delineator_Color,"yellow")
 			set(Lane_Delineator_Type,"solid")
+			label(Lane_Color_Label)
 			LineChoice
 		case (minimumDistance(inter, Lane_Forward_Label) < Context_Detection_Range && travelDirection == "Reverse"):
 			set(Lane_Delineator_Color,"yellow")
 			set(Lane_Delineator_Type,"solid")
+			label(Lane_Color_Label)
 			LineChoice
 		else:
 			print("test")
@@ -238,7 +242,10 @@ DashedLine -->
 		  | ~4 : Ref.Asphalt("Auto", "drive_lane") }*}
 
 SolidLine -->
-	Ref.AsphaltPainted( Lane_Delineator_Color , "Auto", "drive_lane") 
+	split(u,unitSpace,0) {
+	Ref.ThickPaintLineWidth	:Ref.Asphalt("Auto", "drive_lane")|
+	~1:Ref.AsphaltPainted( Lane_Delineator_Color , "Auto", "drive_lane")
+	} 
 # --------------------------------
 # Mixed Traffic Logic
 # --------------------------------
