@@ -1,7 +1,7 @@
 /*
  * File:    ThroughLane.cga
  * Created: 5/31/2025
- * Last Updated: 12/31/2025
+ * Last Updated: 2/9/2026
  * Author:  David J. Wasserman
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -34,16 +34,16 @@ version "2025.0"
 
 
 @Group("LANE CONFIGURATION", "Markings", 2)
-@Order(1) @Enum("with stop marking","through;","through-right;","through-left;","left;","right;","both;","all;") 
+@Order(1) @Enum("none","with stop marking","through;","through-right;","through-left;","left;","right;","both;","all;") 
 @Description("Determines the approach markings (arrows, stop lines) for this lane.")
-attr Stop_Type = "through"
+attr Stop_Type = "with stop marking"
 
 @Order(2)@Enum("dashed","solid")
 @Description("The type of line delination between lanes.")
 attr Lane_Delineator_Type = Default_Type 
 
-@Order(3) @Enum("white","yellow") 
-@Description("Color of the dashed split line.")
+@Order(3) @Enum("white","yellow","black") 
+@Description("Color of the dashed or solid split line.")
 attr Lane_Delineator_Color = Default_Color 
 
 @Order(4) @Distance @Description("The offset added to the paint lines.")
@@ -96,7 +96,7 @@ attr Lane_Forward_Label = "lane_forward"
 @Order(4)@Description("The label used to broadcast lane color to neighbors. Also the label it listens for.")@Hidden
 attr Lane_Color_Label = "yellow"
 @Order(5) @Distance @Description("Distance threshold to detect a neighbor lane (inter-model).")@Hidden
-attr Context_Detection_Range = .2
+attr Context_Detection_Range = .5
 
 @Order(6) @Description("Default delineator type set by context.") @Hidden
 attr Default_Type = _DefaultDelinatorType
@@ -179,35 +179,34 @@ DriveLaneBody(sideFlip, laneWidth) -->
 		Ref.Asphalt("Auto", "drive_lane")
 	else:
 		MixedTrafficOnLane(sideFlip)
-		split(u, unitSpace, 0) {
-			~1 : ThroughLane(sideFlip,laneWidth)
-			| 14 : ApproachMarkings_Setup(sideFlip)
-		}
+		split(v, unitSpace, 0){
+			~1:split(u, unitSpace, 0) {
+				~1 : ThroughLane(sideFlip,laneWidth)
+				| 14 : ApproachMarkings_Setup(sideFlip)}
+			|Ref.PaintLineWidth+Lane_Delinator_Offset:CenterLine_Setup}
+							
 ApproachMarkings_Setup(sideFlip)-->
 	Ref.ApproachMarkings(sideFlip, 1, 1, Stop_Type, Lane_Delinator_Offset,Lane_Delineator_Color)
 
 ThroughLane(sideFlip,laneWidth)-->
 	label(Lane_Context_Label)
-	split(v, unitSpace, 0) {
-# 		Lane_Delinator_Offset:Ref.Asphalt("Auto", "drive_lane")
-# 		|Ref.PaintLineWidth : ContextualLine 
-		 ~1 : Ref.Asphalt("Auto", "drive_lane")
-		| Ref.PaintLineWidth : ContextualLine
-		|Lane_Delinator_Offset:Ref.Asphalt("Auto", "drive_lane")
-	}
+	Ref.Asphalt("Auto", "drive_lane")
 # --------------------------------
 # Contextual Line Logic
 # --------------------------------
-
+CenterLine_Setup-->
+	split(v,unitSpace,0){
+			Ref.PaintLineWidth:ContextualLine|
+								Lane_Delinator_Offset:Ref.Asphalt("Auto","drive_lane")}
 ContextualLine -->
 	case travelDirection == "Reverse":
 		label(Lane_Reverse_Label)
-		QueryLine
+		QueryCenterLine
 	else:
 		label(Lane_Forward_Label)
-		QueryLine
+		QueryCenterLine
 	
-QueryLine-->
+QueryCenterLine --> 
 	# CUSTOM CONTEXT QUERY:
 	# Checks "inter" (other initial shapes in the scene) for the specific Lane_Context_Label.
 	case minimumDistance(inter, Lane_Context_Label) < Context_Detection_Range:
@@ -215,24 +214,26 @@ QueryLine-->
 			set(Lane_Delineator_Color,"yellow")
 			set(Lane_Delineator_Type,"solid")
 			label(Lane_Color_Label)
-			LineChoice
+			Approach_Centerline
 		case (minimumDistance(inter, Lane_Forward_Label) < Context_Detection_Range && travelDirection == "Reverse"):
 			set(Lane_Delineator_Color,"yellow")
 			set(Lane_Delineator_Type,"solid")
 			label(Lane_Color_Label)
-			LineChoice
+			Approach_Centerline
 		else:
-			print("test")
-			LineChoice
+			Approach_Centerline
 	else:
 		Ref.Asphalt("Auto", "drive_lane")
+																
+Approach_Centerline-->
+	split(u,unitSpace,0) {~1:LineChoice|14:Ref.AsphaltPainted(Lane_Delineator_Color,"Auto","drive_lane")}
+
 LineChoice -->
 	case Lane_Delineator_Type =="dashed":
 		DashedLine
 	case Lane_Delineator_Type =="solid":
 		SolidLine
 	else:
-		print("Test2")
 		Ref.Asphalt("Auto", "drive_lane")
 
 DashedLine -->

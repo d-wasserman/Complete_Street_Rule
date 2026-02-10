@@ -3,7 +3,7 @@ version "2025.0"
 /*
  * File:    Complete Street_Configuration.cga
  * Created: 5/31/2025
- * Last Updated: 12/24/2025
+ * Last Updated: 2/9/2025
  * Author:  David J. Wasserman
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -421,9 +421,7 @@ ApproachMarkings(dir,lanenumber,lanestotal,stopType,lineOffset,markingColor) -->
 	HighLODApproachMarkings(dir,lanenumber,lanestotal,_stopSten(stopType,lanenumber,lanestotal),lineOffset,markingColor)
 	
 HighLODApproachMarkings(dir,lanenumber,lanestotal,markings,lineOffset,markingColor)-->
-	split(v,unitSpace,0) {~1:Asphalt("Auto","drive_lane") ApproachSymbolStencilsSetup(dir,lanenumber,lanestotal,markings,markingColor)|
-								_LastLaneSwitch(lanenumber,lanestotal)*PaintLineWidth:AsphaltPainted(markingColor,"Auto","drive_lane")|
-								lineOffset:Asphalt("Auto","drive_lane")}
+	split(v,unitSpace,0) {~1:Asphalt("Auto","drive_lane") ApproachSymbolStencilsSetup(dir,lanenumber,lanestotal,markings,markingColor)}
 	
 ApproachSymbolStencilsSetup(dir,lanenumber,lanestotal,markings,markingColor)-->
 	split(v,unitSpace,0) {'0.1:NIL
