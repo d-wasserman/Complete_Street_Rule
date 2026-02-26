@@ -1,0 +1,329 @@
+/*
+ * File:    ThroughLane.cga
+ * Created: 5/31/2025
+ * Last Updated: 2/9/2026
+ * Author:  David J. Wasserman
+ * License: Apache 2.0 License and ESRI Attribution License.
+ * Source: https://github.com/d-wasserman/Complete_Street_Rule
+# ESRI Attribution License:
+#	ESRI Derivative work
+#	http://mappingcenter.esri.com/downloads/AttributionAndLicense_05_09_07.pdf
+#
+# Copyright 2025 David J. Wasserman
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required bys applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------
+ */
+version "2025.0"
+# --------------------------------
+# Parameters
+# --------------------------------
+
+@Group("LANE CONFIGURATION", "General", 1)
+@Order(1)
+
+
+@Group("LANE CONFIGURATION", "Markings", 2)
+@Order(1) @Enum("none","with stop marking","through;","through-right;","through-left;","left;","right;","both;","all;") 
+@Description("Determines the approach markings (arrows, stop lines) for this lane.")
+attr Stop_Type = "with stop marking"
+
+@Order(2)@Enum("dashed","solid")
+@Description("The type of line delination between lanes.")
+attr Lane_Delineator_Type = Default_Type 
+
+@Order(3) @Enum("white","yellow","black") 
+@Description("Color of the dashed or solid split line.")
+attr Lane_Delineator_Color = Default_Color 
+
+@Order(4) @Distance @Description("The offset added to the paint lines.")
+attr Lane_Delinator_Offset = Ref.PaintLineWidth/2
+
+@Order(5) @Enum("white","yellow") 
+@Description("Color of the approach markings (arrows).")
+attr Approach_Marking_Color = "white"
+
+
+@Group("LANE CONFIGURATION", "Population", 3)
+@Order(5) @Range(min=0,max=500) @Description("Number of cars per kilometer.")
+attr Cars_Per_KM = 25
+
+@Order(6) @Range(min=0,max=1) @Percent @Description("Probability of a bus appearing in traffic flow.")
+attr Mixed_Traffic_Bus_Percentage = 0.05
+
+@Order(7) @Range(min=0,max=1) @Percent @Description("Probability of freight trucks appearing.")
+attr Mixed_Traffic_Freight_Percentage = 0.05
+
+@Order(8) @Range(min=0,max=1) @Percent @Description("Probability of bikes appearing (Curb lanes only).")
+attr Mixed_Traffic_Bike_Percentage = 0.0001
+
+@Order(9) @Range(min=0,max=1) @Percent @Description("Probability of a car being a Taxi.")
+attr Taxi_Percentage = 0.1
+# --------------------------------
+# Imports & Hidden
+# --------------------------------
+
+import Ref : "Complete_Lanes/Reference.cga" 
+import Crossing: "Complete_Lanes/Crossing.cga"
+
+# Object Attributes
+
+@Hidden
+attr travelDirection = ""
+@Hidden
+attr width = geometry.dv(0,unitSpace)
+
+# Context Attrributes
+
+@Group("LANE CONFIGURATION", "Context Logic", 2)
+@Order(1) @Description("The label this lane broadcasts to neighbors. Also the label it listens for.") @Hidden
+attr Lane_Context_Label = "drive_lane"
+
+@Order(2)@Description("The label used to broadcast direction of lane to neighbors.Also the label it listens for.")@Hidden
+attr Lane_Reverse_Label = "lane_reverse"
+@Order(3)@Description("The label used to broadcast direction of lane to neighbors.Also the label it listens for.")@Hidden
+attr Lane_Forward_Label = "lane_forward"
+@Order(4)@Description("The label used to broadcast lane color to neighbors. Also the label it listens for.")@Hidden
+attr Lane_Color_Label = "yellow"
+@Order(5) @Distance @Description("Distance threshold to detect a neighbor lane (inter-model).")@Hidden
+attr Context_Detection_Range = .5
+
+@Order(6) @Description("Default delineator type set by context.") @Hidden
+attr Default_Type = _DefaultDelinatorType
+@Order(7)@Description("Default delineator color set by context.") @Hidden
+attr Default_Color = _DefaultDelinatorColor 
+# --------------------------------
+# Functions & Constants
+# --------------------------------
+
+# --- Constants ---
+const _CrosswalkSwitchBegin = 1 # TODO Refactor Later
+const _CrosswalkSwitchEnd   = 1 # TODO Refactor Later
+const rightHandTraffic      = true 
+# --- Traffic Constants ---
+const minCarDistance = 6
+# Probability calculation: (Cars/km * min_spacing) / 1000m
+const vehicleProb = (Cars_Per_KM * minCarDistance) / 1000
+# Bike Constants from new logic
+const minBikeDistance = 2
+
+# --- Logic for Stops/Neighbors ---
+const _neighborBegin = case Stop_Type !="none" : 1 else: 0 
+const _neighborEnd   = case Stop_Type !="none" : 1 else: 0
+const _stopBegin     = case Stop_Type =="none": 0 else: 1
+const _stopEnd       = case Stop_Type =="none": 0 else: 1
+
+
+
+# Determines if the last lane line should be painted
+_LastLaneSwitch(lanenumber,lanestotal) =
+	case lanenumber == lanestotal-1: 0
+	else: 1	
+
+_DefaultDelinatorType = "dashed"
+
+_DefaultDelinatorColor = "white"
+
+# --------------------------------
+# Start & Approach
+# --------------------------------
+
+@StartRule
+start Lane -->	
+	set(material.name, "Road_Bed")
+	LaneWithCrosswalkBegin
+
+LaneWithCrosswalkBegin -->
+	split(u, uvSpace, 1) {
+		Crossing._crosswalkBeginWidth/25 : Ref.Asphalt("Auto", "asphalt")
+		| Crossing._crosswalkBeginWidth  : Crossing.Crosswalk(Crossing.Crosswalk_Begin, 1)
+		| Crossing.End_Crosswalk_To_Stop_Bar * _CrosswalkSwitchEnd : Ref.Asphalt("Auto", "asphalt")
+		| ~1 : LaneWithCrosswalkEnd
+	}
+
+LaneWithCrosswalkEnd -->
+	split(u, uvSpace, 2) {
+		Crossing._crosswalkEndWidth/25 : Ref.Asphalt("Auto", "asphalt")
+		| Crossing._crosswalkEndWidth    : Crossing.Crosswalk(Crossing.Crosswalk_End, 2)
+		| Crossing.End_Crosswalk_To_Stop_Bar * _CrosswalkSwitchEnd: Ref.Asphalt("Auto", "asphalt")
+		| ~1 : InRoadStopBar(case travelDirection=="Reverse":-1 else:1)
+	} 
+InRoadStopBar(sideFlip) -->
+	scaleUV(0, sideFlip , sideFlip)
+	split(u,unitSpace,0){
+		~1:DriveLane(sideFlip, width)
+		|Ref.ThickPaintLineWidth*Ref._neighborEnd:Ref.AsphaltPainted("white","Auto","stop_bar")
+		}
+# --------------------------------
+# Main Lane
+# --------------------------------
+
+DriveLane(sideFlip, laneWidth) -->
+	alignScopeToAxes(y)
+	color(Ref.Brightness)
+	DriveLaneBody(sideFlip,laneWidth)
+
+DriveLaneBody(sideFlip, laneWidth) -->
+	case Stop_Type == "none":
+		MixedTrafficOnLane(sideFlip)
+		Ref.Asphalt("Auto", "drive_lane")
+	else:
+		MixedTrafficOnLane(sideFlip)
+		split(v, unitSpace, 0){
+			~1:split(u, unitSpace, 0) {
+				~1 : ThroughLane(sideFlip,laneWidth)
+				| 14 : ApproachMarkings_Setup(sideFlip)}
+			|Ref.PaintLineWidth+Lane_Delinator_Offset:CenterLine_Setup}
+							
+ApproachMarkings_Setup(sideFlip)-->
+	Ref.ApproachMarkings(sideFlip, 1, 1, Stop_Type, Lane_Delinator_Offset,Lane_Delineator_Color)
+
+ThroughLane(sideFlip,laneWidth)-->
+	label(Lane_Context_Label)
+	Ref.Asphalt("Auto", "drive_lane")
+# --------------------------------
+# Contextual Line Logic
+# --------------------------------
+CenterLine_Setup-->
+	split(v,unitSpace,0){
+			Ref.PaintLineWidth:ContextualLine|
+								Lane_Delinator_Offset:Ref.Asphalt("Auto","drive_lane")}
+ContextualLine -->
+	case travelDirection == "Reverse":
+		label(Lane_Reverse_Label)
+		QueryCenterLine
+	else:
+		label(Lane_Forward_Label)
+		QueryCenterLine
+	
+QueryCenterLine --> 
+	# CUSTOM CONTEXT QUERY:
+	# Checks "inter" (other initial shapes in the scene) for the specific Lane_Context_Label.
+	case minimumDistance(inter, Lane_Context_Label) < Context_Detection_Range:
+		case (minimumDistance(inter, Lane_Reverse_Label) < Context_Detection_Range && travelDirection == "Forward"):
+			set(Lane_Delineator_Color,"yellow")
+			set(Lane_Delineator_Type,"solid")
+			label(Lane_Color_Label)
+			Approach_Centerline
+		case (minimumDistance(inter, Lane_Forward_Label) < Context_Detection_Range && travelDirection == "Reverse"):
+			set(Lane_Delineator_Color,"yellow")
+			set(Lane_Delineator_Type,"solid")
+			label(Lane_Color_Label)
+			Approach_Centerline
+		else:
+			Approach_Centerline
+	else:
+		Ref.Asphalt("Auto", "drive_lane")
+																
+Approach_Centerline-->
+	split(u,unitSpace,0) {~1:LineChoice|14:Ref.AsphaltPainted(Lane_Delineator_Color,"Auto","drive_lane")}
+
+LineChoice -->
+	case Lane_Delineator_Type =="dashed":
+		DashedLine
+	case Lane_Delineator_Type =="solid":
+		SolidLine
+	else:
+		Ref.Asphalt("Auto", "drive_lane")
+
+DashedLine -->
+	split(u, unitSpace, 0) {
+		~4 : Ref.Asphalt("Auto", "drive_lane")
+		| { ~4 : Ref.AsphaltPainted( Lane_Delineator_Color , "Auto", "drive_lane") 
+		  | ~4 : Ref.Asphalt("Auto", "drive_lane") }*}
+
+SolidLine -->
+	split(u,unitSpace,0) {
+	Ref.ThickPaintLineWidth	:Ref.Asphalt("Auto", "drive_lane")|
+	~1:Ref.AsphaltPainted( Lane_Delineator_Color , "Auto", "drive_lane")
+	} 
+# --------------------------------
+# Mixed Traffic Logic
+# --------------------------------
+
+MixedTrafficOnLane(dir) -->
+	case geometry.du(0,unitSpace) > 1000:
+		split(u,unitSpace,0){ '0.5: MixedTrafficOnLane(dir) | '0.5: MixedTrafficOnLane(dir) }
+	case geometry.du(0,unitSpace) > 10 && p(Mixed_Traffic_Bus_Percentage):
+		split(u,unitSpace,0){ ~1: MixedTrafficOnLane(dir) | (rand(15,25)): Vehicle(dir,"bus") }
+	case geometry.du(0,unitSpace) > 10 && p(Mixed_Traffic_Freight_Percentage):
+		split(u,unitSpace,0){ ~1: MixedTrafficOnLane(dir) | (rand(15,25)): Vehicle(dir,"freight") }
+	case geometry.du(0,unitSpace) > 5 && p(Mixed_Traffic_Bike_Percentage): 
+		split(u,unitSpace,0){ ~1: MixedTrafficOnLane(dir) | (rand(minCarDistance,8)): Bike(dir,width,1) }
+	case geometry.du(0,unitSpace) > 5:
+		split(u,unitSpace,0){ ~1: MixedTrafficOnLane(dir) | (rand(minCarDistance,15)): VehicleTaxiOrCar(dir) }
+	else:
+		NIL
+
+VehicleTaxiOrCar(dir) -->
+	case p(Taxi_Percentage): 
+		Vehicle(dir,"taxi") 
+	else:
+		Vehicle(dir,"car") 
+
+
+Vehicle(dir,type) --> 
+	case p(vehicleProb):
+		split(u,unitSpace,0){ ~1: NIL | 0.5: alignScopeToGeometry(yUp,0,dir) VehicleAsset(type) | ~1: NIL }
+	else:
+		NIL	
+
+# --------------------------------
+# Asset Loading
+# --------------------------------
+
+VehicleAsset(type) -->
+	s(0,0,0)
+	center(x)
+	t(0,0,'rand(0.4,0.6)) 
+	r(0,180,0)
+	r(0, Ref.DirectionalRotation, 0) 
+	i(Ref.vehicleAsset(type))
+	label(type)
+	set(material.name,str(type))
+	color( Ref._ThematicRouter (case type=="bus":"Transit" else:"Auto",case type=="bus":"bus"else:"car"))
+	Ref.Delete_Texture
+
+# --------------------------------
+# Bike Logic (Updated)
+# --------------------------------
+
+Bikes(dir,Bike_Lane_Width,bike_probability) -->
+	case bike_probability > 0:
+		BikesOnLane(dir,Bike_Lane_Width)		
+	else:
+		NIL
+	
+BikesOnLane(dir,Bike_Lane_Width) --> 
+	case geometry.du(0,unitSpace) > 1000:
+		split(u,unitSpace,0){ '0.5: BikesOnLane(dir,Bike_Lane_Width) | '0.5: BikesOnLane(dir,Bike_Lane_Width) }
+	case geometry.du(0,unitSpace) > 5:
+		split(u,unitSpace,0){ ~1: BikesOnLane(dir,Bike_Lane_Width) | (rand(minBikeDistance,3)): Bike(dir,width,1) }
+	else:
+		NIL
+
+Bike(dir,Bike_Lane_Width,bike_probability) --> 
+	case p(bike_probability):
+		split(u,unitSpace,0){ ~1: NIL | 0.5: alignScopeToGeometry(yUp,0,dir) BikeAsset(Bike_Lane_Width) | ~1: NIL }
+	else:
+		NIL	
+		
+BikeAsset(Bike_Lane_Width) -->
+	s(0,0,0) 
+	rotateScope(0,Ref.DirectionalRotation,0)
+	center(x)
+	t(0,0,Bike_Lane_Width/2 + rand(-Bike_Lane_Width/3,Bike_Lane_Width/3)) 
+	i(Ref.bikeAsset) 
+	label("bicyclist")
+	set(material.name,"Bicyclist")
+	Ref.Delete_Color_Texture("Bikeways","bicyclist")

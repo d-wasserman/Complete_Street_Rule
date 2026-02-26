@@ -1,0 +1,276 @@
+/*
+ * File:    Complete Street_Configuration.cga
+ * Created: 5/31/2025
+ * Last Updated: 5/31/2025
+ * Author:  David J. Wasserman
+ * License: Apache 2.0 License and ESRI Attribution License.
+ * Source: https://github.com/d-wasserman/Complete_Street_Rule
+# ESRI Attribution License:
+#	ESRI Derivative work
+#	http://mappingcenter.esri.com/downloads/AttributionAndLicense_05_09_07.pdf
+#
+# Copyright 2025 David J. Wasserman
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required bys applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------
+ */
+
+# Differences to Street Construction Simple:
+# This ruleset can also generate stop markings and crosswalks (by using the 
+# objects attributes) and generates more detailed roundabouts
+# Differences to Street Construction Standard:
+# More informed by MUTCD/AASHTO/NACTO Street Guidelines, but used approximations. 
+# Can create Bus lanes, bike lanes (of different colors), parking lanes (with parklets), 
+# medians (with alternative planting configurations), boulevards(double medians), and even
+# highways with HOV lanes, bridge supports, and shoulders (in center type and bicycle buffer).
+#
+#Sources for Reports and Descriptions:
+#1.http://www.fhwa.dot.gov/publications/research/safety/09039/03.cfm
+#2.http://mutcd.fhwa.dot.gov/index.htm
+#3.http://www.qcode.us/codes/southpasadena/view.php?topic=36-3-36_310-36_310_080
+#4.http://nacto.org/usdg/
+#5.http://nacto.org/cities-for-cycling/design-guide/
+#6.https://bookstore.transportation.org/collection_detail.aspx?ID=110
+#7.http://transweb.sjsu.edu/project/1005.html
+#8.http://onlinepubs.trb.org/onlinepubs/nchrp/nchrp_rpt_504.pdf 
+
+#Useful Numbers: 
+#13 feet	==3.9624 Meters
+#12 feet	==3.6576 Meters	
+#11 feet	==3.3528 Meters
+#10 feet	==3.048  Meters
+#9 feet		==2.7432 Meters
+#8 feet		==2.1336 Meters
+#7 feet		==1.8288 Meters
+#6 feet		==1.524  Meters
+#4 feet		==1.2192 Meters
+#3 feet		==.9144  Meters
+#2 feet		==.6096  Meters
+#1 feet		==.3048  Meters
+#1/2 feet	==.1524  Meters
+#1 inch		==.0254  Meters
+version "2025.0"
+
+#####################
+# Imported Rules    #
+#####################
+import Tree : "/ESRI.lib/rules/Plants/Plant_Loader.cga" 
+import Ref : "Complete_Lanes/Reference.cga" 
+
+# --- New Imports based on File List ---
+import Curbside 	: "Complete_Lanes/CurbsideLane.cga"
+import BikeBuffer 	: "Complete_Lanes/BikeBuffer.cga"
+import CenterTurn 	: "Complete_Lanes/CenterTurnLane.cga"
+import BikeLane 	: "Complete_Lanes/BikeLane.cga"
+import Crossing 	: "Complete_Lanes/Crossing.cga"
+import Through 		: "Complete_Lanes/ThroughLane.cga"
+import BusLane 		: "Complete_Lanes/BusLane.cga"
+
+# --- Sidewalk & Furniture Imports ---
+import SidewalkPlant 	: "Complete_Lanes/Sidewalk_Plant_Lane_Modified.cga"
+import Furniture 		: "Complete_Lanes/Furniture_Lane_Modified.cga"
+import SidewalkBollard 	: "Complete_Lanes/Sidewalk_Bollard_Lane_Modified.cga"
+import Sidewalk 		: "Complete_Lanes/Sidewalk_Lane_Modified.cga"
+
+
+###################################################
+# Control Attributes-INSPECTOR
+#
+@Group("DISPLAY OPTIONS",0) @Enum("true","false")@Order(1)@Description("When true, textures are on display, when false textures are removed. If true it deletes an unused UVset (see comments for details).")
+attr Display_Textures = "true"
+@Order(2) @Description("Visually colors the entire street model based on the attributes of a street. Usage thematic looks best when textures are turned off.")
+@Enum("Thematics Off", "Solid Color", "Peak Runoff/Permeability","Bike Preference","Pedestrian Preference","Auto Preference","Transit Preference","All Mode Preference","Usage","Transit Highlight","Bicycle Highlight","Auto Highlight","Pedestrian Highlight","Planting Highlight","Shared Mobility Highlight","Semantic","Flood Scenario")
+attr Display_Thematics = "Thematics Off" 
+@Order(3) @Color @Description("When the Solid Color thematic is used for highlighting certain streets or mode classes, this chooses the color that is utilized by the thematic.") #@Hidden
+attr Solid_Color = "#FFFFFF"
+@Order(4)@Color @Description("When a mode emphasis thematic is chosen, the color fo the other streets is chosen by default by this hidden parameter.")@Hidden
+attr Secondary_Solid_Color= Ref.Brightness
+@Enum("Very High","High","Moderate","Low") @Order(6)@Description("This attribute controls the level of detail of the selected textures and OBJs. Typically a lower LOD will decrease the polygon count and texture image resolution.")
+attr LOD_Setting	  ="Moderate"
+@Range(min=0,max=1) @Order(7)@Description("This attribute controls the transparency of the street models created by the rule.")#@Hidden
+attr Transparency	  = 0
+@Range(min=0,max=1) @Order(8) @Description("This attribute adjusts the global specularity of the street model.") @Hidden
+attr Specularity	  = 1
+@Enum("true","false") @Order(9)@Description("This attribute controls whether or not context aware queries can be used. Default is off when using low LODs.") @Hidden
+attr Context_Aware_Queries = case Not_High_LOD : false else: true
+@Enum("true","false") @Order(9)@Description("This attribute controls whether key reporting elements are enabled. Low LOD defaults to turning reports off.") @Hidden
+attr Reporting_On = case LOD_Setting == "Low": "false" else: "true"
+
+@Group("LANE LAYOUT","Core Parameters",1)
+@Order(1) @Handle(type=selector, shape=Lane, reference=center, slip=screen, color="#009f9d") 
+@Enum("Off",
+	"through_lane",
+	"center_turn_lane",
+	"bike_lane",
+	"bike_buffer",
+	"bus_lane",
+	"curbside_lane",
+	"sidewalk_lane",
+	"sidewalk_plant",
+	"sidewalk_bollard",
+	"furniture_lane") 
+@Description("Overrides the street allocation to a specific designation based on the imported rules.")
+attr Lane_Choice = "Off"
+
+@Order(5) @Range(min=0,max=80) 
+attr Speed_Limit_in_MPH = 30
+
+
+@Group("LANE LAYOUT","Curb Settings",3)
+@Group("SIDEWALK LAYOUT","Sidewalk Attributes",7)
+@Order(2) @File ("tif","jpg","png","tiff","gif","jpeg","psp","jsl","sgi","tga","bmp","dds")
+attr Curb_Texture = Ref.Default_Pavement
+
+@Order(3) @Range(min=0.1,max=10)
+attr Curb_Texture_Scale = 1
+
+@Order(4) @Range(min=0,max=360)
+attr Curb_Texture_Rotation = 0
+
+@Order(5) @Distance @Range(min=0,max=0.4)
+attr Curb_Height = 0.102
+
+
+# Functions
+texturingOn = bool(Display_Textures) 	# Shorthand.
+thematicsOn = Display_Thematics != "Thematics Off"
+coloringOn = !thematicsOn && texturingOn	# Shorthand.
+reportingOn = bool(Reporting_On)
+
+const peakRunoffDisplayOn = Display_Thematics == "Peak Runoff/Permeability"
+const Not_Low_LOD		  = case LOD_Setting!="Low": true else: false
+const Not_High_LOD		  = case find(LOD_Setting,"High",0)==-1: true else: false
+const Not_Very_High_LOD	  = case find(LOD_Setting,"Very High",0)==-1:true else: false
+const LOD_Object_Choice   = case Not_Low_LOD:"High" else: "Low"
+
+
+@Hidden
+attr travelDirection = ""
+
+
+###################################################
+# Internal utilities
+#
+#Street Length and Lanes
+@Hidden @Order(1) @Range(min=0,max=30)
+attr streetWidth 				= geometry.dv(0,unitSpace)				# REALWORLD-distance in V-direction corresponds to width of street (in case the geometry does not contain rounded entry geometry)
+@Hidden @Order(3) @Range(min=1,max=6)
+attr laneWidth 					= 3.5 # note that TEXTURE-distance in V-direction corresponds to number of lanes (as generated by CityEngine)
+
+const streetLength	= geometry.du(0,unitSpace)				# REALWORLD-distance in U-direction corresponds to length of street
+
+#######################################################################################################################			  
+#Transit Lane Constants
+const Brake_Reaction_Time			= 2.5 #s
+const Deceleration_Rate				= 11.2 #ft/s^2
+const Design_Speed					= case Speed_Limit_in_MPH>=40:Speed_Limit_in_MPH+7.5 else: Speed_Limit_in_MPH # see Below- value chosen is on a much lower end. Please adjust as seen fit. Decision basis below.
+# Source 8: TRB study on Design vs Speed limits: (Discussion informed by research 
+#"Factors used to select design speed are functional classification, rural versus urban,
+#and terrain (used by AASHTO); AASHTO Green Book procedure, legal speed limit,
+#legal speed limit plus a value (e.g., 5 or 10 mph [8.1 to 16.1 km/h]), anticipated volume,
+#anticipated operating speed, development, costs, and consistency (state DOTs);
+#and anticipated operating speed and feedback loop (international practices)."
+#...
+#While the profession has a goal to set posted speed limits near the 85th percentile
+#speed (and surveys say that 85th percentile speed is used to set speed limits), in reality,
+#most sites are set at less than the measured 85th percentile speed. 
+#NACTO has different design philosophy. 
+# "To counteract these gruesome and unnecessary injuries and fatalities, cities should utilize 
+#speed control mechanisms that influence behavior, lower speeds, and in turn, reduce injuries 
+#and fatalities. Embracing a proactive design approach on new and existing streets with the goal 
+#of reducing speeds may be the single most consequential intervention in reducing pedestrian injury and fatality."1"
+#Thus they put forward: "Proactive Urban Street Design: Target Speed = Design Speed = Posted Speed"
+#As a result of existing research relating to traffic speed and crash risk, and the fact that for the most part this
+#rule is designed for urban streets, if the speed limit is greater than or equal to 40 mph (5 above NACTO suggested speed),
+#The design speed is assumed to be Speed_Limit +7.5 other wise it is the Speed_Limit- a decision between the two philosophies. 
+#This is a simple way to have "context sensitive" design speed, and more complex methods maybe considered down the line. 
+const Brake_Reaction_Dist			= 1.47*Design_Speed*Brake_Reaction_Time
+const Braking_Dist					= 1.075*((Design_Speed*Design_Speed)/Deceleration_Rate)# Time spent actually braking
+const Stopping_Sight_Dist			= Brake_Reaction_Dist+Braking_Dist
+#To keep the units exact, we do not distribute the lanes, we fill empty space with concrete (drainage). 
+
+# const _through = connectionEnd=="STREET" || connectionStart=="STREET" || connectionEnd=="JUNCTION" || connectionStart=="JUNCTION" || connectionEnd=="FREEWAY" || connectionStart=="FREEWAY"
+# Vegetation and Hardscape costs -------------------------------
+const TreeCostAverage = 750 
+# const GrassSurfaceCostAverage = 10	# In square meters
+# const HardscapePaverCost = 25		# In square meters
+
+
+###################################################
+###################################################
+##  RULES
+###################################################
+
+@StartRule
+start Lane-->
+	set(material.name,"Road_Bed")
+	Initial_Street_Settings
+	
+Initial_Street_Settings-->
+	case Specularity==1 && Transparency==0:
+		Street_Lane
+	else:
+		Street_Lane_Altered
+		
+Street_Lane_Altered-->
+	case Transparency>0 && Specularity==1:
+		set(material.opacity,1-Transparency)
+		Street_Lane
+	else:
+		set(material.specular.g,Specularity)
+		set(material.specular.b,Specularity)
+		set(material.specular.r,Specularity)
+		Street_Lane
+
+Street_Lane-->
+	ReportMultimodalMetrics(reportingOn)
+	LaneAllocator
+
+ReportMultimodalMetrics(report_bool)-->
+	case report_bool:
+		report("Speed.Braking Distance (ft)",Braking_Dist)
+		report("Speed.Braking Reaction Distance (ft)",Brake_Reaction_Dist)
+		report("Speed.Stopping Sight Distance (ft)",Stopping_Sight_Dist)
+		NIL
+	else:
+		NIL
+
+LaneAllocator-->
+	# --- New Imported Rules ---
+	case Lane_Choice == "bike_lane":
+		BikeLane.Lane
+	case Lane_Choice == "bike_buffer":
+		BikeBuffer.Lane
+	case Lane_Choice == "bus_lane":
+		BusLane.Lane
+	case Lane_Choice == "curbside_lane":
+		Curbside.Lane
+	case Lane_Choice == "center_turn_lane":
+		CenterTurn.Lane
+	case Lane_Choice == "through_lane":
+		Through.Lane
+	case Lane_Choice == "sidewalk_lane":
+		Sidewalk.Lane
+	case Lane_Choice == "sidewalk_plant":
+		SidewalkPlant.Lane
+	case Lane_Choice == "sidewalk_bollard":
+		SidewalkBollard.Lane
+	case Lane_Choice == "furniture_lane":
+		Furniture.Lane
+	else:
+		Ref.Asphalt("Auto","drive_lane")
+
+
+
+
+

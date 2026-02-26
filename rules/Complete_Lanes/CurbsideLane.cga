@@ -1,0 +1,486 @@
+/*
+ * File:    CurbsideLane.cga
+ * Created: 5/31/2025
+ * Last Updated: 12/29/2025
+ * Author:  David J. Wasserman
+ * License: Apache 2.0 License and ESRI Attribution License.
+ * Source: https://github.com/d-wasserman/Complete_Street_Rule
+# ESRI Attribution License:
+#	ESRI Derivative work
+#	http://mappingcenter.esri.com/downloads/AttributionAndLicense_05_09_07.pdf
+#
+# Copyright 2025 David J. Wasserman
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required bys applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------
+ */
+version "2025.0"
+# --------------------------------
+# Parameters
+# --------------------------------
+
+@Group("PARKING LANE LAYOUT", "Configuration", 1)
+@Order(1) @Enum("None","Parallel","Angled Nose In","Angled Back In", "Parallel with Curbside Passenger Loading", "Parallel with Curbside Freight Loading","Parallel with Curbside Carshare Parking","Parallel with Curbside Bus Stop","Parallel with Curbside DoBi & Scooter Parking") 
+@Description("Determines the configuration of the parking lane.")
+attr Parking_Type = case width < 3.4:"Parallel" else: "Angled Nose In"
+
+@Order(2) @Distance @Range(min=2,max=10) 
+@Description("Length of a single parking space. ~22ft (6.7m) for parallel, ~9ft (2.6m) for angled.")
+attr Parking_Length = 6.7
+
+@Group("PARKING LANE LAYOUT", "Curbside Management", 2)
+@Order(3) @Enum("None","Mid-Block & End Spaces","End Spaces","Far-side","Near-side","Mid-Block") 
+@Description("Where curbside management zones (Loading, Bus, etc.) appear within the lane.")
+attr Curbside_Management_Position = "End Spaces"
+
+@Order(4) @Distance @Range(min=0,max=50) 
+@Description("Length of the curbside allocation zone.")
+attr Curbside_Allocation_Length = case find("Scooter",Parking_Type,0)!=-1:10 else: 5
+
+@Group("PARKING LANE LAYOUT", "Occupancy & Objects", 3)
+@Order(5) @Percent @Range(min=0,max=1) 
+@Description("Percentage of spaces filled with cars.")
+attr Parked_Car_Percentage = 0.6
+
+@Order(6) @Percent @Range(min=0,max=1) 
+@Description("Chance of a parklet appearing in a valid parking space.")
+attr Parklet_Percentage = 0.0
+
+@Order(7) @File 
+@Description("Object file for parklets.")
+attr Parklet_Object = Ref.ObjectFolder + "/Parklet_Moderate_LOD.obj"
+
+@Order(8) @Distance @Range(min=0,max=10) @Hidden 
+@Description("Spacing before the parking lane starts (from stop bar/crosswalk).")
+attr Front_Parking_Spacing = 0
+
+@Order(9) @Distance @Range(min=0,max=10) @Hidden 
+@Description("Spacing after the parking lane ends (before next crosswalk).")
+attr Rear_Parking_Spacing = 0
+
+@Order(10) @Range(min=0,max=360) @Description("When parking is angled, this determines the angle of the vehicles placed in each right side angled parking spot.")
+attr Parked_Car_Angle			= _Car_Angle(Parking_Type)
+# --------------------------------
+# Imports
+# --------------------------------
+
+import Ref : "Complete_Lanes/Reference.cga" 
+import Crossing: "Complete_Lanes/Crossing.cga"
+
+# --------------------------------
+# Hidden Attributes
+# --------------------------------
+
+@Hidden
+attr travelDirection = ""
+@Hidden
+attr width = geometry.dv(0,unitSpace)
+
+
+# --------------------------------
+# Constants & Helpers
+# --------------------------------
+
+const _CrosswalkSwitchBegin = case travelDirection == "Reverse": 0 else: 1
+const _CrosswalkSwitchEnd   = case travelDirection == "Reverse": 1 else: 0
+const ParkingCapObjMid = "/Parking_Cap_Mid.obj"
+const ParkingCapObjEnd = "/Parking_Cap_End.obj"
+# ---------------------------------
+# Functions
+# ---------------------------------
+_Car_Angle(ParkingType)				=
+	case find(ParkingType,"Parallel",0)!=-1:
+		0
+	else:
+		205
+		
+_Front_Parking_Spacing(Parking_Type) = 
+case Front_Parking_Spacing!=0:
+	Front_Parking_Spacing
+else:
+	case find(Parking_Type,"Parallel",0)!=-1:
+		6
+	case Parking_Type=="Angled Nose In":
+		6
+	case Parking_Type=="Angled Back In":
+		6
+	else:
+		1							 	
+
+_Rear_Parking_Spacing(Parking_Type)  =
+case Rear_Parking_Spacing!=0:
+	Rear_Parking_Spacing
+else:
+	case find(Parking_Type,"Parallel",0)!=-1:
+		1
+	case Parking_Type=="Angled Nose In":
+		3
+	case Parking_Type=="Angled Back In":
+		3
+	else:
+		1
+
+_Allocate_Midpoint_Curbside(Allocation_Position)=
+	case find(Allocation_Position,"Mid-Block",0)!=-1:
+		1
+	else:
+		0
+_Allocate_Farside_Curbside(Allocation_Position)=
+	case find(Allocation_Position,"End Spaces",0)!=-1||find(Allocation_Position,"Far-side",0)!=-1:
+		1
+	else:
+		0	
+_Allocate_Nearside_Curbside(Allocation_Position)=
+	case find(Allocation_Position,"End Spaces",0)!=-1||find(Allocation_Position,"Near-side",0)!=-1:
+		1
+	else:
+		0	
+			
+_HasCurbsideManagement(ParkingType) =
+    case find(ParkingType,"Curbside",0)!=-1:
+    	1
+    else:
+    	0
+_StencilRotation(pos,sideFlip) = 
+	case sideFlip == 1:
+		case pos=="Begin":270 case pos=="End": 0  else: 0
+	else:
+		case pos=="Begin":270 case pos=="End": 0  else: 0
+# --------------------------------
+# Rules - Approach Set Up (Crossing Logic)
+# --------------------------------
+@StartRule
+start Lane-->	#DeleteUV if texturing is off
+	set(material.name,"Road_Bed")
+	LaneWithCrosswalkBegin
+
+LaneWithCrosswalkBegin-->
+		split(u,uvSpace,1){Crossing._crosswalkBeginWidth/25: Ref.Asphalt("Auto","asphalt")
+					  | Crossing._crosswalkBeginWidth  : Crossing.Crosswalk(Crossing.Crosswalk_Begin ,1)
+					  | Crossing.End_Crosswalk_To_Stop_Bar*_CrosswalkSwitchEnd :Ref.Asphalt("Auto","asphalt")
+					  |~1:LaneWithCrosswalkEnd}
+	
+#The StopBox rule creates both the stop line and Bikebox when they are selected, 
+#and then moves the rest of the space left to the dedicated lane spaces. 
+LaneWithCrosswalkEnd-->
+	split(u,uvSpace,2){ Crossing._crosswalkEndWidth/25: Ref.Asphalt("Auto","asphalt")
+					  | Crossing._crosswalkEndWidth    : Crossing.Crosswalk( Crossing.Crosswalk_End ,2)
+					  | Crossing.End_Crosswalk_To_Stop_Bar*_CrosswalkSwitchBegin :Ref.Asphalt("Auto","asphalt")
+					  |~1:RoadReverser}
+RoadReverser-->
+	case travelDirection=="Reverse":
+		InRoadStopBar(-1)
+	else:
+		InRoadStopBar(1)
+		
+					  
+InRoadStopBar(sideFlip)-->
+	scaleUV(0,sideFlip,sideFlip)
+	split(u,unitSpace,0) {~1:CurbsideLane(sideFlip,width)|Ref.ThickPaintLineWidth:Ref.AsphaltPainted("white","Auto","stop_bar")
+			}
+		
+# --------------------------------
+# Main Parking Lane Rule
+# --------------------------------
+
+CurbsideLane(sideFlip, Width) -->
+	alignScopeToAxes(y)
+	color(Ref.Brightness)
+	# Orient texture/geometry based on sideFlip
+	ParkingLaneBody(sideFlip, Width)
+
+ParkingLaneBody(sideFlip, Width) -->
+	case find(Parking_Type, "Parallel",0) > -1:
+		ParallelParkingLane(sideFlip, Width)
+	case find(Parking_Type, "Angled",0) > -1:
+		AngledParkingLane(sideFlip, Width)
+	else:
+		InformalStorageLane
+
+InformalStorageLane -->
+	Ref.Asphalt("Storage", "parking_lane")
+
+# --------------------------------
+# Parallel Parking Logic
+# --------------------------------
+
+ParallelParkingLane(sideFlip, Width) -->
+	split(u, unitSpace, 0) {
+		~_Front_Parking_Spacing(Parking_Type): Ref.Asphalt("Auto", "parking_lane")
+		# Far-side (Start) Allocation
+		| ~Curbside_Allocation_Length * _Allocate_Farside_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(Parking_Type) : CurbsideAllocator(sideFlip, Width)
+		# Standard Parking Spaces (Repeating)
+		| { Parking_Length : ParkingSpace(sideFlip, "Parallel", split.index, split.total) }*
+		# Mid-Block Allocation
+		| ~Curbside_Allocation_Length * _Allocate_Midpoint_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(Parking_Type) : CurbsideAllocator(sideFlip, Width)
+		# Standard Parking Spaces (Repeating)
+		| { Parking_Length : ParkingSpace(sideFlip, "Parallel", split.index, split.total) }*
+		# Near-side (End) Allocation
+		| ~Curbside_Allocation_Length * _Allocate_Nearside_Curbside(Curbside_Management_Position)*_HasCurbsideManagement(Parking_Type) : CurbsideAllocator(sideFlip, Width)
+		| ~_Rear_Parking_Spacing(Parking_Type): Ref.Asphalt("Auto", "parking_lane")
+	}
+
+# --------------------------------
+# Angled Parking Logic
+# --------------------------------
+
+AngledParkingLane(sideFlip, Width) -->
+	split(u, unitSpace, 0) {
+		~_Front_Parking_Spacing(Parking_Type) : Ref.Asphalt("Auto", "parking_lane")
+		| { Parking_Length : ParkingSpace(sideFlip, Parking_Type, split.index, split.total) }*
+		| ~_Rear_Parking_Spacing(Parking_Type) : Ref.Asphalt("Auto", "parking_lane")
+	}
+
+# --------------------------------
+# Individual Parking Space
+# --------------------------------
+
+ParkingSpace(sideFlip, type, spaceNum, totalSpaces) -->
+	# Check for Parklet first
+	case p(Parklet_Percentage) && spaceNum > 1 && spaceNum < totalSpaces-2:
+		ParkletInsert(sideFlip)
+	case type == "Parallel":
+		ParallelSpaceGeometry(sideFlip, spaceNum, totalSpaces)
+	case type == "Angled Nose In":
+		AngledSpaceGeometry(spaceNum,sideFlip, 1) # 1 = Nose In
+	case type == "Angled Back In":
+		AngledSpaceGeometry(spaceNum,sideFlip, -1) # -1 = Back In
+	else:
+		Ref.Asphalt("Storage", "parking_lane")
+
+ParallelSpaceGeometry(sideFlip, spaceNum, totalSpaces) -->
+	# Logic for 'T' markings vs 'L' markings at ends
+	case spaceNum == totalSpaces-2: # Start Cap
+		ParallelParkingCar(sideFlip,spaceNum, totalSpaces)
+		ParallelMarking(sideFlip, "Begin")
+	case spaceNum == 1: # End Cap
+		ParallelParkingCar(sideFlip,spaceNum, totalSpaces)
+		ParallelMarking(sideFlip, "End")
+	else: # Middle
+		ParallelParkingCar(sideFlip,spaceNum, totalSpaces)
+		ParallelMarking(sideFlip, "Middle")
+
+ParallelMarking(sideFlip, pos) -->
+	# Uses the parking cap OBJ assets
+	case pos == "Begin":
+		ParkingCapObj(sideFlip, "Begin", ParkingCapObjEnd)
+		Ref.Asphalt("Storage", "parking_lane")
+	case pos == "End":
+		ParkingCapObj(sideFlip, "End", ParkingCapObjEnd)
+		Ref.Asphalt("Storage", "parking_lane")
+	else:
+		ParkingCapObj(sideFlip, "Middle", ParkingCapObjMid)
+		Ref.Asphalt("Storage", "parking_lane")
+
+ParkingCapObj(sideFlip, pos, objName) -->
+	# Rotates and inserts the white paint stencil for parking corners
+	scaleUV(0, sideFlip, -1)
+	split(v, unitSpace, 0) {
+		0.6 : split(u, unitSpace, 0) {
+			0.6 : StencilInsert(objName, pos, sideFlip) | ~1 : NIL | 0.6 : NIL
+		}
+		| ~1 : NIL
+	}
+
+StencilInsert(objName, pos, sideFlip) -->
+	alignScopeToGeometry(yUp, largest, 0)
+	# Rotation logic based on position and side
+	rotateScope(0,_StencilRotation(pos,sideFlip), 0) 
+	# Flip correction for Left side (sideFlip=2)
+	rotateScope(0, case sideFlip==-1: 180 else: 0, 0)
+	i(Ref.StencilFolder + objName)
+	Ref.AsphaltPaintedStencil("white", "Storage", "parking_lane")
+
+AngledSpaceGeometry(spaceNumber,sideFlip, noseSenseFlip) -->
+	Ref.Asphalt("Storage", "parking_lane")
+	scaleUV(0,noseSenseFlip,-1)
+	AngledParkingCar(spaceNumber,sideFlip,noseSenseFlip)
+	split(v, unitSpace, 0) { '0.24: NIL | ~1: AngledLineStencil }
+
+AngledLineStencil -->
+	alignScopeToGeometry(yUp, largest, 0)
+	normalizeUV(0, uv, collectiveAllFaces)
+	reverseNormals()
+	setupProjection(0, scope.xz, 2, 2, 2, 2, 2)
+	insertAlongUV(0, Ref.StencilFolder + "/Angled_Parking_Line.obj", 0)
+	t(0, 0, -0.1)
+	comp(f) { top: Ref.AsphaltPaintedStencil("white", "Storage", "parking_lane") }
+
+# --------------------------------
+# Curbside Allocator
+# --------------------------------
+
+CurbsideAllocator(sideFlip, Width) -->
+	case find(Parking_Type, "Freight",0) > -1:
+		label("freight_loading_zone")
+		LoadingZone("yellow", "freight_loading")
+	case find(Parking_Type, "Passenger",0) > -1:
+		label("passenger_loading_zone")
+		LoadingZone("white", "passenger_loading")
+	case find(Parking_Type, "Bus Stop",0) > -1:
+		label("bus_loading_zone")
+		BusStopZone(sideFlip, Width)
+	case find(Parking_Type, "Carshare",0) > -1:
+		label("carshare_parking")
+		CarshareZone(sideFlip)
+	case find(Parking_Type, "DoBi", 0) > -1:
+		label("dobi_parking")
+		ScooterZone
+	else:
+		InformalStorageLane
+
+LoadingZone(paintColor, mode) -->
+	split(v, unitSpace, 0) {
+		Ref.PaintLineWidth : Ref.AsphaltPainted(paintColor, "Shared Mobility", mode)
+		| ~1 : split(u, unitSpace, 0) {
+			Ref.PaintLineWidth : Ref.AsphaltPainted(paintColor, "Shared Mobility", mode)
+			| ~1 : ZebraStripe(paintColor, mode)
+			| Ref.PaintLineWidth : Ref.AsphaltPainted(paintColor, "Shared Mobility", mode)
+		}
+		| Ref.PaintLineWidth : Ref.AsphaltPainted(paintColor, "Shared Mobility", mode)
+	}
+
+ZebraStripe(paintColor, mode) -->
+	cleanupGeometry(all, 0.001)
+	split(u, unitSpace, 0) {
+		Ref.ThickPaintLineWidth : Ref.Asphalt("Shared Mobility", mode)
+		| { Ref.ThickPaintLineWidth : Ref.AsphaltPainted(paintColor, "Shared Mobility", mode)
+		  | Ref.ThickPaintLineWidth : Ref.Asphalt("Shared Mobility", mode) }*
+	}
+
+BusStopZone(sideFlip, Width) -->
+	split(v, unitSpace, 0) {
+		Ref.PaintLineWidth : Ref.AsphaltPainted("white", "Transit", "bus_pull_in")
+		| ~1 : split(u, unitSpace, 0) {
+			Ref.PaintLineWidth : Ref.AsphaltPainted("white", "Transit", "bus_pull_in")
+			| ~0.25 : Ref.Asphalt("Transit", "bus_pull_in")
+			| Width/4 : Ref.Asphalt("Transit", "bus_pull_in") BusStopStencil(sideFlip)
+			| ~9 : Ref.Asphalt("Transit", "bus_pull_in")
+			| Width/4 : Ref.Asphalt("Transit", "bus_pull_in") BusStopStencil(sideFlip)
+			| ~0.25 : Ref.Asphalt("Transit", "bus_pull_in")
+			| Ref.PaintLineWidth : Ref.AsphaltPainted("white", "Transit", "bus_pull_in")
+		}
+		| Ref.PaintLineWidth : Ref.AsphaltPainted("white", "Transit", "bus_pull_in")
+	}
+
+BusStopStencil(sideFlip) -->
+	split(v, unitSpace, 0) { '0.2: NIL | ~1: BusStopStencilInsert(sideFlip) | '0.2: NIL }
+
+BusStopStencilInsert(sideFlip) -->
+	alignScopeToGeometry(yUp, largest, 0)
+	scaleUV(0, 1, case sideFlip==1: -1 else: 1) # Flip for right side
+	rotateUV(0, 90)
+	normalizeUV(0, uv, collectiveAllFaces)
+	insertAlongUV(0, Ref.StencilFolder + "/Bus_Stop.obj", 0)
+	comp(f) { top: Ref.AsphaltPaintedStencil("white", "Transit", "bus_pull_in") }
+
+CarshareZone(sideFlip) -->
+	split(v, unitSpace, 0) {
+		Ref.PaintLineWidth : Ref.AsphaltPainted("green", "Shared Mobility", "parking_lane")
+		| ~1 : split(u, unitSpace, 0) {
+			Ref.PaintLineWidth : Ref.AsphaltPainted("green", "Shared Mobility", "parking_lane")
+			| ~1 : Ref.Asphalt("Shared Mobility", "parking_lane") CarshareStencilSetup(sideFlip)
+			| Ref.PaintLineWidth : Ref.AsphaltPainted("green", "Shared Mobility", "parking_lane")
+		}
+		| Ref.PaintLineWidth : Ref.AsphaltPainted("green", "Shared Mobility", "parking_lane")
+	}
+
+CarshareStencilSetup(sideFlip) -->
+	split(v, unitSpace, 0) { '0.05: NIL | ~1: CarshareStencil(sideFlip) | '0.05: NIL }
+
+CarshareStencil(sideFlip) -->
+	alignScopeToGeometry(yUp, largest, 0)
+	scaleUV(0, 1, case sideFlip==1: -1 else: 1)
+	normalizeUV(0, uv, collectiveAllFaces)
+	insertAlongUV(0, Ref.StencilFolder + "/Carshare_Only.obj", 0)
+	comp(f) { top: Ref.AsphaltPaintedStencil("white", "Transit", "bus_pull_in") }
+
+ScooterZone -->
+	# Simplified representation for DoBi/Scooter
+	split(u, unitSpace, 0) {
+		0.025 : Ref.Asphalt("Shared Mobility", "bike_parking")
+		| { ~0.5 : DoBi_Scooter_Parking_Stamp | 0.025 : Ref.Asphalt("Shared Mobility", "bike_parking") }*
+	}
+
+DoBi_Scooter_Parking_Stamp--> #Ground Textured Rule
+	report("Curbside Management.DoBi & Scooter Parking Length (m)",geometry.du(0,unitSpace))
+	alignScopeToGeometry(yUp, largest, 0)
+	split(v,unitSpace,0){Ref.PaintLineWidth:Ref.AsphaltPainted("white","Shared Mobility", "bike_parking")
+						|~1: split(u,unitSpace,0) {
+								Ref.PaintLineWidth:Ref.AsphaltPainted("white","Shared Mobility","bike_parking")
+								|~1:Ref.Asphalt("Shared Mobility","bike_parking")
+								|Ref.PaintLineWidth:Ref.AsphaltPainted("white","Shared Mobility","bike_parking")}
+						|Ref.PaintLineWidth:Ref.AsphaltPainted("white","Shared Mobility", "bike_parking")}	
+
+# --------------------------------
+# Parklets & Cars
+# --------------------------------
+
+ParkletInsert(sideFlip) -->
+	Ref.Asphalt("Pedestrian", "parking_lane")
+	alignScopeToGeometry(yUp, largest, 1)
+	rotateScope(0, case sideFlip==1: 0 else: 180, 0)
+	t(0, 0, 0) 
+	i(Parklet_Object)
+	label("Parklet")
+
+ParallelParkingCar(sideFlip,spaceNum, totalSpaces) -->
+	case p(Parked_Car_Percentage) && spaceNum!=totalSpaces-2:
+		ParallelParkingCarStep2(sideFlip)	  			
+	else: NIL
+
+ParallelParkingCarStep2(sideFlip) -->
+	alignScopeToGeometry(yUp, 0, 3)#If distortion is too high, the edge numbers might change making this look weird. Hard to evaluate options. 
+	alignScopeToGeometryBBox(zx) # This might correct for the distortion, but not assured.
+	rotateScope(0,Ref.DirectionalRotation,0)
+	rotateScope(0,(case sideFlip == -1:180 else:0),0) 
+	s(0,0,0)
+	i(Ref.vehicleAsset("car"))
+	label("parked car")
+	set(material.name,"parked_car")
+	t(0,0,(geometry.du(0,unitSpace)/2))#+1) 
+	center(x)
+	center(z)
+	color( Ref._ThematicRouter ("Storage","car"))
+	Ref.Delete_Texture
+	
+AngledParkingCar(spaceNumber,sideFlip,noseSenseFlip)-->
+	case p(Parked_Car_Percentage) && spaceNumber!=1: #Don't include last spot
+		AngledParkingCarStep2(sideFlip,noseSenseFlip,Parked_Car_Angle)	  		
+	else: 
+		NIL
+AngledParkingCarStep2(sideFlip,noseSenseFlip,rotationAngle)-->
+	alignScopeToGeometry(yUp, 0, (case sideFlip==-1:3 else:1))#If distortion is too high, the edge numbers might change making this look weird. Hard to evaluate options. 
+	s(0,0,0)
+	t((width/2.3),0,0) # Suggest changing base concept later.
+	rotateScope(0,noseSenseFlip*-rotationAngle,0)
+	i(Ref.vehicleAsset("car"))
+	label("parked car")
+	Ref.Delete_Texture
+	
+ParkingReport(Side,Rear_Edge_Case,Delete_Geo)-->#This edge case parameter only makes sure the correct number of parking spaces is reported. 
+	case Delete_Geo:
+		case Rear_Edge_Case:
+			report("Parking."+Side+" Parking Space Area (m^2)",geometry.area)
+			report("Parking.Total Parking Space Area (m^2)",geometry.area)
+			report("Curbside Management.On-Street Parking Length (m)",geometry.du(0,unitSpace))	
+			NIL
+		else:
+			NIL
+	else:
+		case Rear_Edge_Case:
+			report("Parking."+Side+" Parking Space Area (m^2)",geometry.area)
+			report("Parking.Total Parking Space Area (m^2)",geometry.area)
+			report("Curbside Management.On-Street Parking Length (m)",geometry.du(0,unitSpace))		
+		else:
+			X.		

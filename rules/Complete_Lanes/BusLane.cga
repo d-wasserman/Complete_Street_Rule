@@ -1,0 +1,269 @@
+/*
+ * File:    BusLane.cga
+ * Created: 5/31/2025
+ * Last Updated: 12/24/2025
+ * Author:  David J. Wasserman
+ * License: Apache 2.0 License and ESRI Attribution License.
+ * Source: https://github.com/d-wasserman/Complete_Street_Rule
+# ESRI Attribution License:
+#	ESRI Derivative work
+#	http://mappingcenter.esri.com/downloads/AttributionAndLicense_05_09_07.pdf
+#
+# Copyright 2025 David J. Wasserman
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required bys applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------
+ */
+version "2025.0"
+# --------------------------------
+# Parameters
+# --------------------------------
+
+@Group("LANES LAYOUT", "Bus Lane Settings", 5)
+@Order(1) @Enum("Bus Lane", "Bus-Bike Lane") @Description("Determines the specific configuration of the transit lane.")
+attr Lane_Type = "Bus Lane"
+
+@Order(2) @Distance @Range(min=1,max=100,restricted=false) @Description("Spacing between markings (e.g., 'BUS ONLY').")
+attr Bus_Symbol_Spacing = 24.5
+
+@Order(3) @Distance @Range(min=0,max=20) @Description("Creates conflict spacing made up by asphalt gaps in the lane for approaching intersections.")
+attr Bus_Conflict_Spacing = 0
+
+@Order(4) @Enum("red","black") @Description("NACTO-Red colored paint emphasizes the lane. Default is red for bus lanes.")
+attr Bus_Lane_Color = "red"
+
+@Order(5) @Enum("Both","Right", "Left", "None") @Description("Controls the white lines on the sides of the lane.")
+attr Bus_Paint_Line_Sides = "Both"
+
+@Order(6) @Range(min=0,max=150) @Description("Determines the number of buses per KM of road length loaded onto bus lanes.")
+attr Buses_Per_KM = 25
+
+
+# Reference Import
+
+import Ref : "Complete_Lanes/Reference.cga" 
+import Crossing: "Complete_Lanes/Crossing.cga"
+
+# Hidden attributes
+
+@Hidden
+attr travelDirection = ""
+@Hidden
+attr width = geometry.dv(0,unitSpace)
+
+# Functions
+const _CrosswalkSwitchBegin = case travelDirection == "Reverse":0 else: 1
+const _CrosswalkSwitchEnd = case travelDirection == "Reverse":1 else: 0
+const DirectionalRotation = case travelDirection == "Reverse":0 else:180
+const minCarDistance = 6
+const busProb	   = (Buses_Per_KM*minCarDistance)/1000
+
+####################
+#Rules - Approach Set Up
+####################
+@StartRule
+start Lane-->	#DeleteUV if texturing is off
+	set(material.name,"Road_Bed")
+	LaneWithCrosswalkBegin
+
+LaneWithCrosswalkBegin-->
+		split(u,uvSpace,1){Crossing._crosswalkBeginWidth/25: Ref.Asphalt("Auto","asphalt")
+					  | Crossing._crosswalkBeginWidth  : Crossing.Crosswalk(Crossing.Crosswalk_Begin ,1)
+					  | Crossing.End_Crosswalk_To_Stop_Bar*_CrosswalkSwitchEnd :Ref.Asphalt("Auto","asphalt")
+					  |~1:LaneWithCrosswalkEnd}
+	
+#The StopBox rule creates both the stop line and Bikebox when they are selected, 
+#and then moves the rest of the space left to the dedicated lane spaces. 
+LaneWithCrosswalkEnd-->
+	split(u,uvSpace,2){ Crossing._crosswalkEndWidth/25: Ref.Asphalt("Auto","asphalt")
+					  | Crossing._crosswalkEndWidth    : Crossing.Crosswalk( Crossing.Crosswalk_End ,2)
+					  | Crossing.End_Crosswalk_To_Stop_Bar*_CrosswalkSwitchBegin :Ref.Asphalt("Auto","asphalt")
+					  |~1:RoadReverser}
+RoadReverser-->
+	case travelDirection=="Reverse":
+		InRoadStopBar(-1)
+	else:
+		InRoadStopBar(1)
+		
+					  
+InRoadStopBar(sideflip) -->
+	scaleUV(0, sideflip, sideflip)
+	split(u, unitSpace, 0) {
+		~1 : BusLane(sideflip, width)
+		| Ref.ThickPaintLineWidth : Ref.AsphaltPainted("white", "Auto", "stop_bar")
+	}
+		
+########################
+# Lane Set Up End
+########################
+
+
+
+# --------------------------------
+# Main Bus Lane Rules
+# --------------------------------
+
+BusLane(sideflip, Width) -->
+	alignScopeToAxes(y)
+	# Insert Vehicles
+	Buses((case sideflip==1:0 else: 2), Width, busProb)
+	
+	# Lane Geometry and Texturing
+	color(Ref.Brightness)
+	split(v, unitSpace, 0) {
+		Ref.PaintLineWidth * Ref._PaintLineControl("Left", Bus_Paint_Line_Sides) : BusLaneLines
+		| ~1 : LaneBody(Width, sideflip)
+		| Ref.PaintLineWidth * Ref._PaintLineControl("Right", Bus_Paint_Line_Sides) : BusLaneLines
+	}
+
+BusLaneLines -->
+	split(u,unitSpace,0) {
+		~1 : Ref.AsphaltPainted("white", "Transit", "bus_lane")
+		| Bus_Conflict_Spacing : ConflictZone("white")
+		| 1 : Ref.AsphaltPainted("white", "Transit", "bus_lane")
+	}
+
+# --------------------------------
+# Lane Body & Stencils
+# --------------------------------
+
+LaneBody(Width, sideflip) -->
+	case Lane_Type == "Bus-Bike Lane":
+		BusBikeLaneBody(Width, sideflip)
+	else:
+		BusLaneBody(Width, sideflip)
+
+BusLaneBody(Width, sideflip) -->
+	# Standard Bus Lane: 'BUS ONLY' stencils repeated
+	Ref.AsphaltPainted(Bus_Lane_Color, "Transit", "bus_lane")
+	split(u, unitSpace, 0) {
+		2 : NIL
+		| Width : BusLaneStencilSetup(sideflip)
+		| ~Bus_Symbol_Spacing : NIL
+		| { Width : BusLaneStencilSetup(sideflip) | ~Bus_Symbol_Spacing : NIL }*
+		| Ref._tooShort(geometry.du(0,unitSpace) - Bus_Conflict_Spacing, Bus_Symbol_Spacing) * Ref._hasStopSideSwitch((case sideflip==1:0 else: 2)) * Width : BusLaneStencilSetup(sideflip)
+		| Bus_Conflict_Spacing : ConflictZone(Bus_Lane_Color)
+		| 2 : NIL
+	}
+
+BusBikeLaneBody(Width, sideflip) -->
+	# [cite_start]Bus-Bike Shared Lane: Alternating Bike Symbol and Bus Stencil [cite: 184]
+	Ref.AsphaltPainted(Bus_Lane_Color, "Transit", "bus_lane")
+	split(u, unitSpace, 0) {
+		2 : NIL
+		| Width*.75 : BikeBoxSymbolAllocation(sideflip, Width*.5, Width*.75, Bus_Lane_Color)
+		| Width : BusLaneStencilSetup(sideflip)
+		| ~Bus_Symbol_Spacing : NIL
+		| { Width*.75 : BikeBoxSymbolAllocation(sideflip, Width*.5, Width*.75, Bus_Lane_Color) 
+		  | Width : BusLaneStencilSetup(sideflip) 
+		  | ~Bus_Symbol_Spacing : NIL }*
+		| Ref._tooShort(geometry.du(0,unitSpace) - Bus_Conflict_Spacing, Bus_Symbol_Spacing) * Ref._hasStopSideSwitch((case sideflip==1:0 else: 2)) * Width : BikeBoxSymbolAllocation(sideflip, Width*.5, Width*.75, Bus_Lane_Color) 
+		| Ref._tooShort(geometry.du(0,unitSpace) - Bus_Conflict_Spacing, Bus_Symbol_Spacing) * Ref._hasStopSideSwitch((case sideflip==1:0 else: 2)) * Width : BusLaneStencilSetup(sideflip)
+		| Bus_Conflict_Spacing : ConflictZone(Bus_Lane_Color)
+		| 2 : NIL
+	}
+
+ConflictZone(passedcolor) -->
+	split(u,unitSpace,0) {
+		~1: Ref.AsphaltPainted(passedcolor, "Conflict Zones", "conflict_marking")
+		| ~1: Ref.Asphalt("Conflict Zones", "conflict_marking")
+	}*
+
+# --------------------------------
+# Stencils
+# --------------------------------
+
+BusLaneStencilSetup(sideflip) -->
+	split(v, unitSpace, 0) { '0.05: NIL | ~1: BusLaneStencil(sideflip) | '0.05: NIL }
+
+BusLaneStencil(sideflip) -->
+	scaleUV(0, 1, case sideflip==1: 1 else: -1) 
+	rotateUV(0, 90)
+	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0, Ref.StencilFolder + "/Bus_Only.obj", 0)
+	setupProjection(0, scope.xz, ~2, ~2, 2, 2, 2)
+	reverseNormals()
+	comp(f) { top: Ref.AsphaltPaintedStencil(Ref.StencilColor, "Transit", "bus_lane") }
+
+# --------------------------------
+# Shared Bike/Bus Symbols
+# --------------------------------
+
+BikeBoxSymbolAllocation(sideflip, symbol_spacing, allocation_width, box_color) -->
+	case sideflip==2: # Left orientation
+		scaleUV(0, -1, 1)
+		Ref.AsphaltPainted(box_color, "Bikeways", "bike_lane")
+		split(v, unitSpace, 0) { 
+			~symbol_spacing/2: NIL 
+			| allocation_width * 0.75: BikeBoxSymbolSetup(allocation_width) 
+			| ~symbol_spacing/2: NIL 
+		}*
+	else: # Right orientation (default)
+		scaleUV(0, 1, 1) 
+		Ref.AsphaltPainted(box_color, "Bikeways", "bike_lane")
+		split(v, unitSpace, 0) { 
+			~symbol_spacing/2: NIL 
+			| allocation_width * 0.75: BikeBoxSymbolSetup(allocation_width) 
+			| ~symbol_spacing/2: NIL 
+		}*
+
+BikeBoxSymbolSetup(Width) -->
+	split(u, unitSpace, 0) { ~0.2: NIL | ~Width: BikeLaneSymbolStencil | ~0.2: NIL }
+
+BikeLaneSymbolStencil -->
+	scaleUV(0, 1, 1)
+	normalizeUV(0, uv, collectiveAllFaces)	
+	insertAlongUV(0, Ref.StencilFolder + "/Bike_Symbol.obj", 0)
+	cleanupGeometry(all, 0.001) 
+	comp(f) { top: Ref.AsphaltPaintedStencil(Ref.StencilColor, "Bikeways", "bike_lane") }
+
+# --------------------------------
+# Vehicles (Buses)
+# --------------------------------
+
+const minBusDistance = 15
+
+Buses(dir, lane_width, probability) -->
+	case probability > 0:
+		BusOnLane(dir, lane_width)
+	else:
+		NIL
+
+BusOnLane(dir, lane_width)-->
+	case geometry.du(0,unitSpace)>10:
+		split(u,unitSpace,0){ ~1: BusOnLane(dir, lane_width) | (rand(15,25)): BusVehicle(dir,lane_width) }
+	else:
+		NIL
+
+BusVehicle(dir, lane_width) -->
+	split(u, unitSpace, 0) { ~1: NIL | 0.5: alignScopeToGeometry(yUp, 0, dir) BusAsset(lane_width) | ~1: NIL }
+
+BusAsset(lane_width) -->
+	t(0, 0, lane_width/2 + rand(-0.2, 0.2)) 
+	s(0, 0, 0) 
+	r(scopeCenter, 0, 90, 0) 
+	VehicleAsset("bus") 
+	label("bus")
+	set(material.name, "Bus")
+	Ref.Delete_Color_Texture("Transit", "bus")
+
+VehicleAsset(type) -->
+	t(0,0,'rand(0.4,0.6)) 
+	s(0,0,0) 
+	r(0,0,0)
+	r(0,DirectionalRotation,0) 
+	i(Ref.vehicleAsset(type))
+	label(type)
+	set(material.name,str(type))
+	color( Ref._ThematicRouter (case type=="bus":"Transit" else:"Auto",case type=="bus":"bus"else:"car"))
+	Ref.Delete_Texture
