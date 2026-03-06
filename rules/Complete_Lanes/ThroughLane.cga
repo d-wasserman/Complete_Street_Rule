@@ -73,8 +73,8 @@ attr Taxi_Percentage = 0.1
 # Imports & Hidden
 # --------------------------------
 
-import Ref : "Complete_Lanes/Reference.cga" 
-import Crossing: "Complete_Lanes/Crossing.cga"
+import Ref : "Complete_Lanes/Imports/Reference.cga"
+import Crossing: "Complete_Lanes/Imports/Crossing.cga"
 
 # Object Attributes
 

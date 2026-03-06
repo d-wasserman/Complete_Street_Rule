@@ -63,7 +63,7 @@ import Plant_Curb : "/ESRI.lib/rules/Streets/Imports/Elements/Curbed_Area.cga"(
 	Wall --> Street_Materials.start
 )
 
-import Curb : "/ESRI.lib/rules/Streets/Imports/Elements/Curb_UV.cga"(
+import Curb : "Complete_Lanes/Imports/Curb_UV.cga"(
 	Height = Curb_Height,
 	Surface --> Street_Materials.start,
 	CurbWall --> Street_Materials.start
