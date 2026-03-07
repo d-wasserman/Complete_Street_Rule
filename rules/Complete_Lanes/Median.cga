@@ -102,8 +102,8 @@ attr Island_Texture_Rotation = 0
 # Imports & Hidden Attributes
 # --------------------------------
 
-import Ref : "Complete_Lanes/Reference.cga" 
-import Crossing: "Complete_Lanes/Crossing.cga"
+import Ref : "Complete_Lanes/Imports/Reference.cga"
+import Crossing: "Complete_Lanes/Imports/Crossing.cga"
 import Tree : "/ESRI.lib/rules/Plants/Plant_Loader.cga"
 
 @Hidden

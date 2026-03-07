@@ -30,10 +30,11 @@ attr shapeType = ""
 @Hidden
 attr sidewalkSide = ""
 
-import Curb : "/ESRI.lib/rules/Streets/Imports/Elements/Curb_UV.cga"(
+import Curb : "Complete_Lanes/Imports/Curb_UV.cga"(
 	Height = Curb_Height,
 	Surface --> Street_Materials.start,
-	CurbWall --> Street_Materials.start
+	CurbWall --> Street_Materials.start,
+	InhabitSurface --> People
 )
 
 import Crossings : "/ESRI.lib/rules/Streets/Imports/Elements/Two_Crossings.cga"(
@@ -45,13 +46,36 @@ import Crossings : "/ESRI.lib/rules/Streets/Imports/Elements/Two_Crossings.cga"(
 
 import Street_Materials : "/ESRI.lib/rules/Streets/Imports/Elements/Street_Materials.cga"
 
-@Order(1)
-@Range(min=0, max=0.5, stepsize=0.01)
+@Group("General", 1)
+@Order(11)
+@Range(min=0, max=0.5, stepsize=0.01) @Description("Height of the raised curb in meters. Set to 0 to produce a flush (curbless) sidewalk edge.")
 attr Curb_Height = Curb.defaultHeight
 
-@Order(2)
-@Enum(valuesAttr=Crossings.crossingPositions)
+@Order(12)
+@Enum(valuesAttr=Crossings.crossingPositions) @Description("Controls where curb ramp crossings are generated at the ends of the sidewalk segment. Use 'None' to suppress crossings entirely.")
 attr Crossing_Position = Crossings.none
+
+
+@Group("Population", 2)
+@Order(21)
+@Bool @Description("Toggles pedestrian model generation on the sidewalk surface. When false, no people assets are placed regardless of other Population settings.")
+attr Show_People = true
+
+@Order(22)
+@Range(min=0, max=1, stepsize=0.01) @Percent @Description("Probability that each pedestrian slot along the sidewalk is filled. Higher values produce denser crowds; set to 0 to suppress all people without hiding the group.")
+attr People_Percentage = 0.25
+
+@Order(23)
+@Range(min=0.3, max=5.0, stepsize=0.1) @Description("Minimum random gap in meters between consecutive pedestrian models. Paired with People_Max_Spacing to define the spacing range.")
+attr People_Min_Spacing = 1
+
+@Order(24)
+@Range(min=0.5, max=10.0, stepsize=0.1) @Description("Maximum random gap in meters between consecutive pedestrian models. Paired with People_Min_Spacing to define the spacing range.")
+attr People_Max_Spacing = 4
+
+
+const CompleteStreetFolder = case fileExists("Complete_Streets/Asset_Metadata.csv"): "Complete_Streets" else: "/ESRI.lib/assets/Streets"
+const dirHuman = 50%: 90 else: -90
 
 
 @StartRule
@@ -61,3 +85,28 @@ start Start -->
 
 Lane -->
 	Curb.start
+
+
+People -->
+	case !Show_People || People_Percentage <= 0:
+		NIL
+	case geometry.du(0,unitSpace) > 20:
+		split(u,unitSpace,0){ '0.5: People | '0.5: People }
+	else:
+		split(u,unitSpace,0){ { 0.1: Human | ~rand(People_Min_Spacing, People_Max_Spacing): NIL }* | 0.1: Human }
+
+peopleAsset = fileRandom( CompleteStreetFolder + "/LowPolygon3D.com_People/*.obj")
+
+Human -->
+	case (scope.sz < 2 && p(People_Percentage * 0.3))
+			|| (scope.sz >= 2 && p(People_Percentage)):
+		alignScopeToAxes(y)
+		t(0, 0, 'rand(0.1, 0.6))
+		s(0, rand(1.7, 1.9), 0) r(0, dirHuman, 0)
+		label("person")
+		color("#FFFFFF")
+		i(peopleAsset)
+		set(material.name, "Person")
+		X.
+	else:
+		NIL
