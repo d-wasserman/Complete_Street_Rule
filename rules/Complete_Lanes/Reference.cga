@@ -1,0 +1,555 @@
+version "2025.0"
+
+/*
+ * File:    Complete Street_Configuration.cga
+ * Created: 5/31/2025
+ * Last Updated: 2/9/2025
+ * Author:  David J. Wasserman
+ * License: Apache 2.0 License and ESRI Attribution License.
+ * Source: https://github.com/d-wasserman/Complete_Street_Rule
+# ESRI Attribution License:
+#	ESRI Derivative work
+#	http://mappingcenter.esri.com/downloads/AttributionAndLicense_05_09_07.pdf
+#
+# Copyright 2025 David J. Wasserman
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required bys applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------
+ */
+
+# Differences to Street Construction Simple:
+# This ruleset can also generate stop markings and crosswalks (by using the 
+# objects attributes) and generates more detailed roundabouts
+# Differences to Street Construction Standard:
+# More informed by MUTCD/AASHTO/NACTO Street Guidelines, but used approximations. 
+# Can create Bus lanes, bike lanes (of different colors), parking lanes (with parklets), 
+# medians (with alternative planting configurations), boulevards(double medians), and even
+# highways with HOV lanes, bridge supports, and shoulders (in center type and bicycle buffer).
+#
+#Sources for Reports and Descriptions:
+#1.http://www.fhwa.dot.gov/publications/research/safety/09039/03.cfm
+#2.http://mutcd.fhwa.dot.gov/index.htm
+#3.http://www.qcode.us/codes/southpasadena/view.php?topic=36-3-36_310-36_310_080
+#4.http://nacto.org/usdg/
+#5.http://nacto.org/cities-for-cycling/design-guide/
+#6.https://bookstore.transportation.org/collection_detail.aspx?ID=110
+#7.http://transweb.sjsu.edu/project/1005.html
+#8.http://onlinepubs.trb.org/onlinepubs/nchrp/nchrp_rpt_504.pdf 
+
+##################
+# User constants #
+##################
+# Street Length and Lanes
+const streetLength	= geometry.du(0,unitSpace)				# REALWORLD-distance in U-direction corresponds to length of street
+#Folder Constants-Asset Links
+const CompleteStreetFolder 			= case fileExists("Complete_Streets/Asset_Metadata.csv"):"Complete_Streets" else: "/ESRI.lib/assets/Streets"
+const LanesFolder					= CompleteStreetFolder +"/Lanes"
+const SidewalkFolder				= CompleteStreetFolder +"/Sidewalks"
+const ObjectFolder					= CompleteStreetFolder +"/Street_Furniture_and_Objects"
+const GrassFolder					= CompleteStreetFolder +"/Sidewalks/Grass"
+const MiscFolder					= CompleteStreetFolder +"/Misc"
+const StencilFolder					= ObjectFolder+ "/Stencil"
+const EsriSignsAndSignalsFolder		= "/ESRI.lib/assets/Webstyles/SignsAndSignals"
+const EsriStreetSceneFolder			= "/ESRI.lib/assets/Webstyles/StreetScene"
+const EsriTransportationFolder		= "/ESRI.lib/assets/Webstyles/Transportation"
+#Paint Constants
+const Asphalt_Tile_Size				= 2.5
+const Sidewalk_Tile_Size			= 2
+const ThickPaintLineWidth			= 0.5
+const ModeratePaintLineWidth		= 0.17
+const PaintLineWidth				= 0.11 #uvSpace 36/256-about 4 in
+const Rumble_Strip_Len				= 1.5 #FWHA 7 in wide per bump with 5 in ashpalt spacing
+const Rumble_Strip_Wid				= .355 #FWHA-typically 12-16 in wide
+const Asphalt_Base  				= "Asphalt003_2K_Color.jpg"
+const StencilColor 					= "white"
+#SideWalk and Median Constants
+const Bench_Threshold_Width			= .9
+const Bench_Adjuster				= 1
+const Default_Pavement				= SidewalkFolder+"/Concrete Clean Light.jpg"
+const CurbtoPlantingGap				=.15
+const Curb_Depth					= 0.1574
+const BusStop_Length				= 16.0
+const TWLTL_Turn_Pocket_Depth		= 13.75
+const Median_Turn_Pocket_Depth		= 14
+const Minimum_Turn_Curb_Width		= 1.5/Feet
+
+ 
+#Transit Lane Constants
+#Bike Constants
+const sharrowHeight					=0.005 * ceil(abs(geometry.angle(maxSlope)+1)/5)
+const Buffer_StartGap				=.2
+const BikeBox_Fraction				=.75
+const Center_Tube_Marker_Dist		=.1
+const L_to_W_Ratio_Bk			= 3 # MUTCD recommends a 72 in gap and length of symbol, gap, and arrows. Assuming a 6 ft lane, this is width of lane * 3
+#Transit Constants
+const Track_Gauge					= 1.435 #Standard 
+const Rail_Depth 					= .05
+
+#Vegetation Constants
+const Random_Grass					=(fileRandom(GrassFolder + "/*.jpg"))
+#Parking Constants
+const Default_Lamp					= (EsriStreetSceneFolder +"/Overhanging_Street_-_Light_off.glb")
+const Default_Parking_Meter			= (ObjectFolder+ "/parkingMeter.obj")
+const Default_Small_Traffic_Light	= (EsriSignsAndSignalsFolder+ "/Traffic_Light_1.glb")
+const Default_Large_Traffic_Light	= (EsriSignsAndSignalsFolder+ "/Traffic_Light_2.glb")
+const Default_WayFinder				= (ObjectFolder+ "/WayFinder.obj")
+const Default_Bench					= (EsriStreetSceneFolder+ "/Park_Bench_2.glb")
+const Default_Bike_Rack				= (ObjectFolder+ "/Bike_Rack.obj")
+const Default_Parklet				= (ObjectFolder+ "/Parklet_High_LOD.obj")
+const Default_BusStop				= (EsriStreetSceneFolder+ "/Bus_Stop_2.glb")
+const Default_Median_End			= (StencilFolder+ "/Median_End.obj")
+const Default_Median_Transition		= (StencilFolder+"/Median_Transition.obj")
+const Default_TWLTL_Transition      = (StencilFolder+"/Center_Turn_Lane_Transition.obj")
+const Default_Wedge 				= (ObjectFolder+"/Wedge.obj")
+const Max_Distance_From_CS_Manage   = 1.5
+#Boolean Converted Constants
+const Feet							=3.28084 #per meter ^1
+#Thematic Constants
+const Brightness="#d7d7d7"
+const NACTOPedestrian="#FFFFFF"
+const NACTOTransit="#AF4E57"
+const NACTOAuto="#C3C2C0"
+const NACTOStorage = "#CCCCCC"
+const NACTOBike="#6AAA70"
+const NACTOPlanting="#B5DC98"
+const NACTOConflictZone="#F9ECB7" #Crosswalk in book
+const NACTOBikeDark="#59995F"
+const FehrAndPeersUberSharedMobility="#CAA8CD"
+#Lane Constants:
+const Default_Mix_Bus = .075
+const Default_Mix_Bike = .2
+const Default_Mix_Freight = .05
+const Default_Mix_Taxi = .05
+# Vegetation and Hardscape costs
+const TreeCostAverage = 750 
+# const GrassSurfaceCostAverage = 10	# In square meters
+# const HardscapePaverCost = 25		# In square meters
+
+# Directional Constants 
+const rightHandTraffic	 	= true # Traffic_Direction =="right-hand" (not supported yet)
+const leftHandTraffic	  	= !rightHandTraffic
+const DirectionalFlip	 	= case rightHandTraffic:1 else:-1 				# This is used to mirror UVs when right hand traffic is false
+const DirectionalRotation	= case rightHandTraffic:0 else:180
+
+bikeAsset = fileRandom( CompleteStreetFolder + "/LowPolygon3D.com_Cyclists/*.obj")
+
+
+
+#########
+# Hidden Attributes
+#########
+# Mapped Attributes (comming from graph)
+#@Group("LINK TO OBJECT ATTRIBUTES",99)
+@Hidden @Order(5)@Description("For internal use and reporting, must be set to 'Source=Object'.")
+attr connectionEnd 				= "CROSSING"		# built in value attributes, needs to be sourced as Object (parent)
+@Hidden @Order(6)@Description("For internal use and reporting, must be set to 'Source=Object'.")
+attr connectionStart 			= "CROSSING"		# built in value attributes, needs to be sourced as Object (parent)
+@Hidden @Order(7)@Description("For internal use and rep_getInitialCrosswalk(connectionStart)orting, must be set to 'Source=Object'.")
+attr valency 					= 0
+@Hidden @Order(8)@Description("For internal use and reporting, must be set to 'Source=Object'.")//If these two do not connect, crosswalks with have no default width-they must be connected. 
+attr sidewalkWidthLeft			= (geometry.dv(0,unitSpace))
+@Hidden @Order(9)@Description("For internal use and reporting, must be set to 'Source=Object'.")//If these two do not connect, crosswalks with have no default width-they must be connected. 
+attr sidewalkWidthRight			= (geometry.dv(0,unitSpace))
+@Hidden @Order(10) @Description("For internal use and reporting, must be set to 'Source=Object'.")
+attr sidewalkWidth				= case sidewalkSide=="Right": sidewalkWidthRight else: sidewalkWidthLeft
+@Hidden @Order(11) @Description("For internal use and reporting, must be set to 'Source=Object'.")
+attr sidewalkLength				= 0
+@Hidden @Order(12) @Description("For internal use and reporting, must be set to 'Source=Object'.")
+attr sidewalkSide				= "Error"
+@Hidden @Order(14) @Description("For internal use and reporting, must be set to 'Source=Object'.")
+attr Thematics					= Brightness
+@Order(15) @Hidden @Description("For internal use and reporting, must be set to 'Source=Object'.")
+attr elevation = 0               # built in value attributes, needs to be sourced as Object (parent)
+@Hidden @Order(16) @Description("For internal use and is designed to be mapped to the segement line so that a street can be used in flood visualization.")
+attr Base_Flood_Elevation=-.00001
+@Hidden @Order(18) @Description("Travel Direction tracked internally by CityEngine.")
+attr travelDirection = "Forward"
+
+
+#######################################
+#Functions
+#######################################
+_GeneralThematic(display,solidColor, peakRunoffDisplayOn)				=
+	case display=="Thematics Off":
+		Brightness # Started as: "#d7d7d7" as constant
+	case display=="Solid Color":
+		solidColor
+	case peakRunoffDisplayOn:
+		"#FFFFFF"
+	case display=="Flood Scenario":
+		case  scope.elevation<=Base_Flood_Elevation:
+			"#0a39FF"
+		else:
+			Brightness
+	else:
+		Brightness
+		
+_getInitialCrosswalk(connection,streetLength) =
+	case _hasStop(connection) && streetLength>10:
+		"continental"
+	case _hasStop(connection) && streetLength>10: 85%: "continental" 5%: "ladder custom" 5%: "transverse" else: "none"
+	else: "none"
+
+_getInitialGap(connection)=
+	case _hasStop(connection): 
+		2.4
+	else:
+		 -2
+_getInitialStop(connection,streetLength) =
+	case _hasStop(connection) && (streetLength>20):
+		case connection=="ROUNDABOUT": "right;right;right;right"
+		else		 				 : "line only"
+	else: "none"
+
+		 
+_hasStop(neighbor) 	= neighbor=="CROSSING" || neighbor=="ROUNDABOUT" || neighbor=="JUNCTION_ENTRY"||neighbor=="JUNCTION"||neighbor=="DEAD_END"
+
+_hasStopSideSwitch(dir)= case dir==0: _neighborEnd else: _neighborBegin	
+
+const _neighborBegin		   = case _hasStop(connectionStart):1 else: 0
+
+
+const _neighborEnd			   = case _hasStop(connectionEnd):1 else: 0
+
+_uScale	= case geometry.du(0,unitSpace)>10: 1	
+		  case geometry.du(0,unitSpace)>4 : 1/2	# in case the street is too short, we only use half of the texture
+		  else				  			  : 1/6	# if even shorter, we use only the start of the texture (i.e. centerline only)
+		  
+_TextureDimensionByUsage(Usage)=
+	case Usage =="Auto":Asphalt_Tile_Size
+	else: Sidewalk_Tile_Size
+
+_PaintLineControl(side,Control_String)=
+	case side=="Left":
+		case Control_String=="Both":	1
+		case Control_String=="Right":	0
+		case Control_String=="Left":	1
+		else: 							0
+	else:
+		case Control_String=="Both":	1
+		case Control_String=="Right":	1
+		case Control_String=="Left":	0
+		else: 							0
+				
+_Construct_PBR_Path(color_map_path,type) = 
+	case type == "col":
+		color_map_path
+	case type == "norm":
+		replace(color_map_path,"_Color","_Normal")
+	case type == "disp":
+		replace(color_map_path,"_Color.jpg","_Displacement.png")
+	case type == "roug":
+		replace(color_map_path,"_Color","_Roughness")
+	case type == "aocc":
+		replace(color_map_path,"_Color","_AmbientOcclusion")
+	case type == "spec":
+		replace(color_map_path,"_Color","_Metallic")
+	case type == "meta":
+		replace(color_map_path,"_Color","_Specularity")
+	else:
+		print("No correct type specified for path.")	
+
+################################################
+# Approach Functions
+################################################
+_stopListTex(stopType,lanenumber)		=
+	case lanenumber >= listSize(stopType):
+		_arrowChoice(listLast(stopType))
+	else:
+		_arrowChoice(listItem(stopType,lanenumber))
+		
+_arrowChoice(stopCode) 								=
+	case stopCode =="stop":
+		case rightHandTraffic: "_stop_word" else: "_stop_word_mirrored"			  
+	case stopCode =="right":
+		"_stop_arrows_all_1"#right
+	case stopCode =="through-right":
+		"_stop_arrows_all_2"#through-right
+	case stopCode =="through":
+		"_stop_arrows_all_3"#through
+	case stopCode =="through-left":
+		"_stop_arrows_all_4"#through-left	
+	case stopCode =="left":
+		"_stop_arrows_all_5"#left
+	case stopCode =="all":
+		"_stop_arrows_all_6"#all
+	case stopCode =="both":
+		"_stop_arrows_all_7"#both
+	else:
+		"_stop_strip"
+_dropNones(stopType,lanestotal) 								=
+	case lanestotal<listSize(stopType) && find(stopType,"none",0)!=-1:
+		_dropNones(listRemove(stopType,"none"),lanestotal)
+	else:
+		stopType	
+		
+_stopSten(stopType,lanenumber,lanestotal)			= #TODO: Add more lane options- D.J.Wasserman
+	case find(stopType,";",0)!=-1:
+  	    _stopListStencil(stopType,lanenumber)
+  	case stopType == "with stop marking"	  : 
+  		_stopListStencil("stop;",lanenumber)
+    case stopType == "arrows on all lanes"  : 
+  		_stopListStencil("right;through-right;through;through-left;left",lanenumber)
+    case stopType == "arrows on side lanes" :
+  		_stopListStencil(_dropNones("right;none;none;none;none;none;none;left",lanestotal),lanenumber)
+    case stopType == "arrows for right turn":
+  		_stopListStencil(_dropNones("right;right;none;none",lanestotal),lanenumber)
+    case stopType == "arrows for left turn" && lanenumber+1==lanestotal :
+  		_stopListStencil(_dropNones("none;none;none;none;none;none;none;none;left;left",lanestotal),lanenumber)
+    else: #Any time you see more case logic for the first trigger, it is a result of trying to work in the current framework
+  		 _stopListStencil("none;",lanenumber)
+
+_stopListStencil(stopType,lanenumber)		=
+	case lanenumber >= listSize(stopType):
+		_arrowStencilChoice(listLast(stopType))
+	else:
+		_arrowStencilChoice(listItem(stopType,lanenumber))
+		
+_arrowStencilChoice(stopCode) 								=
+	case stopCode =="stop":
+		case rightHandTraffic: "Stop_Symbol.obj" else:"Stop_Symbol_Mirrored.obj"	  
+	case stopCode =="right":
+		"Right_Arrow.obj"#right
+	case stopCode =="through-right":
+		"Right-Through_Arrow.obj"#through-right
+	case stopCode =="through":
+		"Through_Arrow.obj"#through
+	case stopCode =="through-left":
+		"Left-Through_Arrow.obj"#through-left	
+	case stopCode =="left":
+		"Left_Arrow.obj"#left
+	case stopCode =="all":
+		"All_Arrow.obj"#all
+	case stopCode =="both":
+		"Both_Arrow.obj"#both
+	else:
+		"Nothing.obj"		
+_LastLaneSwitch(lanenumber,lanestotal)=
+	case lanenumber==lanestotal-1:
+		0
+	else:
+		1	
+
+
+################################################
+#Misc Functions	
+################################################
+_tooShort(length,goal_len)= 
+	case length<goal_len: 0
+	else: 1
+_round(num,sig_fig)=
+	rint(num*pow(10,sig_fig))/pow(10,sig_fig)	
+_Maxof(num1,num2)= #Finds the max of two numbers
+	case num1>=num2:
+		num1
+	else:
+		num2
+_Minof(num1,num2)= #Finds the min of two numbers
+	case num1<=num2:
+		num1
+	else:
+		num2
+_DeviateValue(value,percent_deviation)= 
+    value + (value * rand(-abs(percent_deviation),abs(percent_deviation)))
+    
+################################################
+#Thematic Functions
+const SemanticSegs="car;pedestrian;bus;planting_area;bike_lane;truck;parking_lane;bike_buffer;lamp;hov_lane;centerline;median;center_turn_lane;asphalt;bus_lane;drive_lane;stop_bar;crosswalk;sidewalk;bus_pull_in;passenger_loading;freight_loading;bike_parking;traffic_light;vegetation;bicyclist;"
+const SemanticSegsSize = listSize(SemanticSegs)
+_ThematicRouter(Usage,LabelID)	=
+# 	case Display_Thematics == "Semantic":
+# 		_SemanticClassifier(LabelID)
+# 	case Display_Thematics=="Usage"||Display_Thematics=="All Mode Preference"||count(Display_Thematics,"Highlight")>0: 
+# 	#Please construct your own usage zones if the current ones are not sufficient-Colors based on NACTO illustrations
+# 		_ModeClassifier(Usage)
+# 	else:
+		Thematics #Attribute that diverts to _Thematic
+		
+_ThematicRouter (Usage)	=
+	_ThematicRouter(Usage,"asphalt")
+
+_ColorByLabel(LabelID,LabelList,ListSize,colorType)=
+	colorRamp(colorType,float(listIndex(LabelList,LabelID)+1)/float(ListSize))#Plus 1 because a null index find is -1 so +1 for 
+
+_SemanticClassifier(LabelID)=
+	_ColorByLabel(LabelID,SemanticSegs,SemanticSegsSize,"spectrum")
+
+############################
+# Reference Asset Constants
+###########################
+const assetDataFilename = CompleteStreetFolder + "/Asset_Metadata.csv"
+const assetData = readStringTable(assetDataFilename)
+getAssetsInCategory(category) = assetData[assetData[0:nRows(assetData)-1,1].==category, 0]
+
+
+###########################
+# Vehicle Asset Constants & Functions
+###########################
+
+const busAssets 	= getAssetsInCategory("bus")
+const carAssets 	= getAssetsInCategory("car")
+const freightAssets	= getAssetsInCategory("freight")
+const taxiAssets 	= getAssetsInCategory("taxi")
+
+vehicleAsset(type) =
+	case type=="bus":		getRandomAsset(busAssets)
+	case type=="freight":	getRandomAsset(freightAssets)
+	case type=="taxi":		getRandomAsset(taxiAssets)
+	else:					getRandomAsset(carAssets)
+
+getRandomAsset(assetList) = assetList[rint(rand(size(assetList)-1))]
+
+####################
+#Reference Rules
+####################
+
+###################
+#Approach Rules
+##################
+
+ApproachMarkings(dir,lanenumber,lanestotal,stopType,lineOffset,markingColor) -->	# is used for textures for intersection approach (stop,turn arrows etc). 
+	HighLODApproachMarkings(dir,lanenumber,lanestotal,_stopSten(stopType,lanenumber,lanestotal),lineOffset,markingColor)
+	
+HighLODApproachMarkings(dir,lanenumber,lanestotal,markings,lineOffset,markingColor)-->
+	split(v,unitSpace,0) {~1:Asphalt("Auto","drive_lane") ApproachSymbolStencilsSetup(dir,lanenumber,lanestotal,markings,markingColor)}
+	
+ApproachSymbolStencilsSetup(dir,lanenumber,lanestotal,markings,markingColor)-->
+	split(v,unitSpace,0) {'0.1:NIL
+		  				 |~1:split(u,unitSpace,0){'0.65:NIL
+		  					 |~1:ApproachSymbolStencils(dir,lanenumber,lanestotal,markings,markingColor)
+		  					 |'0.15:NIL}
+						  |'0.1:NIL}
+						  
+ApproachSymbolStencils(dir,lanenumber,lanestotal,markings,markingColor)-->
+	case find(str(markings),"Nothing",0)!=-1:
+		NIL
+	else:
+		normalizeUV(0, uv, collectiveAllFaces)
+		rotateUV(0,90)
+		insertAlongUV(0, StencilFolder+"/"+markings, 0)
+		comp (f) {top:AsphaltPaintedStencil(StencilColor,"Auto","drive_lane")}
+
+
+##################################################
+#Paint & Asphalt Reporting
+##################################################	
+#Asphalt Painted is actually retrofitted to be the paint and mode reporting aggregator, all "Paint Areas" originate here. 
+Asphalt(Usage,LabelID) --> #Ground Textured Rule
+	tileUV(0,Asphalt_Tile_Size,Asphalt_Tile_Size)
+	cleanupGeometry(all, 0.001)
+	texture( LanesFolder+"/"+Asphalt_Base)
+	ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Usage,LabelID,true)
+	
+	
+ProjectPBRTextures(path,Usage,LabelID,Report)-->
+	case true:
+		setupProjection(5,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
+		setupProjection(7,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
+		setupProjection(8,scope.xz,_TextureDimensionByUsage(Usage),_TextureDimensionByUsage(Usage),0,0,1)
+		ApplyPBRTextures(path,Usage,LabelID,Report)
+	else:
+		ReportManager(Usage,LabelID,Report)
+
+	
+ApplyPBRTextures(path,Usage,LabelID,Report)-->
+	case true:
+		set(material.shader,"CityEnginePBRShader")
+		set(material.normalmap,_Construct_PBR_Path(path,"norm"))
+		projectUV(5)
+		set(material.roughnessmap,_Construct_PBR_Path(path,"roug"))
+		projectUV(8)
+		set(material.occlusionmap, _Construct_PBR_Path(path,"aocc"))
+		projectUV(7)
+		ReportManager(Usage,LabelID,Report)
+	else:
+		NIL
+
+AsphaltPainted(paintColor,Usage,LabelID) --> #Ground Textured Rule
+	case paintColor!="black":# This makes sure that if the color is black, it is thrown into Asphalt Reporting
+		tileUV(0,Asphalt_Tile_Size,Asphalt_Tile_Size)
+		cleanupGeometry(all,0.001)
+		texture(LanesFolder+"/Asphalt003_2K_" + paintColor + "_Color.jpg")
+		set(material.name,str(material.name)+"_"+str(paintColor))
+		ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Usage,LabelID,true)
+	else:#If Black redirect to asphalt rule.
+		Asphalt(Usage,LabelID)
+
+AsphaltPaintedStencil(paintColor,Usage,LabelID)-->
+	# Stencils should have no reporting, managed by overlay shapes.
+	alignScopeToAxes(y)
+	alignScopeToGeometry(yUp,largest,longest)
+	extrude(world.up,sharrowHeight)
+	normalizeUV(0,uv, separatePerFace)
+	setupProjection(0,scope.xz,Asphalt_Tile_Size,Asphalt_Tile_Size,Asphalt_Tile_Size,Asphalt_Tile_Size,1)
+	texture(LanesFolder+"/Asphalt003_2K_" + paintColor + "_Color.jpg")
+	set(material.name,str(material.name)+"_"+str(paintColor))
+	projectUV(0)
+	ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Usage,LabelID,false)
+	
+ReportManager(Usage,LabelID,Report)-->
+	case Report:
+		ColorAndReport(Usage,LabelID)
+	else:
+		color( _ThematicRouter (Usage,LabelID))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+		Delete_Texture
+
+ColorAndReport(Usage,LabelID)-->
+	color( _ThematicRouter (Usage,LabelID))#If Display Thematics==Usage, goes to usage, if not, Thematic. 
+	ModeReporter(Usage)
+# 	Delete_Texture
+
+ModeReporter(Usage)-->
+	case true:
+		report("Mode Area (m^2)."+str(Usage),geometry.area)
+		X.
+	else:
+		NIL
+		
+NoGeometryModeReporter(Usage)-->
+	case true:
+		report("Mode Area (m^2)."+str(Usage),geometry.area)
+		NIL
+	else:
+		NIL
+	
+Delete_Color_Texture(Mode,label)-->
+	case false:
+		deleteUV(0)
+		deleteUV(2)
+		deleteUV(5)
+		deleteUV(8)
+		deleteUV(7)
+		color( _ThematicRouter (Mode,label))
+		NIL
+	case false:
+		color( _ThematicRouter (Mode,label))
+	case false:
+		deleteUV(0)
+		deleteUV(2)	
+		deleteUV(5)
+		deleteUV(8)
+		deleteUV(7)
+	else:
+		X.
+
+Delete_Texture-->
+	case true: 
+		X.	
+# 		print(geometry.isInstanced())	
+	else: 
+		deleteUV(0)
+		deleteUV(2)
+		deleteUV(5)
+		deleteUV(8)
+		deleteUV(7)
+# 		print(geometry.isInstanced())
