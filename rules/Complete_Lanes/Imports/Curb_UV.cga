@@ -28,6 +28,9 @@ version "2025.0"
 
 extension CurbWall --> CurbWall.
 extension Surface --> Surface.
+# Population hook: override InhabitSurface in importing rules to place pedestrian assets
+# on the raised sidewalk surface. Defaults to NIL (no population).
+extension InhabitSurface --> NIL.
 
 
 @Hidden
@@ -37,11 +40,11 @@ attr sidewalkSide = ""
 
 
 @Hidden
-import Lane_Queries : "Streets/Imports/Lane_Queries.cga"
+import Lane_Queries : "/ESRI.lib/rules/Streets/Imports/Lane_Queries.cga"
 @Hidden
-import Street_Materials : "Streets/Imports/Elements/Street_Materials.cga"
+import Street_Materials : "/ESRI.lib/rules/Streets/Imports/Elements/Street_Materials.cga"
 @Hidden
-import Show_Scope : "Streets/Imports/Elements/Show_Scope.cga"
+import Show_Scope : "/ESRI.lib/rules/Streets/Imports/Elements/Show_Scope.cga"
 
 
 @Order(1)
@@ -129,6 +132,13 @@ Curbed -->
 CurbedLane -->
 	t(0, Height, 0)
 	SetupSurfaceMaterial
+	SidewalkInhabitants
+
+SidewalkInhabitants -->
+	case isSidewalk():
+		InhabitSurface
+	else:
+		NIL
 
 
 SideCurbStone -->
