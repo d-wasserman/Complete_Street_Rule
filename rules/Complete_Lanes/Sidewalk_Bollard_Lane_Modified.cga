@@ -57,17 +57,17 @@ import Street_Materials : "/ESRI.lib/rules/Streets/Imports/Elements/Street_Mater
 
 @Group("General", 1)
 @Order(11)
-@Range(min=0, max=0.5, stepsize=0.01)
+@Range(min=0, max=0.5, stepsize=0.01) @Description("Height of the raised curb in meters. Set to 0 to produce a flush (curbless) sidewalk edge.")
 attr Curb_Height = Curb.defaultHeight
 
 @Order(12)
-@Enum(valuesAttr=Crossings.crossingPositions)
+@Enum(valuesAttr=Crossings.crossingPositions) @Description("Controls where curb ramp crossings are generated at the ends of the sidewalk segment. Use 'None' to suppress crossings entirely.")
 attr Crossing_Position = Crossings.none
 
 
 @Group("Bollard", 2)
 @Order(21)
-@Enum(valuesAttr=Bollard.bollards)
+@Enum(valuesAttr=Bollard.bollards) @Description("Selects the bollard model placed along the lane. Choose from the available ESRI.lib bollard styles.")
 attr Bollard_Type = Bollard.black
 
 /*
@@ -77,15 +77,15 @@ attr Side = Row_Distributor.center
 */
 
 @Order(23)
-@Range(min=0.0, max=30.0, stepsize=0.1, restricted=false)
+@Range(min=0.0, max=30.0, stepsize=0.1, restricted=false) @Description("Center-to-center distance in meters between bollards along the lane length.")
 attr Spacing = 2
 
 @Order(24)
-@Range(min=0.0, max=10.0, stepsize=0.1, restricted=false)
+@Range(min=0.0, max=10.0, stepsize=0.1, restricted=false) @Description("Shifts the first bollard along the lane in meters, offsetting the start of the distributed row. Defaults to half the spacing to center the pattern.")
 attr Offset_Along = Spacing / 2
 
 @Order(25)
-@Range(min=-8.0, max=8.0, stepsize=0.05, restricted=false)
+@Range(min=-8.0, max=8.0, stepsize=0.05, restricted=false) @Description("Shifts all bollards perpendicular to the lane direction in meters. Positive values move toward the street, negative toward the building face.")
 attr Offset_Across = 0.0
 
 
