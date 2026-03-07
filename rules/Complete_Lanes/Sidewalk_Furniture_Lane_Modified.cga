@@ -1,5 +1,5 @@
 /*
- * File:    Sidewalk_Bollard_Lane_Modified.cga
+ * File:    Sidewalk_Plant_Lane_Modified.cga
  * Created: 5/31/2025
  * Last Updated: 1/2/2026
  * Author:  David J. Wasserman & Esri
@@ -25,6 +25,7 @@
 # --------------------------------
  */
 version "2025.0"
+
 @Hidden
 attr shapeType = ""
 @Hidden
@@ -32,11 +33,13 @@ attr sidewalkSide = ""
 
 @Hidden
 import Row_Distributor : "/ESRI.lib/rules/Streets/Imports/Elements/Row_Distributor.cga"(
-	Element --> Bollard.start
+	#Element_Length = Furniture.getLength(),
+	#Element_Width = Furniture.getWidth(),
+	Element --> Furniture.start
 )
 
-import Bollard : "/ESRI.lib/rules/Streets/Imports/Elements/Bollard.cga"(
-	Type = Bollard_Type
+import Furniture : "/ESRI.lib/rules/Streets/Imports/Elements/Furniture.cga"(
+	Type = Furniture_Type
 )
 
 import Curb : "Complete_Lanes/Imports/Curb_UV.cga"(
@@ -65,10 +68,10 @@ attr Curb_Height = Curb.defaultHeight
 attr Crossing_Position = Crossings.none
 
 
-@Group("Bollard", 2)
+@Group("Furniture", 2)
 @Order(21)
-@Enum(valuesAttr=Bollard.bollards) @Description("Selects the bollard model placed along the lane. Choose from the available ESRI.lib bollard styles.")
-attr Bollard_Type = Bollard.black
+@Enum(valuesAttr=Furniture.furniture) @Description("Selects the street furniture model placed along the lane, such as benches or other ESRI.lib furniture assets.")
+attr Furniture_Type = Furniture.simple_bench
 
 /*
 @Order(22)
@@ -77,24 +80,23 @@ attr Side = Row_Distributor.center
 */
 
 @Order(23)
-@Range(min=0.0, max=30.0, stepsize=0.1, restricted=false) @Description("Center-to-center distance in meters between bollards along the lane length.")
-attr Spacing = 2
+@Range(min=0.0, max=30.0, stepsize=0.1, restricted=false) @Description("Center-to-center distance in meters between furniture items along the lane length.")
+attr Spacing = 10
 
 @Order(24)
-@Range(min=0.0, max=10.0, stepsize=0.1, restricted=false) @Description("Shifts the first bollard along the lane in meters, offsetting the start of the distributed row. Defaults to half the spacing to center the pattern.")
+@Range(min=0.0, max=30.0, stepsize=0.1, restricted=false) @Description("Shifts the first furniture item along the lane in meters, offsetting the start of the distributed row. Defaults to half the spacing to center the pattern.")
 attr Offset_Along = Spacing / 2
 
 @Order(25)
-@Range(min=-8.0, max=8.0, stepsize=0.05, restricted=false) @Description("Shifts all bollards perpendicular to the lane direction in meters. Positive values move toward the street, negative toward the building face.")
-attr Offset_Across = 0.0
+@Range(min=-8.0, max=8.0, stepsize=0.05, restricted=false) @Description("Shifts all furniture items perpendicular to the lane direction in meters. Positive values move toward the street, negative toward the building face.")
+attr Offset_Across = 0.2
 
 
 @StartRule
 start Start -->
 	Crossings.start
 	
-
 Lane -->
 	Curb.start
 	t(0, Curb_Height, 0)
-	Row_Distributor.start 
+	Row_Distributor.start

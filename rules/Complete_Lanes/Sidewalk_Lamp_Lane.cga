@@ -1,7 +1,7 @@
 /*
- * File:    Sidewalk_Bollard_Lane_Modified.cga
- * Created: 5/31/2025
- * Last Updated: 1/2/2026
+ * File:    Sidewalk_Lamp_Lane.cga
+ * Created: 3/6/2026
+ * Last Updated: 3/6/2026
  * Author:  David J. Wasserman & Esri
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -30,13 +30,15 @@ attr shapeType = ""
 @Hidden
 attr sidewalkSide = ""
 
+
 @Hidden
 import Row_Distributor : "/ESRI.lib/rules/Streets/Imports/Elements/Row_Distributor.cga"(
-	Element --> Bollard.start
+	Element --> Lamp.start
 )
 
-import Bollard : "/ESRI.lib/rules/Streets/Imports/Elements/Bollard.cga"(
-	Type = Bollard_Type
+@Hidden
+import Lamp : "/ESRI.lib/rules/Streets/Imports/Elements/Lamp.cga" (
+	Type = Lamp_Type
 )
 
 import Curb : "Complete_Lanes/Imports/Curb_UV.cga"(
@@ -55,6 +57,7 @@ import Crossings : "/ESRI.lib/rules/Streets/Imports/Elements/Two_Crossings.cga"(
 import Street_Materials : "/ESRI.lib/rules/Streets/Imports/Elements/Street_Materials.cga"
 
 
+
 @Group("General", 1)
 @Order(11)
 @Range(min=0, max=0.5, stepsize=0.01) @Description("Height of the raised curb in meters. Set to 0 to produce a flush (curbless) sidewalk edge.")
@@ -65,10 +68,10 @@ attr Curb_Height = Curb.defaultHeight
 attr Crossing_Position = Crossings.none
 
 
-@Group("Bollard", 2)
+@Group("Lamp", 2)
 @Order(21)
-@Enum(valuesAttr=Bollard.bollards) @Description("Selects the bollard model placed along the lane. Choose from the available ESRI.lib bollard styles.")
-attr Bollard_Type = Bollard.black
+@Enum(valuesAttr=Lamp.lamps) @Description("Selects the street lamp model placed along the lane. Choose from the available ESRI.lib lamp styles.")
+attr Lamp_Type = Lamp.lamp_simple
 
 /*
 @Order(22)
@@ -77,24 +80,24 @@ attr Side = Row_Distributor.center
 */
 
 @Order(23)
-@Range(min=0.0, max=30.0, stepsize=0.1, restricted=false) @Description("Center-to-center distance in meters between bollards along the lane length.")
-attr Spacing = 2
+@Range(min=0.0, max=30.0, stepsize=0.1, restricted=false) @Description("Center-to-center distance in meters between lamp posts along the lane length.")
+attr Spacing = 10
 
 @Order(24)
-@Range(min=0.0, max=10.0, stepsize=0.1, restricted=false) @Description("Shifts the first bollard along the lane in meters, offsetting the start of the distributed row. Defaults to half the spacing to center the pattern.")
+@Range(min=0.0, max=30.0, stepsize=0.1, restricted=false) @Description("Shifts the first lamp along the lane in meters, offsetting the start of the distributed row. Defaults to half the spacing to center the pattern.")
 attr Offset_Along = Spacing / 2
 
 @Order(25)
-@Range(min=-8.0, max=8.0, stepsize=0.05, restricted=false) @Description("Shifts all bollards perpendicular to the lane direction in meters. Positive values move toward the street, negative toward the building face.")
+@Range(min=-8.0, max=8.0, stepsize=0.05, restricted=false) @Description("Shifts all lamp posts perpendicular to the lane direction in meters. Positive values move toward the street, negative toward the building face.")
 attr Offset_Across = 0.0
 
 
 @StartRule
 start Start -->
 	Crossings.start
-	
+
 
 Lane -->
 	Curb.start
 	t(0, Curb_Height, 0)
-	Row_Distributor.start 
+	Row_Distributor.start
