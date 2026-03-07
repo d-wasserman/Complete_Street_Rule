@@ -58,18 +58,14 @@ attr Crossing_Position = Crossings.none
 
 @Group("Population", 2)
 @Order(21)
-@Bool @Description("Toggles pedestrian model generation on the sidewalk surface. When false, no people assets are placed regardless of other Population settings.")
-attr Show_People = true
+@Range(min=0, max=1, stepsize=0.01) @Percent @Description("Probability that each pedestrian slot along the sidewalk is filled. Higher values produce denser crowds; set to 0 to suppress all people without hiding the group.")
+attr People_Percentage = 0
 
 @Order(22)
-@Range(min=0, max=1, stepsize=0.01) @Percent @Description("Probability that each pedestrian slot along the sidewalk is filled. Higher values produce denser crowds; set to 0 to suppress all people without hiding the group.")
-attr People_Percentage = 0.25
-
-@Order(23)
 @Range(min=0.3, max=5.0, stepsize=0.1) @Description("Minimum random gap in meters between consecutive pedestrian models. Paired with People_Max_Spacing to define the spacing range.")
 attr People_Min_Spacing = 1
 
-@Order(24)
+@Order(23)
 @Range(min=0.5, max=10.0, stepsize=0.1) @Description("Maximum random gap in meters between consecutive pedestrian models. Paired with People_Min_Spacing to define the spacing range.")
 attr People_Max_Spacing = 4
 
@@ -88,7 +84,7 @@ Lane -->
 
 
 People -->
-	case !Show_People || People_Percentage <= 0:
+	case People_Percentage <= 0:
 		NIL
 	case geometry.du(0,unitSpace) > 20:
 		split(u,unitSpace,0){ '0.5: People | '0.5: People }
