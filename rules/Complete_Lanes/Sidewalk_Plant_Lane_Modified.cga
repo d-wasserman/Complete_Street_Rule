@@ -80,46 +80,46 @@ import Street_Materials : "/ESRI.lib/rules/Streets/Imports/Elements/Street_Mater
 
 @Group("General", 1)
 @Order(11)
-@Range(min=0, max=0.5, stepsize=0.01) @Description("Height of the raised curb in meters. Set to 0 to produce a flush (curbless) sidewalk edge.")
+@Range(min=0, max=0.5, stepsize=0.01)
 attr Curb_Height = Curb.defaultHeight
 
 @Order(12)
-@Enum(valuesAttr=Crossings.crossingPositions) @Description("Controls where curb ramp crossings are generated at the ends of the sidewalk segment. Use 'None' to suppress crossings entirely.")
+@Enum(valuesAttr=Crossings.crossingPositions)
 attr Crossing_Position = Crossings.none
 
 
 @Group("Vegetation", 2)
 @Order(21)
-@Enum(valuesAttr=Ground_Cover_.vegetationLabels) @Description("Selects the ground cover or soil material displayed inside planting beds.")
+@Enum(valuesAttr=Ground_Cover_.vegetationLabels)
 attr Ground_Cover = Ground_Cover_.soil
 
 @Order(22)
-@Enum(valuesAttr=Plant.plants) @Description("Selects the tree or plant species placed within each planting bed.")
+@Enum(valuesAttr=Plant.plants)
 attr Plant_Type = Plant.default
 
 @Order(23)
-@Enum(valuesAttr=beds) @Description("Controls the shape and containment method of the planting bed — raised curb borders or planter pots, in round or rectangular form.")
+@Enum(valuesAttr=beds)
 attr Plant_Bed_Type = bed_curb_round
 
 @Order(24)
-@Range(min=0.5, max=10, stepsize=0.1, restricted=false) @Description("Diameter in meters of each planting bed or pot. Applies to both round and rectangular bed types as a bounding dimension.")
+@Range(min=0.5, max=10, stepsize=0.1, restricted=false)
 attr Plant_Bed_Diameter = 1.2
 
 @Order(25)
-@Enum(valuesAttr=Plant.representation) @Description("Sets the level of detail used to render the plant model, from a simple symbol to a full 3D representation.")
+@Enum(valuesAttr=Plant.representation)
 attr Vegetation_Representation = Plant.default_representation
 
 
 @Order(31)
-@Range(min=0.0, max=30.0, stepsize=0.1, restricted=false) @Description("Center-to-center distance in meters between planting beds along the lane length.")
+@Range(min=0.0, max=30.0, stepsize=0.1, restricted=false)
 attr Spacing = 10
 
 @Order(32)
-@Range(min=0.0, max=30.0, stepsize=0.1, restricted=false) @Description("Shifts the first planting bed along the lane in meters, offsetting the start of the distributed row. Defaults to half the spacing to center the pattern.")
+@Range(min=0.0, max=30.0, stepsize=0.1, restricted=false)
 attr Offset_Along = Spacing / 2
 
 @Order(33)
-@Range(min=-8.0, max=8.0, stepsize=0.05, restricted=false) @Description("Shifts all planting beds perpendicular to the lane direction in meters. Positive values move toward the street, negative toward the building face.")
+@Range(min=-8.0, max=8.0, stepsize=0.05, restricted=false)
 attr Offset_Across = 0.0
 
 
