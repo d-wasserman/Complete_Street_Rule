@@ -63,7 +63,7 @@ attr People_Percentage = 0
 
 @Order(22)
 @Range(min=0.3, max=5.0, stepsize=0.1) @Description("Minimum random gap in meters between consecutive pedestrian models. Paired with People_Max_Spacing to define the spacing range.")
-attr People_Min_Spacing = 1
+attr People_Min_Spacing = 2
 
 @Order(23)
 @Range(min=0.5, max=10.0, stepsize=0.1) @Description("Maximum random gap in meters between consecutive pedestrian models. Paired with People_Min_Spacing to define the spacing range.")
@@ -89,7 +89,7 @@ People -->
 	case geometry.du(0,unitSpace) > 20:
 		split(u,unitSpace,0){ '0.5: People | '0.5: People }
 	else:
-		split(u,unitSpace,0){ { 0.1: Human | ~rand(People_Min_Spacing, People_Max_Spacing): NIL }* | 0.1: Human }
+		split(u,unitSpace,0){ { 0.5: Human | ~rand(People_Min_Spacing, People_Max_Spacing): NIL }* | 0.5: Human }
 
 peopleAsset = fileRandom( CompleteStreetFolder + "/LowPolygon3D.com_People/*.obj")
 
