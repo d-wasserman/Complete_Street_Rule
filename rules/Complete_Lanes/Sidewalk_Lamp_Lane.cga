@@ -1,7 +1,7 @@
 /*
  * File:    Sidewalk_Lamp_Lane.cga
  * Created: 3/6/2026
- * Last Updated: 3/6/2026
+ * Last Updated: 3/9/2026
  * Author:  David J. Wasserman & Esri
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -41,7 +41,7 @@ import Lamp : "/ESRI.lib/rules/Streets/Imports/Elements/Lamp.cga" (
 	Type = Lamp_Type
 )
 
-import Curb : "Complete_Lanes/Imports/Curb_UV.cga"(
+import Curb : "/ESRI.lib/rules/Streets/Imports/Elements/Curb_UV.cga"(
 	Height = Curb_Height,
 	Surface --> Street_Materials.start,
 	CurbWall --> Street_Materials.start

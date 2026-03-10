@@ -1,7 +1,7 @@
 /*
  * File:    Sidewalk_Plant_Lane_Modified.cga
  * Created: 5/31/2025
- * Last Updated: 1/2/2026
+ * Last Updated: 3/9/2026
  * Author:  David J. Wasserman & Esri
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -42,7 +42,7 @@ import Furniture : "/ESRI.lib/rules/Streets/Imports/Elements/Furniture.cga"(
 	Type = Furniture_Type
 )
 
-import Curb : "Complete_Lanes/Imports/Curb_UV.cga"(
+import Curb : "/ESRI.lib/rules/Streets/Imports/Elements/Curb_UV.cga"(
 	Height = Curb_Height,
 	Surface --> Street_Materials.start,
 	CurbWall --> Street_Materials.start

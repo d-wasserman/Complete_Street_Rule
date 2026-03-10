@@ -1,7 +1,7 @@
 /*
  * File:    Sidewalk_Lane_Modified.cga
  * Created: 5/31/2025
- * Last Updated: 1/2/2026
+ * Last Updated: 3/9/2026
  * Author:  David J. Wasserman & Esri
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -30,11 +30,10 @@ attr shapeType = ""
 @Hidden
 attr sidewalkSide = ""
 
-import Curb : "Complete_Lanes/Imports/Curb_UV.cga"(
+import Curb : "/ESRI.lib/rules/Streets/Imports/Elements/Curb_UV.cga"(
 	Height = Curb_Height,
 	Surface --> Street_Materials.start,
-	CurbWall --> Street_Materials.start,
-	InhabitSurface --> People
+	CurbWall --> Street_Materials.start
 )
 
 import Crossings : "/ESRI.lib/rules/Streets/Imports/Elements/Two_Crossings.cga"(
@@ -81,6 +80,7 @@ start Start -->
 
 Lane -->
 	Curb.start
+	People
 
 
 People -->
@@ -97,10 +97,9 @@ Human -->
 	case (scope.sz < 2 && p(People_Percentage * 0.3))
 			|| (scope.sz >= 2 && p(People_Percentage)):
 		alignScopeToAxes(y)
-		t(0, 0, 'rand(0.1, 0.6))
+		t(0, Curb_Height, 'rand(0.1, 0.6))
 		s(0, rand(1.7, 1.9), 0) r(0, dirHuman, 0)
 		label("person")
-		color("#FFFFFF")
 		i(peopleAsset)
 		set(material.name, "Person")
 		X.
