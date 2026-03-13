@@ -1,7 +1,7 @@
 /*
  * File:    Sidewalk_Lamp_Lane.cga
  * Created: 3/6/2026
- * Last Updated: 3/9/2026
+ * Last Updated: 3/12/2026
  * Author:  David J. Wasserman & Esri
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -43,6 +43,8 @@ import Lamp : "/ESRI.lib/rules/Streets/Imports/Elements/Lamp.cga" (
 
 import Curb : "/ESRI.lib/rules/Streets/Imports/Elements/Curb_UV.cga"(
 	Height = Curb_Height,
+	Width = 0.149,
+	Curb_On_Ends = "None",
 	Surface --> Street_Materials.start,
 	CurbWall --> Street_Materials.start
 )
@@ -54,7 +56,9 @@ import Crossings : "/ESRI.lib/rules/Streets/Imports/Elements/Two_Crossings.cga"(
 	Crossing --> Street_Materials.start
 )
 
-import Street_Materials : "/ESRI.lib/rules/Streets/Imports/Elements/Street_Materials.cga"
+import Street_Materials : "/ESRI.lib/rules/Streets/Imports/Elements/Street_Materials.cga"(
+	Surface = "Light Concrete"
+)
 
 
 
