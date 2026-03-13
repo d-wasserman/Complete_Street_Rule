@@ -1,7 +1,7 @@
 /*
  * File:    BusLane.cga
  * Created: 5/31/2025
- * Last Updated: 12/24/2025
+ * Last Updated: 3/12/2026
  * Author:  David J. Wasserman
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -91,9 +91,9 @@ LaneWithCrosswalkEnd-->
 					  |~1:RoadReverser}
 RoadReverser-->
 	case travelDirection=="Reverse":
-		InRoadStopBar(-1)
+		InRoadStopBar(-1) # Sideflip Defintion
 	else:
-		InRoadStopBar(1)
+		InRoadStopBar(1)  # Sideflip Defintion
 		
 					  
 InRoadStopBar(sideflip) -->
@@ -116,8 +116,7 @@ InRoadStopBar(sideflip) -->
 BusLane(sideflip, Width) -->
 	alignScopeToAxes(y)
 	# Insert Vehicles
-	Buses((case sideflip==1:0 else: 2), Width, busProb)
-	
+	BusOnLane(Width)
 	# Lane Geometry and Texturing
 	color(Ref.Brightness)
 	split(v, unitSpace, 0) {
@@ -187,7 +186,7 @@ BusLaneStencilSetup(sideflip) -->
 	split(v, unitSpace, 0) { '0.05: NIL | ~1: BusLaneStencil(sideflip) | '0.05: NIL }
 
 BusLaneStencil(sideflip) -->
-	scaleUV(0, 1, case sideflip==1: 1 else: -1) 
+	scaleUV(0,1,1)
 	rotateUV(0, 90)
 	normalizeUV(0, uv, collectiveAllFaces)	
 	insertAlongUV(0, Ref.StencilFolder + "/Bus_Only.obj", 0)
@@ -200,22 +199,13 @@ BusLaneStencil(sideflip) -->
 # --------------------------------
 
 BikeBoxSymbolAllocation(sideflip, symbol_spacing, allocation_width, box_color) -->
-	case sideflip==2: # Left orientation
-		scaleUV(0, -1, 1)
-		Ref.AsphaltPainted(box_color, "Bikeways", "bike_lane")
-		split(v, unitSpace, 0) { 
-			~symbol_spacing/2: NIL 
-			| allocation_width * 0.75: BikeBoxSymbolSetup(allocation_width) 
-			| ~symbol_spacing/2: NIL 
-		}*
-	else: # Right orientation (default)
-		scaleUV(0, 1, 1) 
-		Ref.AsphaltPainted(box_color, "Bikeways", "bike_lane")
-		split(v, unitSpace, 0) { 
-			~symbol_spacing/2: NIL 
-			| allocation_width * 0.75: BikeBoxSymbolSetup(allocation_width) 
-			| ~symbol_spacing/2: NIL 
-		}*
+	scaleUV(0, 1, 1)
+	Ref.AsphaltPainted(box_color, "Bikeways", "bike_lane")
+	split(v, unitSpace, 0) { 
+		~symbol_spacing/2: NIL 
+		| allocation_width * 0.75: BikeBoxSymbolSetup(allocation_width) 
+		| ~symbol_spacing/2: NIL 
+	}*
 
 BikeBoxSymbolSetup(Width) -->
 	split(u, unitSpace, 0) { ~0.2: NIL | ~Width: BikeLaneSymbolStencil | ~0.2: NIL }
@@ -233,20 +223,17 @@ BikeLaneSymbolStencil -->
 
 const minBusDistance = 15
 
-Buses(dir, lane_width, probability) -->
-	case probability > 0:
-		BusOnLane(dir, lane_width)
-	else:
-		NIL
-
-BusOnLane(dir, lane_width)-->
+BusOnLane(lane_width)-->
 	case geometry.du(0,unitSpace)>10:
-		split(u,unitSpace,0){ ~1: BusOnLane(dir, lane_width) | (rand(15,25)): BusVehicle(dir,lane_width) }
+		split(u,unitSpace,0){ ~1: BusOnLane(lane_width) | (rand(15,25)): BusVehicle(lane_width) }
 	else:
 		NIL
 
-BusVehicle(dir, lane_width) -->
-	split(u, unitSpace, 0) { ~1: NIL | 0.5: alignScopeToGeometry(yUp, 0, dir) BusAsset(lane_width) | ~1: NIL }
+BusVehicle(lane_width) -->
+	case p(busProb):
+		split(u, unitSpace, 0) { ~1: NIL | 0.5: alignScopeToGeometry(yUp, 0, 0) BusAsset(lane_width) | ~1: NIL }
+	else:
+		NIL
 
 BusAsset(lane_width) -->
 	t(0, 0, lane_width/2 + rand(-0.2, 0.2)) 
