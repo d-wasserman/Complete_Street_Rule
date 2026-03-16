@@ -1,7 +1,7 @@
 /*
  * File:    CurbsideLane.cga
  * Created: 5/31/2025
- * Last Updated: 12/29/2025
+ * Last Updated: 3/15/2026
  * Author:  David J. Wasserman
  * License: Apache 2.0 License and ESRI Attribution License.
  * Source: https://github.com/d-wasserman/Complete_Street_Rule
@@ -58,7 +58,7 @@ attr Parklet_Percentage = 0.0
 
 @Order(7) @File 
 @Description("Object file for parklets.")
-attr Parklet_Object = Ref.ObjectFolder + "/Parklet_Moderate_LOD.obj"
+attr Parklet_Object = Ref.ObjectFolder + "/Parklet_High_LOD.obj"
 
 @Order(8) @Distance @Range(min=0,max=10) @Hidden 
 @Description("Spacing before the parking lane starts (from stop bar/crosswalk).")
@@ -248,6 +248,7 @@ AngledParkingLane(sideFlip, Width) -->
 ParkingSpace(sideFlip, type, spaceNum, totalSpaces) -->
 	# Check for Parklet first
 	case p(Parklet_Percentage) && spaceNum > 1 && spaceNum < totalSpaces-2:
+		Ref.Asphalt("Pedestrian", "parking_lane")
 		ParkletInsert(sideFlip)
 	case type == "Parallel":
 		ParallelSpaceGeometry(sideFlip, spaceNum, totalSpaces)
@@ -427,10 +428,9 @@ DoBi_Scooter_Parking_Stamp--> #Ground Textured Rule
 # --------------------------------
 
 ParkletInsert(sideFlip) -->
-	Ref.Asphalt("Pedestrian", "parking_lane")
 	alignScopeToGeometry(yUp, largest, 1)
 	rotateScope(0, case sideFlip==1: 0 else: 180, 0)
-	t(0, 0, 0) 
+	t(0, 0, 0)
 	i(Parklet_Object)
 	label("Parklet")
 
