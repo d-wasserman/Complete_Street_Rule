@@ -31,7 +31,7 @@ If all you need is the rule for your current project:
 
 4.	Move the Complete_Streets folder in assets to your current project's assets folder. 
 
-5.	Move the files ending in .CGA in the rules folder to your current project's rules's folder.
+5.	Copy all contents of the repository's rules folder, including subfolders, into your current project's rules folder, preserving the directory structure. In particular, `Complete_Lane_Configuration.cga` imports rules from `Complete_Lanes/`, so copying only the top-level .cga files will leave those imports missing.
 
 6.	Open CityEngine. 
 
