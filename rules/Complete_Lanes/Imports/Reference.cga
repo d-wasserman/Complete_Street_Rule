@@ -446,7 +446,6 @@ ApproachSymbolStencils(dir,lanenumber,lanestotal,markings,markingColor)-->
 #Asphalt Painted is actually retrofitted to be the paint and mode reporting aggregator, all "Paint Areas" originate here. 
 Asphalt(Usage,LabelID) --> #Ground Textured Rule
 	tileUV(0,Asphalt_Tile_Size,Asphalt_Tile_Size)
-	cleanupGeometry(all, 0.001)
 	texture( LanesFolder+"/"+Asphalt_Base)
 	ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Usage,LabelID,true)
 	
@@ -477,7 +476,6 @@ ApplyPBRTextures(path,Usage,LabelID,Report)-->
 AsphaltPainted(paintColor,Usage,LabelID) --> #Ground Textured Rule
 	case paintColor!="black":# This makes sure that if the color is black, it is thrown into Asphalt Reporting
 		tileUV(0,Asphalt_Tile_Size,Asphalt_Tile_Size)
-		cleanupGeometry(all,0.001)
 		texture(LanesFolder+"/Asphalt003_2K_" + paintColor + "_Color.jpg")
 		set(material.name,str(material.name)+"_"+str(paintColor))
 		ProjectPBRTextures(LanesFolder+"/"+Asphalt_Base,Usage,LabelID,true)
