@@ -2700,33 +2700,33 @@ Raised_Offset_Curb(Location,Dir,Mode,Setback)-->
 Street_Pavement(Boulevard_Side,Location,Dir)-->
 #Boulevard side is used when arranging String=="None"
 	case Location=="Buffer":
-		extrude(world.y, Sidewalk_Height )
+		extrude(world.up, Sidewalk_Height )
 		comp(f){top=Buffer_Top}
 	case Location=="Median":
-		extrude(world.y, Sidewalk_Height )
+		extrude(world.up, Sidewalk_Height )
 		comp(f){top=Median_Top_Setup(Dir)}
 	case Location=="Boulevard":
-		extrude(world.y, Sidewalk_Height )
+		extrude(world.up, Sidewalk_Height )
 		comp(f){top=Boulevard_Top(Dir)	}
 	case Location=="Boulevard Center":
-		extrude(world.y, Sidewalk_Height )
+		extrude(world.up, Sidewalk_Height )
 		comp(f){top=Boulevard_Center_Top(Dir)	}
 	case Location=="WalkWay_Right"||Location=="WalkWay_Left":
 		WalkWay_Texture
 		Master_Split(Boulevard_Side,(geometry.dv(0,unitSpace)>=Bench_Threshold_Width),"WalkWay",Dir)
 		People
 	case Location=="Open Space":
-		extrude(world.y, Sidewalk_Height )
+		extrude(world.up, Sidewalk_Height )
 		comp(f){top=OpenSpace_Planting}
 	case Location=="Median With Turn Lane":
-		extrude(world.y, Sidewalk_Height )
+		extrude(world.up, Sidewalk_Height )
 		comp(f){top=Median_Plant_Side(0,Dir)} #Does not have all options for median, auto oriented median.
 	case Location=="Median Offset":#Extruded sidewalk texture with sides. 
-		extrude(world.y, Sidewalk_Height)
+		extrude(world.up, Sidewalk_Height)
 		comp(f) {top= General_Sidewalk_Texture
 			|side= General_Sidewalk_Texture}
 	else:
-		extrude(world.y, Sidewalk_Height )
+		extrude(world.up, Sidewalk_Height )
 		WalkWay_Texture
 		
 General_Sidewalk_Texture--> #Ground Textured Rule	
@@ -3275,11 +3275,11 @@ Sidewalk_Generation-->
 
 
 Curbs_Mass(RotateUV)-->
-	extrude(world.y, Sidewalk_Height )
+	extrude(world.up, Sidewalk_Height )
 	comp(f) {top:Curbs(RotateUV)|side:Curbs(false)}
 	
 Curbs_Mass(RotateUV,Height)--> #Overload Curbs_Mass
-	extrude(world.y, Height)
+	extrude(world.up, Height)
 	comp(f) {top:Curbs(RotateUV)|side:Curbs(false)}
 
 
@@ -3298,15 +3298,15 @@ Curbs(RotateUV) --> #Ground Textured Rule
   		
 Sidewalk_Setup-->
 	case sidewalkSide=="Right":
-		extrude(world.y, Sidewalk_Height )
+		extrude(world.up, Sidewalk_Height )
 		comp(f){top=SidewalkTop(sidewalkSide)|side: Sidewalk_Pavement("Building Side") }
 	case sidewalkSide=="Left":
 		scaleUV(0,1,1)
-		extrude(world.y, Sidewalk_Height ) 
+		extrude(world.up, Sidewalk_Height ) 
 		comp(f){top=SidewalkTop(sidewalkSide)|side: Sidewalk_Pavement("Building Side") }
 	else:
 		print("Error: two right sidewalks as default- please map this attribute.") 
-		extrude(world.y, Sidewalk_Height ) 
+		extrude(world.up, Sidewalk_Height ) 
 		comp(f){top=SidewalkTop(sidewalkSide)|side: Sidewalk_Pavement("Building Side") }
 
 SidewalkTop(side)-->
@@ -3886,7 +3886,7 @@ PierStep2 -->
 	alignScopeToGeometry(yUp,0,0)
 	# Make "feeler" for occlusion check in next rule.
 	# Extrude down to the terrain (must be mapped in layer attribute).
-	extrude(world.y,-heightOverTerrain)
+	extrude(world.up,-heightOverTerrain)
 	# Align to yUp for feeler scaling.
 	alignScopeToAxes(y)
 	# Scale to go past regular pier shape.
@@ -3918,7 +3918,7 @@ PierShafts -->
 # XX: Come back later and make smarter pier sizing code.
 StreetDimensionMassing(Location,dir,height)-->
 	translate(rel,world,0,-height,0)
-	extrude(world.y,height)
+	extrude(world.up,height)
 	StreetDimensionBuilder(Location,dir,height)
 	
 StreetDimensionBuilder(Location,dir,height)-->
@@ -4063,40 +4063,40 @@ BridgeSlope -->
 
 BridgeConcrete(height) -->
 	translate(rel,world,0,-height,0)
-	extrude(world.y,height)
+	extrude(world.up,height)
 	comp(f){top: NIL | all= BridgeMaterial("No Color") }
 
 BridgeRailing -->
 	case Not_Low_LOD:
 		translate(rel,world,0, Sidewalk_Height ,0)
 		split(v,unitSpace,0){ ~1: NIL | 0.4: 
-			extrude(world.y,0.8) 
+			extrude(world.up,0.8) 
 			color(case coloringOn: "#eeeeee" else: "") 
 			comp(f){all: BridgeMaterial("No Color")} }
 		split(v,unitSpace,0){ ~1: NIL | 0.1: 
 			translate(rel,world,0,0.8,0) 
 			VerticalRails 
 			translate(rel,world,0,0.3,0) 
-			extrude(world.y,0.05) 
+			extrude(world.up,0.05) 
 			RailMaterial 
 			| 0.17: NIL }
 	else:
 		translate(rel,world,0, Sidewalk_Height ,0)
-		split(v,unitSpace,0){ ~1: NIL | 0.4: extrude(world.y,0.8) color(case coloringOn: "#eeeeee" else: "") comp(f){all: BridgeMaterial("No Color") } }
-		split(v,unitSpace,0){ ~1: NIL | 0.1: translate(rel,world,0,0.8,0) VerticalRails translate(rel,world,0,0.3,0) comp(f){ all: extrude(world.y,0.05) comp(f){front: RailMaterial} | 0.17: NIL } }
+		split(v,unitSpace,0){ ~1: NIL | 0.4: extrude(world.up,0.8) color(case coloringOn: "#eeeeee" else: "") comp(f){all: BridgeMaterial("No Color") } }
+		split(v,unitSpace,0){ ~1: NIL | 0.1: translate(rel,world,0,0.8,0) VerticalRails translate(rel,world,0,0.3,0) comp(f){ all: extrude(world.up,0.05) comp(f){front: RailMaterial} | 0.17: NIL } }
 
 VerticalRails -->
 	case Not_Low_LOD:
 		comp(f){all: split(x){ ~1 : NIL 
-							 | 0.1: s('1,0.07,'1) center(y) extrude(world.y,0.3) RailMaterial
+							 | 0.1: s('1,0.07,'1) center(y) extrude(world.up,0.3) RailMaterial
 							 | { ~2 : NIL 
-							 |   0.1: s('1,0.07,'1) center(y) extrude(world.y,0.3) RailMaterial }*
+							 |   0.1: s('1,0.07,'1) center(y) extrude(world.up,0.3) RailMaterial }*
 							 | ~1 : NIL } }
 	else:
 		comp(f){all: split(x){ ~1 : NIL 
-							 | 0.1: s('1,0.07,'1) center(y) extrude(world.y,0.3) comp(f){front: RailMaterial}
+							 | 0.1: s('1,0.07,'1) center(y) extrude(world.up,0.3) comp(f){front: RailMaterial}
 							 | { ~2 : NIL 
-							 |   0.1: s('1,0.07,'1) center(y) extrude(world.y,0.3) comp(f){front: RailMaterial} }*
+							 |   0.1: s('1,0.07,'1) center(y) extrude(world.up,0.3) comp(f){front: RailMaterial} }*
 							 | ~1 : NIL } }		
 
 BridgeSolid -->
@@ -4179,7 +4179,7 @@ Fence(Location)-->
 	FencePoles
 
 FenceMesh -->
-	extrude(world.y,1.3)
+	extrude(world.up,1.3)
 	alignScopeToAxes(y) #Cast Scope to prevent edge issues 
 	alignScopeToGeometry(yUp, 0, 3)#Cast Scope to prevent edge issues. 
 	FencePrep
@@ -4217,7 +4217,7 @@ PoleBase -->
 	center(xz)
 	i(MiscFolder+"/Fence/quad.obj")
 	center(xz)
-	extrude(world.y, 1.3)
+	extrude(world.up, 1.3)
 	comp(f) {all: PoleTexturing}
 
 PoleTexturing -->

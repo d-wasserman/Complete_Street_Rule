@@ -188,7 +188,7 @@ CurbTexture -->
 	projectUV(0)
 	
 Curbs_Mass(RotateUV)-->
-	extrude(world.y, Curb_Height )
+	extrude(world.up, Curb_Height )
 	comp(f) {top:Curbs(RotateUV)|side:Curbs(false)}
 	
 Curbs(RotateUV) --> #Ground Textured Rule 

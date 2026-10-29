@@ -289,7 +289,7 @@ Raised_Offset_Curb(Location, Dir, Mode, Setback) -->
 	}
 
 Street_Pavement_Median(Dir) -->
-	extrude(world.y, Curb_Height)
+	extrude(world.up, Curb_Height)
 	comp(f) { top: Median_Plant_Side(Dir)
 			|side:CurbTexture }
 
