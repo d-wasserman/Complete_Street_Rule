@@ -3031,19 +3031,20 @@ Sidewalk_Tree_Insert_Setup_2(Location,Tree_Type,Tree_Height)-->
 Tree_Insert_Type(Location,Tree_Type1,Tree_Height1)-->
 	case Tree_Height1<.001: #If Tree Height is reduced beyond a limit, remove tree. 
 		NIL
-	case texturingOn:
-		s(0,0,0)
+	else:
 		report("Vegetation.Construction, Tree Cost",TreeCostAverage)
 		set(Tree.Name, Tree_Type_Adjusted(Tree_Type1))
 		set(Tree.Height, Tree_Height1)
 		set(Tree.Radius,Tree_Radius(Tree_Type1,Tree_Height1))
+		Tree_Generate
+
+Tree_Generate -->
+	case coloringOn: # Fix to make Schematic and LowPoly trees appear colored
+		resetMaterial()
+		Tree.Generate
+	case texturingOn:
 		Tree.Generate
 	else: #If Texturing is off, the tree texture is overrided to the current thematic color 
-		s(0,0,0)
-		report("Vegetation.Construction, Tree Cost",TreeCostAverage)
-		set(Tree.Name, Tree_Type_Adjusted(Tree_Type1))
-		set(Tree.Height, Tree_Height1)
-		set(Tree.Radius,Tree_Radius(Tree_Type1,Tree_Height1))
 		set(Tree.OverwriteColor, _ThematicRouter ("Plantings","vegetation"))
 		Tree.Generate
 
