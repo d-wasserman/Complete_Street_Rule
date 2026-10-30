@@ -289,7 +289,7 @@ Raised_Offset_Curb(Location, Dir, Mode, Setback) -->
 	}
 
 Street_Pavement_Median(Dir) -->
-	extrude(world.y, Curb_Height)
+	extrude(world.up, Curb_Height)
 	comp(f) { top: Median_Plant_Side(Dir)
 			|side:CurbTexture }
 
@@ -304,9 +304,12 @@ Raised_Curb_Extrusion(Mode, Dir) -->
 	CurbTexture
 	
 CurbTexture -->
-	setupProjection(0, scope.xz, 2, 2, 2, 2, 2)
-	texture(Curb_Texture)
-	projectUV(0)
+	comp(f) { all:
+		setupProjection(0, scope.xy, 2, 2)
+		texture(Curb_Texture)
+		projectUV(0)
+		CurbSurface.
+	}
 
 # --------------------------------
 # Planting Logic
