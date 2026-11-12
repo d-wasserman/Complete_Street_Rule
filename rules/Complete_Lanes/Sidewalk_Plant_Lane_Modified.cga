@@ -38,7 +38,7 @@ import Row_Distributor : "/ESRI.lib/rules/Streets/Imports/Elements/Row_Distribut
 	Element --> SelectTreeBed
 )
 
-import Plant : "/ESRI.lib/rules/Streets/Imports/Elements/Solitary_Plant3.cga" (
+import Plant : "/ESRI.lib/rules/Streets/Imports/Elements/Solitary_Plant.cga" (
 	Type = Plant_Type
 )
 
